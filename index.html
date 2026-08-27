@@ -23,6 +23,10 @@
     if(isiOS)root.dataset.ios='true';
     // 安卓 / WebView 套壳 APK 同样需要键盘补偿；标记出来供 CSS 使用。
     if(!isiOS&&/Android/i.test(navigator.userAgent))root.dataset.android='true';
+    /* ToApp 等打包工具允许自定义 UA（甚至伪装成桌面），仅靠 UA 判定会漏掉这类外壳，
+       导致所有键盘补偿规则都不匹配、底部导航不让位而压住输入框。
+       这里补一个不依赖 UA 的兜底：只要是触摸设备且非 iOS，就按安卓外壳处理。 */
+    if(!isiOS&&!root.dataset.android&&(navigator.maxTouchPoints>0||'ontouchstart'in window))root.dataset.android='true';
     if(window.matchMedia?.('(display-mode: standalone)').matches||navigator.standalone===true)root.dataset.standalone='true';
     let frame=0,stableHeight=Math.round(window.innerHeight||document.documentElement.clientHeight||0);
     const isFormControl=node=>/^(INPUT|TEXTAREA|SELECT)$/u.test(node?.tagName||'');
@@ -32,7 +36,9 @@
 const shrinksOnKeyboard=!isiOS;const height=standalone&&focused&&!shrinksOnKeyboard?Math.max(stableHeight,inner):inner;const visualHeight=Math.round(viewport?.height||height),offsetTop=Math.max(0,Math.round(viewport?.offsetTop||0));
 /* 无 visualViewport 的老 WebView：用 stableHeight 与当前 inner 的差值兜底推算键盘高度。 */
 let keyboardInset=focused?Math.max(0,height-visualHeight-offsetTop):0;
-if(focused&&!viewport&&shrinksOnKeyboard&&stableHeight>0)keyboardInset=Math.max(keyboardInset,Math.max(0,stableHeight-inner));if(height>0)root.style.setProperty('--app-viewport-height',`${height}px`);root.style.setProperty('--app-viewport-offset-top',`${offsetTop}px`);root.style.setProperty('--app-keyboard-inset',`${keyboardInset}px`);root.dataset.keyboardOpen=keyboardInset>80?'true':'false';});};
+/* 兜底不再依赖 shrinksOnKeyboard（其来源 isiOS 由 UA 推断，打包外壳可能伪装 UA）：
+   只要聚焦输入框且可视高度明显小于稳定高度，就认定键盘已弹出。 */
+if(focused&&stableHeight>0)keyboardInset=Math.max(keyboardInset,Math.max(0,stableHeight-inner));if(height>0)root.style.setProperty('--app-viewport-height',`${height}px`);root.style.setProperty('--app-viewport-offset-top',`${offsetTop}px`);root.style.setProperty('--app-keyboard-inset',`${keyboardInset}px`);root.dataset.keyboardOpen=keyboardInset>80?'true':'false';});};
     update();window.addEventListener('resize',update,{passive:true});window.addEventListener('orientationchange',()=>{stableHeight=0;setTimeout(update,120);},{passive:true});window.visualViewport?.addEventListener('resize',update,{passive:true});window.visualViewport?.addEventListener('scroll',update,{passive:true});window.addEventListener('pageshow',update,{passive:true});document.addEventListener('focusin',event=>{if(isFormControl(event.target)){setTimeout(update,60);if(event.target?.id==='chatMessageInput')setTimeout(()=>{const body=document.getElementById('chatThreadBody');if(body)body.scrollTop=body.scrollHeight;},120);}});document.addEventListener('focusout',event=>{if(isFormControl(event.target))setTimeout(()=>{update();if(root.dataset.standalone==='true')window.scrollTo(0,0);},160);});
     window.__updateMobiusViewport=update;
   })();
@@ -7364,6 +7370,16 @@ html[data-android][data-standalone="true"] .screen,html[data-android][data-stand
 html[data-android] .chat-composer{padding-bottom:calc(7px + env(safe-area-inset-bottom,0px))!important}
 html[data-android][data-keyboard-open="true"] .chat-composer{padding-bottom:7px!important}
 
+/* ===== 平台无关的键盘兜底 =====
+   ToApp / 各类打包外壳可能自定义 UA，导致 data-ios / data-android 都没打上。
+   这组规则只依赖 data-keyboard-open（由 visualViewport 实测得出，与 UA 无关），
+   确保任何外壳里键盘弹出时底部导航都会让位，不会压住输入框。 */
+html[data-keyboard-open="true"] #appScreen>.bottom-nav{display:none!important}
+html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-view{height:100%!important;padding-bottom:0!important}
+html[data-keyboard-open="true"] #chatApp.thread-open .chat-composer,
+html[data-keyboard-open="true"] .chat-composer{padding-bottom:7px!important}
+html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-padding-bottom:12px!important}
+
 /* iOS / Android 窄屏桌面编辑适配：主题面板始终位于安全区和顶栏下方，不越过左右边界。 */
 .desktop-theme-panel{
   top:calc(58px + env(safe-area-inset-top,0px));
@@ -11117,9 +11133,30 @@ html[data-android][data-keyboard-open="true"] .chat-composer{padding-bottom:7px!
 
     function openDreamDataDatabase() { return openDreamV3Database(); }
 
-    function mirrorDreamStorageRecord(name, serialized, previous = null, updatedAt = Date.now()) {
+    // V3 镜像失败时的待重试队列。
+    // 早期实现是「发射后不管」：IndexedDB 事务被中断（页面切后台、配额紧张、
+    // Safari 回收）时无人知晓，localStorage 里是新值而 V3 里仍是旧值。
+    // 一旦 localStorage 之后被浏览器清理，启动引导就会用 V3 的旧快照回填，
+    // 用户表现为「设置保存后过一会儿又变回去」。
+    const dreamMirrorRetryQueue = new Map();
+    let dreamMirrorRetryTimer = 0;
+
+    function scheduleDreamMirrorRetry() {
+      if (dreamMirrorRetryTimer || !dreamMirrorRetryQueue.size) return;
+      dreamMirrorRetryTimer = window.setTimeout(() => {
+        dreamMirrorRetryTimer = 0;
+        const pending = [...dreamMirrorRetryQueue.entries()];
+        dreamMirrorRetryQueue.clear();
+        pending.forEach(([name, item]) => {
+          if (item.attempts >= 3) { console.warn('[DreamStorage] V3 镜像多次失败:', name); return; }
+          mirrorDreamStorageRecord(name, item.serialized, item.previous, item.updatedAt, item.attempts + 1);
+        });
+      }, 800);
+    }
+
+    function mirrorDreamStorageRecord(name, serialized, previous = null, updatedAt = Date.now(), attempts = 0) {
       openDreamV3Database().then(db => {
-        if (!db) return;
+        if (!db) { dreamMirrorRetryQueue.set(name, { serialized, previous, updatedAt, attempts }); scheduleDreamMirrorRetry(); return; }
         try {
           const tx = db.transaction([DREAM_DATA_STORE_NAME, DREAM_V3_JOURNAL_STORE], 'readwrite');
           const records = tx.objectStore(DREAM_DATA_STORE_NAME);
@@ -11133,9 +11170,31 @@ html[data-android][data-keyboard-open="true"] .chat-composer{padding-bottom:7px!
             records.put({ key: name, value: serialized, previousValue, updatedAt, schemaVersion: 3 });
             journal.delete(journalId);
           };
-        } catch (_) {}
-      }).catch(() => {});
+          // 事务真正提交后才算落盘成功；中断或报错则排队重试。
+          tx.oncomplete = () => { dreamMirrorRetryQueue.delete(name); };
+          tx.onerror = tx.onabort = () => {
+            dreamMirrorRetryQueue.set(name, { serialized, previous, updatedAt, attempts });
+            scheduleDreamMirrorRetry();
+          };
+        } catch (_) {
+          dreamMirrorRetryQueue.set(name, { serialized, previous, updatedAt, attempts });
+          scheduleDreamMirrorRetry();
+        }
+      }).catch(() => {
+        dreamMirrorRetryQueue.set(name, { serialized, previous, updatedAt, attempts });
+        scheduleDreamMirrorRetry();
+      });
     }
+
+    // 页面隐藏/关闭前尽最大努力把未落盘的镜像写完，减少「新值只存在于 localStorage」的窗口。
+    function flushDreamMirrorQueue() {
+      if (!dreamMirrorRetryQueue.size) return;
+      const pending = [...dreamMirrorRetryQueue.entries()];
+      dreamMirrorRetryQueue.clear();
+      pending.forEach(([name, item]) => mirrorDreamStorageRecord(name, item.serialized, item.previous, item.updatedAt, item.attempts));
+    }
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushDreamMirrorQueue(); });
+    window.addEventListener('pagehide', flushDreamMirrorQueue);
 
     function commitDreamV3Batch(entries, label = 'batch') {
       return openDreamV3Database().then(db => new Promise(resolve => {
@@ -15463,24 +15522,50 @@ html[data-android][data-keyboard-open="true"] .chat-composer{padding-bottom:7px!
       return value;
     }
 
-    async function buildDreamMediaArchive(categories) {
+    // 分类备份把媒体转成 base64 塞进单个 JSON，体积会膨胀约 37%，
+    // 再经 JSON.stringify 变成一个巨型字符串（V8 上限约 512MB 字符）。
+    // 大量 MP3（一起听歌单 / 语音字卡）很容易撑爆内存或字符串上限，
+    // 因此这里逐个串行读取并累计体积，超限时主动抛错引导用户改用流式备份。
+    const DREAM_CATEGORY_BACKUP_MEDIA_LIMIT = 96 * 1024 * 1024; // base64 后的累计上限
+
+    async function buildDreamMediaArchive(categories, onProgress = null) {
       const media = {};
       const references = [...collectDreamMediaReferences(categories)];
-      await Promise.all(references.map(async reference => {
+      let encodedBytes = 0;
+      let index = 0;
+      // 串行处理：并发 Promise.all 会让所有音频的 Blob 与 base64 同时驻留内存。
+      for (const reference of references) {
+        index += 1;
+        if (onProgress) onProgress(index, references.length, encodedBytes);
         const source = await resolveDreamMediaSource(reference);
-        if (!source) return;
-        try { media[reference] = await readFileAsDataUrl(await fetch(source).then(response => response.blob())); } catch (error) { /* skip unavailable media */ }
-      }));
+        if (!source) continue;
+        try {
+          const blob = await fetch(source).then(response => response.blob());
+          const dataUrl = await readFileAsDataUrl(blob);
+          encodedBytes += dataUrl.length;
+          if (encodedBytes > DREAM_CATEGORY_BACKUP_MEDIA_LIMIT) {
+            const error = new Error('category-backup-media-too-large');
+            error.encodedBytes = encodedBytes;
+            throw error;
+          }
+          media[reference] = dataUrl;
+        } catch (error) {
+          if (error?.message === 'category-backup-media-too-large') throw error;
+          /* 单个媒体不可用时跳过，不影响其余内容 */
+        }
+        // 让出主线程，避免长时间冻结界面
+        if (index % 4 === 0) await new Promise(resolve => setTimeout(resolve, 0));
+      }
       return media;
     }
 
-    async function buildSelectedDreamBackup(categoryIds = getSelectedDreamBackupCategoryIds(), source = null) {
+    async function buildSelectedDreamBackup(categoryIds = getSelectedDreamBackupCategoryIds(), source = null, onProgress = null) {
       const categories = {};
       categoryIds.forEach(id => { categories[id] = buildDreamBackupCategory(id, source); });
       // backupVersion 3：settings 增加 accountName/answerBook/notificationCenter/proactiveEvents，phone 增加 aiConfig。
       // 导入侧对缺失字段做保留处理，v2 及更早的档案仍可正常导入。
       const archive = { type: 'dream-transmit-categorized-backup', schemaVersion: DREAM_STORAGE_SCHEMA_VERSION, backupVersion: 3, exportDate: new Date().toISOString(), categories, selectedCategories: categoryIds };
-      const media = await buildDreamMediaArchive(categories);
+      const media = await buildDreamMediaArchive(categories, onProgress);
       if (Object.keys(media).length) archive.media = media;
       return archive;
     }
@@ -15661,9 +15746,29 @@ html[data-android][data-keyboard-open="true"] .chat-composer{padding-bottom:7px!
     async function exportSelectedDreamData() {
       const selected = getSelectedDreamBackupCategoryIds();
       if (!selected.length) { showGlobalSettingsToast('请至少选择一个数据分类'); return; }
-      const archive = await buildSelectedDreamBackup(selected);
-      downloadDreamBackup(archive);
-      showGlobalSettingsToast(`已导出 ${selected.length} 类本地数据`);
+      // 原先没有 try/catch：媒体过多导致 RangeError 时会静默失败，
+      // 用户点了导出既没有文件也没有提示，表现为「导不出来」。
+      setMediaCompressionProgress('正在准备分类备份…');
+      try {
+        const archive = await buildSelectedDreamBackup(selected, null, (done, total) => {
+          setMediaCompressionProgress(`正在打包媒体 ${done}/${total}…`);
+        });
+        setMediaCompressionProgress('正在生成文件…');
+        downloadDreamBackup(archive);
+        setMediaCompressionProgress('');
+        showGlobalSettingsToast(`已导出 ${selected.length} 类本地数据`);
+      } catch (error) {
+        setMediaCompressionProgress('');
+        const tooLarge = error?.message === 'category-backup-media-too-large'
+          || /Invalid string length|Array buffer allocation failed|out of memory/i.test(String(error?.message || ''));
+        if (tooLarge) {
+          window.alert('媒体文件过多，分类备份无法在单个 JSON 中容纳（MP3 转码后体积会膨胀约 37%）。\n\n请改用「流式全量备份」——它逐条写入、不受此限制，同样包含全部数据与媒体。');
+          showGlobalSettingsToast('媒体过多，请改用流式全量备份');
+        } else {
+          console.warn('[分类备份] 导出失败', error);
+          showGlobalSettingsToast(`导出失败${error?.message ? `：${error.message}` : ''}`);
+        }
+      }
     }
 
     async function restoreDreamMediaArchive(media) {
