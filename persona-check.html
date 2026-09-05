@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>人设功能 · 版本自检</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;padding:20px 15px 50px;background:#F6F4EC;color:#3D3A31;
+  font:14px/1.7 -apple-system,BlinkMacSystemFont,'PingFang SC',system-ui,sans-serif}
+.w{max-width:640px;margin:0 auto}
+h1{margin:0 0 6px;font-size:19px}
+.lead{margin:0 0 16px;color:#8A8270;font-size:12.5px;line-height:1.8}
+.lead b{color:#B08D3C}
+.pick{padding:15px 17px;border-radius:14px;background:#fff;border:2px solid #EFE7D4;margin-bottom:14px}
+.pick h2{margin:0 0 9px;font-size:14px}
+.pick p{margin:0 0 10px;color:#7C7463;font-size:12.5px}
+.pick input{width:100%;padding:11px 13px;border:1.5px solid #E2D9C2;border-radius:11px;
+  background:#FDFCF7;font:inherit;font-size:13px;color:#3D3A31}
+.pick input:focus{outline:0;border-color:#C9A64E}
+.btn{width:100%;margin-top:10px;padding:12px;border:0;border-radius:11px;background:#C9A64E;
+  color:#fff;font:inherit;font-size:14px;font-weight:600;cursor:pointer}
+.btn:active{transform:scale(.99);background:#B5923F}
+.btn.alt{background:#fff;color:#8F7434;border:1.5px solid #E2D9C2;margin-top:8px}
+.res{display:none;margin-top:16px}
+.res.on{display:block}
+.card{padding:15px 17px;border-radius:14px;background:#fff;border:2px solid #EFE7D4;margin-bottom:11px}
+.card h3{margin:0 0 10px;font-size:13.5px}
+.row{display:flex;align-items:flex-start;gap:9px;padding:8px 0;border-bottom:1px solid #F4F0E4;font-size:12.5px}
+.row:last-child{border-bottom:0}
+.row .ic{flex:0 0 20px;font-weight:700;font-size:14px;line-height:1.4}
+.row .tx{flex:1;min-width:0}
+.row .tx b{display:block;color:#3D3A31;font-weight:600}
+.row .tx small{display:block;margin-top:2px;color:#9A9384;font-size:11px;line-height:1.6;word-break:break-all}
+.ok .ic{color:#5E8C55}
+.no .ic{color:#C4702B}
+.verdict{padding:17px;border-radius:14px;margin-bottom:12px;font-size:13.5px;line-height:1.8}
+.verdict.good{background:#EDF6E9;border:2px solid #B9D6AC;color:#3F6B37}
+.verdict.bad{background:#FDF0E4;border:2px solid #EBC59B;color:#9A5A22}
+.verdict b{display:block;margin-bottom:5px;font-size:15px}
+.fix{padding:15px 17px;border-radius:14px;background:#FFF9EC;border:2px solid #EDD9A8}
+.fix h3{margin:0 0 9px;font-size:13.5px;color:#8F6A1F}
+.fix ol{margin:0;padding-left:19px;color:#7C6A45;font-size:12.5px;line-height:1.95}
+.fix li{margin-bottom:6px}
+.fix code{padding:1px 5px;border-radius:4px;background:#F5E9CC;font:11.5px ui-monospace,monospace}
+.mini{margin-top:12px;color:#A39C88;font-size:11px;line-height:1.7}
+</style>
+</head>
+<body>
+<div class="w">
+  <h1>人设功能 · 版本自检</h1>
+  <p class="lead">用来确认<b>你手机上正在跑的那一份</b>有没有人设功能。四条改动（人设独立存档、进手机即弹、AI 只生成三项、移除全局用户设定）已在 <b>v53</b> 完成，如果你没看到，多半是 PWA 缓存还停在旧版。</p>
+
+  <div class="pick">
+    <h2>方式一 · 自动检测（推荐）</h2>
+    <p>如果这个页面和你的 Möbius 放在同一个目录，点下面直接测。</p>
+    <button class="btn" onclick="runFetch('./index.html')">检测同目录的 index.html</button>
+    <button class="btn alt" onclick="runLive()">检测当前已安装的 PWA（读缓存）</button>
+  </div>
+
+  <div class="pick">
+    <h2>方式二 · 手动粘贴</h2>
+    <p>把你手机上那份 index.html 用浏览器打开，全选复制，粘进来。文件很大，粘贴可能要等几秒。</p>
+    <input id="pasteBox" placeholder="粘贴 index.html 的内容">
+    <button class="btn" onclick="runText(document.getElementById('pasteBox').value)">检测粘贴内容</button>
+  </div>
+
+  <div class="res" id="res"></div>
+</div>
+
+<script>
+/* 每条检测都用「代码里必然存在的字符串」做锚点，而不是行号 */
+const CHECKS=[
+  ['人设独立存在梦角档案',      'p.persona=out',                       'savePersona 把人设写进 profile.persona，每个梦角一份'],
+  ['人设填写页存在',            'function openPersonaSetup(',           '四字段表单：身份 / 性格 / 习惯 / 往事'],
+  ['进手机即触发（非点钱夹）',  'phoneNeedsIntro(roleId)',              '写在 openRolePhone 开头，不再藏在钱夹面板里'],
+  ['未配 API 不显示人设页',     'function phoneAIReady(',               '检查 baseUrl / apiKey / model 三项齐全'],
+  ['AI 请求带上人设',           'persona:hasPersona?{',                 'payload 里有 persona 字段'],
+  ['AI 只生成三项',             '字段必须且仅为',                        'system 提示词限定 recentListening / memos / browser'],
+  ['行程钱夹不被 AI 覆盖',      'wallet:profile.data?.wallet',          'merge 时保留原值，不让 AI 写进去'],
+  ['星图有「人设」按钮',        'data-phone-persona',                   '配好 API 后星图底部可随时重填'],
+  ['跳过后不再反复弹',          'p.personaFilledAt=Date.now()',         '跳过也记时间戳'],
+];
+/* v59 / v60 新增项 */
+const CHECKS60=[
+  ['梦角会自己换聊天壁纸',      'function maybeRollPartnerWallpaper(',  'v59：每天首次进聊天室判一次，15% 概率从相册挑一张'],
+  ['壁纸让位规则',              'wallpaperUserDay',                     '用户当天手动设过，当天就不被自动换走'],
+  ['相册新界面',                'alb-wrap',                             'v60：暖杏色照片墙，两列错落'],
+  ['相册标出当前聊天背景',      'function albumLiveWallpaper(',         'v60：哪张正在当背景，图上直接标'],
+  ['顶栏改 HER / HIS PHONE',   'HER / HIS PHONE',                      'v63：明确这是对方的手机'],
+  ['TA 不让看（整机）',         'function phoneDenied(',                'v63：10% 概率整机拒绝，冷却 2 小时'],
+  ['拒绝用冷却而非纯随机',      'function phoneDenySlot(',              'v63：同窗口内结果稳定，退出重进绕不过'],
+  ['拒绝页界面',                'phone-deny-scr',                       'v63：一块暗着的小屏幕'],
+  ['通话头像铺满圆形',          "element.style.backgroundOrigin = 'border-box'", 'v64：修掉深色头像外圈的浅灰环'],
+  ['运势层级高于导航栏',        'position:absolute;inset:0;z-index:362',  'v65：原 302 低于导航栏 340，底部 44px 被压住'],
+  ['钱夹余额与 KOMO 统一',      'purse-wallet-init',                     'v66：钱夹原本不初始化钱包，首次显示 ¥0.00'],
+  ['红包扣款守恒',              'const paid=Math.min(wallet.balanceCents,amount)', 'v66：原 Math.max(0,…) 静默扣到零，账目差 ¥1230'],
+  ['发红包受余额约束',          'red-envelope-plan',                     'v66：金额封顶在梦角余额的 60%'],
+  ['星轨保留彩蛋契约',          'soft-star-vinyl',                       'v67：长按封面 1250ms 的星轨彩蛋未被破坏'],
+  ['今晚一起听过',              'function renderListenTrail(',           'v67：真实播放轨迹，无记录时显示空态'],
+  ['唱片一圈即停',              'listenDiscSpin 4s cubic-bezier',        'v69：开始播放时出现一次动画'],
+  ['今晚有时间边界',            'function listenNightKey(',              'v68：凌晨 5 点前算前一夜，跨夜自动清空'],
+  ['冠军卡改极简数字',          'mus-bignum',                           'v61：巨大数字当背景，去掉紫色渐变实卡'],
+  ['背景数字不被读屏重复念',    'aria-hidden="true">\'+champPlays',      'v61：装饰数字与真实数字重复，须 aria-hidden'],
+];
+const NEG=[
+  ['全局「用户设定」已移除',    'phoneAICustomPrompt',                  '这个 id 应当完全消失'],
+  ['假壁纸文案已删除',          '作为锁屏和桌面壁纸。</p>',              'v60：锁屏/桌面早已不存在，这句话是假的'],
+  ['锁屏桌面死代码已清除',      'function dailyWallpaper(',             'v60：调用数为 0 的死函数'],
+  ['旧相册九宫格已替换',        'phone-album-grid',                     'v60：改为 .alb-grid'],
+  ['冠军卡旧渐变已移除',        'linear-gradient(135deg,#6A5C93,#8E76B4)','v61：白字打在亮端对比度仅 3.89，不达 AA'],
+  ['设备归属文案已修正',        '上传的图片只存在这台设备上',            'v62：这是对方的手机，「这台设备」指向错误'],
+  ['旧顶栏副标题已替换',        'PRIVATE DEVICE ARCHIVE',               'v63：改为 HER / HIS PHONE'],
+  ['通话头像旧边框已移除',      'border: 5px solid rgba(255,255,255,.84)','v64：border 占掉 5px 头像，改用 box-shadow'],
+  ['运势旧层级已修正',          'inset:0;z-index:302',                   'v65：302 低于 .bottom-nav 的 340'],
+  ['红包旧扣款逻辑已移除',      'amount);wallet.sentToMeCents=(wallet.sentToMeCents||0)+amount', 'v66：旧代码会把余额静默扣到 0 且不记账'],
+  ['星轨公转已撤销',            '@keyframes loOrbit',                    'v69：用户要求头像回归原版不旋转'],
+  ['唱片无限旋转已移除',        'listenDiscSpin 4s linear infinite',     'v69：改为播放时转一圈即停'],
+];
+
+function analyse(txt){
+  const build=(txt.match(/MOBIUS_BUILD\s*=\s*'([^']*)'/)||[])[1]||'(读不到)';
+  const pass=[],fail=[];
+  [...CHECKS,...CHECKS60].forEach(([name,needle,desc])=>{
+    (txt.includes(needle)?pass:fail).push([name,desc,needle]);
+  });
+  NEG.forEach(([name,needle,desc])=>{
+    (txt.includes(needle)?fail:pass).push([name,desc,needle]);
+  });
+  return {build,pass,fail,size:txt.length};
+}
+function render(r){
+  const box=document.getElementById('res');
+  const total=CHECKS.length+CHECKS60.length+NEG.length;
+  const good=r.fail.length===0;
+  const isV53=/v69/.test(r.build);
+  let html='';
+  html+=`<div class="verdict ${good?'good':'bad'}">
+    <b>${good?'✅ 这份是 v69，功能齐全':'⚠ 这份不是最新版，缺少下列功能'}</b>
+    通过 ${r.pass.length} / ${total} 项　·　构建号 <code>${esc(r.build)}</code>　·　${(r.size/1048576).toFixed(2)} MB
+  </div>`;
+  html+='<div class="card"><h3>逐项结果</h3>';
+  r.pass.forEach(([n,d])=>{html+=`<div class="row ok"><span class="ic">✓</span><span class="tx"><b>${esc(n)}</b><small>${esc(d)}</small></span></div>`;});
+  r.fail.forEach(([n,d,k])=>{html+=`<div class="row no"><span class="ic">✕</span><span class="tx"><b>${esc(n)}</b><small>${esc(d)}<br>缺少标记：${esc(k)}</small></span></div>`;});
+  html+='</div>';
+  if(!good||!isV53){
+    html+=`<div class="fix"><h3>怎么更新到 v53</h3><ol>
+      <li>确认下载到的包是 <code>670,409 字节</code>，MD5 <code>2f082de5…</code>。文件偏小说明下载被截断了，重下。</li>
+      <li>把包里的 <b>index.html 和 sw.js 一起</b>替换掉，只换 index.html 不管用 —— sw.js 里的 <code>CACHE_VERSION</code> 要变成 v53 才会刷新缓存。</li>
+      <li>手机上把已安装的 Möbius <b>彻底关掉</b>（不是切到后台，是从多任务里划掉）。</li>
+      <li>重新打开，等两三秒让 Service Worker 换版。若仍是旧的，在浏览器里清掉该站点数据再进。</li>
+      <li>再回来点一次上面的检测。</li>
+    </ol></div>`;
+  }else{
+    html+=`<div class="fix"><h3>功能齐全，那怎么用</h3><ol>
+      <li>先在<b>全局设置</b>里把接口地址、Key、模型填好并保存 —— 没配好不会出现人设页，这是特意设计的。</li>
+      <li>进<b>查手机</b>，选一位<b>之前没设定过</b>的梦角。</li>
+      <li>会先弹人设页（身份 / 性格 / 习惯 / 往事），填完点保存，接着才是钱夹那三步。</li>
+      <li>已经设定过的梦角不会再弹。想重填的话，进星图后点底部的「<b>人设</b>」按钮。</li>
+      <li>填完在星图底部点「使用 AI 生成」，只会刷新<b>浏览记录 / 备忘录 / 最近常听</b>三项。</li>
+    </ol></div>`;
+  }
+  box.innerHTML=html;
+  box.classList.add('on');
+  box.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function fail(msg){
+  const box=document.getElementById('res');
+  box.innerHTML=`<div class="verdict bad"><b>读取失败</b>${esc(msg)}<div class="mini">直接用浏览器打开你的 index.html，全选复制，用上面的「手动粘贴」再试一次。</div></div>`;
+  box.classList.add('on');
+}
+async function runFetch(url){
+  try{
+    const r=await fetch(url,{cache:'no-store'});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    render(analyse(await r.text()));
+  }catch(e){fail('无法读取 '+url+'：'+e.message);}
+}
+async function runLive(){
+  try{
+    if(!('caches' in window))throw new Error('这个浏览器不支持读取缓存');
+    const names=await caches.keys();
+    if(!names.length)throw new Error('没有找到任何缓存，可能还没安装成 PWA');
+    for(const n of names){
+      const c=await caches.open(n);
+      const keys=await c.keys();
+      for(const k of keys){
+        if(/index\.html|\/$/.test(k.url)){
+          const resp=await c.match(k);
+          if(resp){
+            const t=await resp.text();
+            if(t.includes('MOBIUS_BUILD')){
+              const r=analyse(t);
+              r.build+=`（来自缓存 ${n}）`;
+              return render(r);
+            }
+          }
+        }
+      }
+    }
+    throw new Error('缓存里没找到 index.html。缓存名：'+names.join(', '));
+  }catch(e){fail(e.message);}
+}
+</script>
+</body>
+</html>
