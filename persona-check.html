@@ -246,6 +246,10 @@ const CHECKS60=[
   ['设置项叫连词成句',       '<strong>连词成句</strong>',              'v104：用户要求改名，不再叫「字典字卡」'],
   ['存量梦角补挂 glyph',     'function backfillGlyphCardMount(',       'v104：v103 前配置过挂载的梦角白名单里没有 glyph，开了也拼不出一个字'],
   ['补挂只跑一次',           'glyph-mount-backfill',                   'v104：marker 保证幂等，用户手动取消挂载后不会被强塞回来'],
+  ['调度参数实时保存',       "schedulerSaveTimers",                    'v105：原本只听 change，手机上改完不失焦直接刷新就丢了'],
+  ['调度参数切后台落盘',     'flushSchedulerPending',                  'v105：visibilitychange + pagehide 兜底'],
+  ['调度参数 0 不当假值',    'function clampSchedulerValue(',          'v105：原写 Number(x)||默认值，填 0 会跳回默认值'],
+  ['保存前强制夹紧',         'normalizeSchedulerSettings(globalAppSettings)', 'v105：load 命中缓存会跳过 clamp，越界值原样写盘'],
 ];
 const NEG=[
   ['装饰价签已移除',          'background:var(--kk-tag) center/contain', 'v85：用户要求去掉价格牌标签'],
@@ -290,10 +294,10 @@ function render(r){
   const box=document.getElementById('res');
   const total=CHECKS.length+CHECKS60.length+NEG.length;
   const good=r.fail.length===0;
-  const isV53=/v104/.test(r.build);
+  const isV53=/v105/.test(r.build);
   let html='';
   html+=`<div class="verdict ${good?'good':'bad'}">
-    <b>${good?'✅ 这份是 v104，功能齐全':'⚠ 这份不是最新版，缺少下列功能'}</b>
+    <b>${good?'✅ 这份是 v105，功能齐全':'⚠ 这份不是最新版，缺少下列功能'}</b>
     通过 ${r.pass.length} / ${total} 项　·　构建号 <code>${esc(r.build)}</code>　·　${(r.size/1048576).toFixed(2)} MB
   </div>`;
   html+='<div class="card"><h3>逐项结果</h3>';
@@ -301,9 +305,9 @@ function render(r){
   r.fail.forEach(([n,d,k])=>{html+=`<div class="row no"><span class="ic">✕</span><span class="tx"><b>${esc(n)}</b><small>${esc(d)}<br>缺少标记：${esc(k)}</small></span></div>`;});
   html+='</div>';
   if(!good||!isV53){
-    html+=`<div class="fix"><h3>怎么更新到 v104</h3><ol>
-      <li>确认下载到的包是 <code>约 1.93 MB</code>（1,932,5xx 字节上下）。文件偏小说明下载被截断了，重下。</li>
-      <li>把包里的 <b>index.html 和 sw.js 一起</b>替换掉，只换 index.html 不管用 —— sw.js 里的 <code>CACHE_VERSION</code> 要变成 v104 才会刷新缓存。</li>
+    html+=`<div class="fix"><h3>怎么更新到 v105</h3><ol>
+      <li>确认下载到的包是 <code>约 1.84 MB</code>（1,934,xxx 字节上下）。文件偏小说明下载被截断了，重下。</li>
+      <li>把包里的 <b>index.html 和 sw.js 一起</b>替换掉，只换 index.html 不管用 —— sw.js 里的 <code>CACHE_VERSION</code> 要变成 v105 才会刷新缓存。</li>
       <li>手机上把已安装的 Möbius <b>彻底关掉</b>（不是切到后台，是从多任务里划掉）。</li>
       <li>重新打开，等两三秒让 Service Worker 换版。若仍是旧的，在浏览器里清掉该站点数据再进。</li>
       <li>再回来点一次上面的检测。</li>

@@ -15537,6 +15537,42 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
       else closeCircleApp();
     });
 
+    /* ═══ v105 · 主动事件调度参数的规范化 ═══
+       抽成独立函数有两个原因，都踩过：
+
+       ① 原本写 `Number(x) || 默认值` —— 0 是假值，会被悄悄换成默认值。
+          实测「主动发送消息 最快秒数」填 0 → 存 0 → 下次读取跳回 300，用户看到「没保存」。
+          改成只在「非数字 / 空」时才回退，0 交给 Math.max 的下限去夹。
+
+       ② loadGlobalAppSettings() 开头是 `if (globalAppSettings) return globalAppSettings`，
+          已缓存就直接返回、**跳过全部 clamp**。于是保存时越界值原样写盘，
+          要等下次刷新重新读取才夹紧 —— 实测填 99999 内存里就真的是 99999。
+          所以 persistGlobalAppSettings() 里必须显式再跑一次。 */
+    function clampSchedulerValue(value, lo, hi, fallback) {
+      const num = Number(value);
+      const usable = value !== '' && value !== null && value !== undefined && Number.isFinite(num);
+      return Math.max(lo, Math.min(hi, usable ? num : fallback));
+    }
+
+    function normalizeSchedulerSettings(target) {
+      if (!target || typeof target !== 'object') return target;
+      target.proactiveMessageMinSeconds = clampSchedulerValue(target.proactiveMessageMinSeconds, 1, 3600, 300);
+      target.proactiveMessageMaxMinutes = clampSchedulerValue(target.proactiveMessageMaxMinutes, 1, 1440, 36);
+      target.proactiveLetterMinMinutes = clampSchedulerValue(target.proactiveLetterMinMinutes, 1, 180, 60);
+      target.proactiveLetterMaxHours = clampSchedulerValue(target.proactiveLetterMaxHours, .5, 72, 24);
+      target.letterReplyMinMinutes = clampSchedulerValue(target.letterReplyMinMinutes, .1, 180, 1);
+      target.letterReplyMaxHours = clampSchedulerValue(target.letterReplyMaxHours, .1, 24, 2);
+      target.circlePostMinMinutes = clampSchedulerValue(target.circlePostMinMinutes, 1, 180, 30);
+      target.circlePostMaxHours = clampSchedulerValue(target.circlePostMaxHours, .5, 72, 4);
+      target.circleVisitorEnabled = target.circleVisitorEnabled !== false;
+      target.circleVisitorMinMinutes = clampSchedulerValue(target.circleVisitorMinMinutes, 1, 180, 30);
+      target.circleVisitorMaxHours = clampSchedulerValue(target.circleVisitorMaxHours, .5, 72, 6);
+      /* 评论回复延迟允许 0（立即回复） */
+      target.circleCommentMinMinutes = clampSchedulerValue(target.circleCommentMinMinutes, 0, 180, 5);
+      target.circleCommentMaxMinutes = clampSchedulerValue(target.circleCommentMaxMinutes, target.circleCommentMinMinutes, 720, Math.max(target.circleCommentMinMinutes, 30));
+      return target;
+    }
+
     function loadGlobalAppSettings() {
       if (globalAppSettings) return globalAppSettings;
       const defaults = { theme: 'mono', glyphCardsEnabled: false, quoteReply: true, readReceipt: true, receiptStyle: 'icon', autonomyHesitationEnabled: true, readNoReplyEnabled: true, typingMimic: true, cardSentence: false, messageActionsEnabled: true, simulationEnabled: true, messageSoundEnabled: false, messageSoundSrc: '', messageSoundName: '', ringtoneEnabled: false, ringtoneSrc: '', ringtoneName: '', globalFontSource: '', globalFontName: '', auroraPalette: 'cream', backgroundNotification: false, inAppPopup: true, usageAnnouncementEnabled: true, systemNotificationEnabled: true, notificationAppBadgeEnabled: true, notificationOnlyBackground: false, notificationPreviewMode: 'full', notificationDndEnabled: false, notificationDndStart: '22:00', notificationDndEnd: '08:00', notificationServiceWorkerEnabled: true, fontScale: 100, desktopIconShape: 'rounded', desktopIconMaterial: 'glass', desktopThemeColor: '', desktopAccentColor: '', desktopThemeOpacity: 75, desktopThemeBlur: 12, desktopWallpaper: '', replyMaxReplies: 5, replyMinSeconds: 3, replyMaxSeconds: 60, replyWeights: [45,32,15,6,2], groupReplyMaxMembers: 3, groupForceReply: true, groupAutonomousRounds: 2, groupAutonomousChance: 45, schedulerEnabled: true, proactiveContactEnabled: true, proactiveContactMinMinutes: 15, proactiveContactMaxMinutes: 60, proactiveMessageEnabled: true, proactiveLetterEnabled: true, proactiveCircleEnabled: true, proactiveMessageMinSeconds: 300, proactiveMessageMaxMinutes: 36, proactiveLetterMinMinutes: 60, proactiveLetterMaxHours: 24, letterReplyMinMinutes: 1, letterReplyMaxHours: 2, circlePostMinMinutes: 30, circlePostMaxHours: 4, circleVisitorEnabled: true, circleVisitorMinMinutes: 30, circleVisitorMaxHours: 6, circleCommentReplyEnabled: true, circleCommentMinMinutes: 5, circleCommentMaxMinutes: 30, proactiveMinMinutes: 5, proactiveMaxMinutes: 30 };
@@ -15606,23 +15642,9 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
       globalAppSettings.proactiveMessageEnabled = true;
       globalAppSettings.proactiveLetterEnabled = true;
       globalAppSettings.proactiveCircleEnabled = true;
-      globalAppSettings.proactiveMessageMinSeconds = Math.max(1, Math.min(3600, Number(globalAppSettings.proactiveMessageMinSeconds) || 300));
-      globalAppSettings.proactiveMessageMaxMinutes = Math.max(1, Math.min(1440, Number(globalAppSettings.proactiveMessageMaxMinutes) || 36));
-      globalAppSettings.proactiveLetterMinMinutes = Math.max(1, Math.min(180, Number(globalAppSettings.proactiveLetterMinMinutes) || 60));
-      globalAppSettings.proactiveLetterMaxHours = Math.max(.5, Math.min(72, Number(globalAppSettings.proactiveLetterMaxHours) || 24));
-      globalAppSettings.letterReplyMinMinutes = Math.max(.1, Math.min(180, Number(globalAppSettings.letterReplyMinMinutes) || 1));
-      globalAppSettings.letterReplyMaxHours = Math.max(.1, Math.min(24, Number(globalAppSettings.letterReplyMaxHours) || 2));
-      globalAppSettings.circlePostMinMinutes = Math.max(1, Math.min(180, Number(globalAppSettings.circlePostMinMinutes) || 30));
-      globalAppSettings.circlePostMaxHours = Math.max(.5, Math.min(72, Number(globalAppSettings.circlePostMaxHours) || 4));
+      normalizeSchedulerSettings(globalAppSettings);
       globalAppSettings.circleVisitorEnabled = globalAppSettings.circleVisitorEnabled !== false;
-      globalAppSettings.circleVisitorMinMinutes = Math.max(1, Math.min(180, Number(globalAppSettings.circleVisitorMinMinutes) || 30));
-      globalAppSettings.circleVisitorMaxHours = Math.max(.5, Math.min(72, Number(globalAppSettings.circleVisitorMaxHours) || 6));
       globalAppSettings.circleCommentReplyEnabled = true;
-      // 评论回复延迟允许设置为 0（立即回复）：只有“未设置/非数值”时才回退默认值。
-      const circleCommentMinValue = Number(globalAppSettings.circleCommentMinMinutes);
-      const circleCommentMaxValue = Number(globalAppSettings.circleCommentMaxMinutes);
-      globalAppSettings.circleCommentMinMinutes = Number.isFinite(circleCommentMinValue) && globalAppSettings.circleCommentMinMinutes !== '' ? Math.max(0, Math.min(180, circleCommentMinValue)) : 5;
-      globalAppSettings.circleCommentMaxMinutes = Number.isFinite(circleCommentMaxValue) && globalAppSettings.circleCommentMaxMinutes !== '' ? Math.max(globalAppSettings.circleCommentMinMinutes, Math.min(720, circleCommentMaxValue)) : Math.max(globalAppSettings.circleCommentMinMinutes, 30);
       globalAppSettings.proactiveMinMinutes = Math.max(1, Math.min(180, Number(globalAppSettings.proactiveMinMinutes) || 5));
       globalAppSettings.proactiveMaxMinutes = Math.max(globalAppSettings.proactiveMinMinutes, Math.min(720, Number(globalAppSettings.proactiveMaxMinutes) || 30));
       return globalAppSettings;
@@ -15635,6 +15657,9 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
     function persistGlobalAppSettings() {
       if (window.__dreamDataImportInProgress) return true;
       loadGlobalAppSettings();
+      /* ⚠ loadGlobalAppSettings 命中缓存时会跳过 clamp，越界值会原样写盘。
+         这里补夹一次，保证「存进去的」和「下次读出来的」始终一致。 */
+      normalizeSchedulerSettings(globalAppSettings);
       return writeDreamJSON(GLOBAL_SETTINGS_KEY, globalAppSettings);
     }
 
@@ -17222,14 +17247,56 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
         circleVisitorMinMinutesInput: 'circleVisitorMinMinutes', circleVisitorMaxHoursInput: 'circleVisitorMaxHours',
         circleCommentMinMinutesInput: 'circleCommentMinMinutes', circleCommentMaxMinutesInput: 'circleCommentMaxMinutes'
       };
-      Object.entries(schedulerInputs).forEach(([id, key]) => document.getElementById(id)?.addEventListener('change', event => {
+      /* ⚠ v105：原本只监听 change —— 而 number 输入框的 change 只在「失焦 / 按回车」时才触发。
+         手机上改完直接切走或下拉刷新（不点别处 = 不失焦），输入框显示的是新值，
+         设置里却从没写进去，刷新后就「恢复原状」。实测复现：DOM=88 而内存仍是 300。
+         改成 input + change 双监听。input 要防抖，否则打「77」时先按下的「7」会被立刻
+         clamp 成 7；也不能在 input 里调 renderGlobalSettings()，那会回写 value 把光标顶掉。 */
+      const schedulerSaveTimers = new Map();
+      const commitSchedulerValue = (id, key, rawValue, fromInput) => {
         const settings = loadGlobalAppSettings();
-        settings[key] = Number(event.target.value);
+        const next = Number(rawValue);
+        if (rawValue === '' || !Number.isFinite(next)) return;   // 清空中途不保存，等失焦兜底
+        if (settings[key] === next) return;
+        settings[key] = next;
         persistGlobalAppSettings();
-        renderGlobalSettings();
         startProactiveHeartbeat();
+        /* 正在打字时不整页重渲染：只在失焦/回车那次把 clamp 后的结果回填。
+           ⚠ 必须回填 —— 超出上下限时存的是夹紧值，输入框却还显示原数（实测填 99999
+           存 1440 但框里仍是 99999），看起来就像「设了没生效」。 */
+        if (!fromInput) {
+          renderGlobalSettings();
+          const input = document.getElementById(id);
+          const clamped = loadGlobalAppSettings()[key];
+          if (input && Number(input.value) !== Number(clamped)) input.value = clamped;
+        }
         showGlobalSettingsToast('节奏参数已更新');
-      }));
+      };
+      Object.entries(schedulerInputs).forEach(([id, key]) => {
+        const input = document.getElementById(id);
+        if (!input) return;
+        input.addEventListener('input', event => {
+          const value = event.target.value;
+          window.clearTimeout(schedulerSaveTimers.get(id));
+          schedulerSaveTimers.set(id, window.setTimeout(() => commitSchedulerValue(id, key, value, true), 420));
+        });
+        input.addEventListener('change', event => {
+          window.clearTimeout(schedulerSaveTimers.get(id));
+          commitSchedulerValue(id, key, event.target.value, false);
+        });
+      });
+      /* 页面被切到后台 / 关闭前，把还没提交的那一次立刻落盘 */
+      const flushSchedulerPending = () => {
+        if (!schedulerSaveTimers.size) return;
+        schedulerSaveTimers.forEach((timer, id) => {
+          window.clearTimeout(timer);
+          const input = document.getElementById(id);
+          if (input) commitSchedulerValue(id, schedulerInputs[id], input.value, true);
+        });
+        schedulerSaveTimers.clear();
+      };
+      document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushSchedulerPending(); });
+      window.addEventListener('pagehide', flushSchedulerPending);
       document.getElementById('globalQuoteReplyToggle')?.addEventListener('change', event => { loadGlobalAppSettings().quoteReply = event.target.checked; persistGlobalAppSettings(); showGlobalSettingsToast(event.target.checked ? '已开启引用回复' : '已关闭引用回复'); });
       document.getElementById('globalReadReceiptToggle')?.addEventListener('change', event => { loadGlobalAppSettings().readReceipt = event.target.checked; persistGlobalAppSettings(); applyGlobalReceiptState(); showGlobalSettingsToast(event.target.checked ? '已开启已读回执' : '已关闭已读回执'); });
       document.getElementById('globalReceiptStyleSelect')?.addEventListener('change', event => { loadGlobalAppSettings().receiptStyle = event.target.value === 'text' ? 'text' : 'icon'; persistGlobalAppSettings(); applyGlobalReceiptState(); });
@@ -20951,7 +21018,7 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
        取值即清空 —— 否则这段文字会被随后的 sendChatMessage 再发一遍。 */
     /* 诊断开关：在控制台执行 localStorage.setItem('mobius:combo-debug','1') 后刷新，
        发图片/表情时会 toast 出取值过程，便于定位真机上「文字没合并」的环节。 */
-    window.MOBIUS_BUILD = 'v104-glyphfix';
+    window.MOBIUS_BUILD = 'v105-schedsave';
     function comboDebug(msg) {
       try {
         if (localStorage.getItem('mobius:combo-debug') !== '1') return;
