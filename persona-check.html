@@ -119,7 +119,9 @@ const CHECKS60=[
   ['重建列表恢复置顶',          "toggle('is-pinned', Number(rowRole?.pinnedAt)", 'v73：与「暂时离开」同样在重建时还原'],
   ['置顶顺序统一入口',          'function applyChatListPinnedOrder(',     'v73：操作后与重建后顺序必须一致'],
   ['进度条左右留白',            'margin-left: 15px; margin-right: 15px;', 'v74：原本满宽顶到屏幕边，与「今晚一起听过」对齐'],
-  ['星轨彩蛋不被降级停掉',      'soft-star-vinyl)/i',                     'v74：极简模式曾把长按彩蛋的动画一起停了'],
+  /* 锚点不要带 KEEP 列表的结尾 `)/i` —— v94 往列表里加了 |wave，结尾就失配了。
+     只锚定词本身并带 | 前缀，确保命中的是正则列表而非 CSS 类名。 */
+  ['星轨彩蛋不被降级停掉',      '|soft-star-vinyl',                       'v74：极简模式曾把长按彩蛋的动画一起停了'],
   ['特殊卡片改拼贴风',          '--cc-ac:#3E63A8',                        'v75：五类卡各一张彩纸，蓝/绿/紫/红/青'],
   ['卡片叠纸效果',              'has(> .chat-check-bubble)::before',      'v75：底下垫两层歪斜底纸'],
   ['纸张噪点',                  'feTurbulence',                           'v75：让纸看起来像真纸不是纯色块'],
@@ -147,11 +149,15 @@ const CHECKS60=[
   ['KOMO 流水卡已实装',         'function buildKomoFlowCard(',            'v85：下单/充值/集章/使用/退款/里程碑原本聊天室零痕迹'],
   ['代买「稍后」保留入口',      'keepAction:action===',                   'v85：原本点稍后按钮全消失，这条请求就死了'],
   ['收礼回应改成卡片',          "sendKomoFlowCard('gift-recv'",           'v85：原为纯文字白气泡，和送礼卡断开'],
-  ['KOMO卡不被我方渐变刷掉',   'background-image:none!important;\n  background-color:var(--kk-paper)', 'v85：发出的卡整张变蓝紫渐变'],
+  /* 锚点不要跨行：原本写的 \n 在源码里是转义反斜杠+n，查的是字面量，永不命中。 */
+  ['KOMO卡不被我方渐变刷掉',   'background-color:var(--kk-paper)!important', 'v85：发出的卡整张变蓝紫渐变'],
   ['KOMO卡已排除通用气泡规则', ':not(.group-v2-special-bubble):not([class*="chat-komo-"])', 'v85：通用 !important 规则在后面盖掉了 padding'],
   ['商品图标已补进代付明细',   "<i>${product?.icon||'🛍️'}</i>",        'v85：明细行原本只有名字和价格'],
   ['发出方向装饰翻到反侧',     'right:auto; left:-27px; transform:rotate(-9deg)', 'v85：墨戳压住右侧头像 37%'],
-  ['聊天列表KOMO预览已修',   'chat-komo-flow-head > span')?.textContent,20)', 'v85：列表预览原本把整张卡文字拼成一长串'],
+  /* ⚠ v94 修：这条锚点自 v85 起就写坏了 —— 片段里含单引号却用单引号包裹，
+     整个 <script> 抛 SyntaxError，自检页九个版本以来一直是「点了没反应」。
+     含引号的锚点必须换一种引号包裹，改完要跑一次 acorn 才算数。 */
+  ["聊天列表KOMO预览已修",   "chat-komo-flow-head > span')?.textContent,20)", 'v85：列表预览原本把整张卡文字拼成一长串'],
   ['墨戳已换成猫爪',         '--kk-seal) center/contain no-repeat',    'v84：右下角圆戳改猫爪图案'],
   ['主动代付四档已拆分',     'const KOMO_ACTIVE_ALL_PERCENT=25',        'v85：A 路径独立分档，全部代付25%/不触发25%'],
   ['A路径复用同一个roll',    'const activeRoll=hash(`${state.cartRoundId}', 'v85：两次%100凑不出整数概率，改单次判定'],
@@ -176,10 +182,70 @@ const CHECKS60=[
   ['真实杯体渲染',           'function orderRenderCup(',               'v92：真实照片合成，非 SVG 色块'],
   ['喜茶黑界面',             '.order-bar{display:flex',                'v92：纯白底+黑字+底部常驻结算条'],
   ['8种真实小料素材',        'const ORDER_TOP_IMG=',                   'v92：珍珠椰果芋泥奶盖仙草燕麦红豆布丁'],
-  ['杯型逐行插值',           'Math.floor((y-2)/4)*4+2',                'v92：采样点是 y%4===2，曾写错成整4倍'],
+  /* ⚠ v97 换水彩杯后，几何改为「逐行」存储，不再每 4 行插值，
+     原锚点 Math.floor((y-2)/4)*4+2 已被删除，这里改查新的取键逻辑。 */
+  /* v98：orderInnerAt 增加 geo 形参以支持多杯型，取键从写死 ORDER_CUP_GEO 改为局部 G */
+  ['杯型逐行查表',           'G[k-d]||G[k+d]',                         'v98：逐行采样 + 可传入指定杯型几何'],
   ['回信到期时间已持久化',   'replyDueAt: Number(value.replyDueAt)',   'v93：原定时器只在内存，刷新即丢失'],
   ['启动重建回信定时器',     'function restoreMailReplies(',           'v93：挂进 runLocalSchedulerCatchUp'],
   ['回信取不到文案有提示',   '没有挂载「内容」字卡分组',                'v93：原为静默 return'],
+  ['循环动画按声明还原原速', "animation-duration:' + dur + '!important", 'v94：正在输入被全局提速，1s 压到 .22s'],
+  ['输入气泡原速静态兜底',   'chat-typing span{ animation-duration:1s!important', 'v94：CSSOM 扫描失败时也保住 1s'],
+  ['还原只在动画未被停用时', 'aliveBalanced = kept || !isCostly',      'v94：已停用的装饰动画不该被还原'],
+  ['ORDER 冰箱已实装',       'function renderOrderFridge(',            'v95：送达不再蒸发，进冰箱可喝/送/倒'],
+  ['冰箱 24 格上限',         'const ORDER_FRIDGE_MAX=',                'v95：满格不丢单，留在订单里等补收'],
+  ['保鲜期判定',             'function orderFreshness(',               'v95：热饮4h/其余12h，过期只是变难喝'],
+  ['配方图鉴已实装',         'function renderOrderCodex(',             'v95：11个隐藏配方原本撞中了也没处看'],
+  ['喝掉走真实结算',         'function orderDrink(',                   'v95：从冰箱移除并累计 drunk'],
+  ['补偿走独立退款流水',     'function orderRefund(',                  'v95：不能用 orderCharge 传负数'],
+  ['骑手小剧场分场景',       'ORDER_RIDER_SCENE',                      'v95：按夜间/雨天/常规挑台词池'],
+  ['ORDER 隐藏彩蛋',         'const ORDER_EGG=',                       'v95：翻车补偿/白开水/夜班/第5杯/集齐'],
+  /* v97：双层堆叠被「悬浮撒点」取代 —— 两种小料各按自己的密度曲线撒，
+     天然就分得开，不需要再堆两层。 */
+  ['两种小料各自撒点',       'sink.slice(0,2).forEach((tp,ti)',        'v97：两种小料按不同 bias 分层悬浮'],
+  /* v97：颗粒改为圆形裁切贴图，半径统一，不存在纵向压扁问题 */
+  ['颗粒圆形裁切',           'g.arc(cx,y,rad,0,Math.PI*2);g.clip()',   'v97：等比贴图，不会压成椭圆'],
+  ['真实冰块素材',           'ORDER_TOP_IMG.ice',                      'v96：原来是 canvas 手画六边形'],
+  ['冰块用 lighten 融进液体', "globalCompositeOperation='lighten'",     'v96：直接贴白底照片会变贴纸感'],
+  ['咖啡油脂素材',           'ORDER_TOP_IMG.crema',                    'v96：热咖啡/可可盖一层真实 crema'],
+  ['水彩杯已换用',           '--op-paper:#FBF8F1',                     'v97：ORDER 界面改手账风，米白纸底'],
+  ['杯型几何已重新采样',     'pad==null?2:pad',                        'v97：水彩杯逐行几何，不再每4行插值'],
+  ['液面范围由几何推导',     'const ORDER_LIQ_TOP',                    'v97：不再写死 30/498（照片杯坐标）'],
+  ['悬浮小料密度曲线',       'SINK_PROFILE=',                          'v97：颗粒撒进液体中间，照片杯做不到'],
+  ['奶盖夹在杯口与液面间',   'capBot-46',                              'v97：原写死 LIQ_TOP-62 会跑出杯口'],
+  ['咖啡品类已补足',         '"americano"',                            'v98：原本只有浓缩1种，补美式/拿铁/卡布/澳白/冷萃/手冲'],
+  ['多杯型素材表',           'const ORDER_VESSEL=',                    'v98：纸杯/剖面窗/玻璃杯/外卖袋'],
+  ['几何按杯型取',           'orderVesselGeo(recipe)',                 'v98：每种杯型一份逐行几何，共用会画到杯外'],
+  ['纸杯正面不画内容',       'const OPAQUE=orderVesselOpaque',         'v98：纸杯不透明，内容物物理上看不见'],
+  ['剖面窗可切换',           'orderCutaway',                           'v98：点杯子在正面/剖面之间切'],
+  ['外卖袋已接入调用',       'function orderBagImg(',                  'v99：v98 只有素材没有调用路径，bag 永远选不中'],
+  ['配送途中显示袋子',       'function orderInTransit(',               'v99：step 2~3 骑手拎的是袋不是杯'],
+  ['多杯打包行',             'order-packrow',                          'v99：冰箱 ≥2 杯时显示一袋'],
+  ['卡片来源可区分',         'config.srcApp',                          'v100：ORDER/KOMO 共用 kind，靠 data-src 分开'],
+  ['ORDER 卡专属星点',       '--kk-star',                              'v100：只挂 [data-src=order]，便利店不变'],
+  ['文字垫底防吃字',         'box-decoration-break:clone',             'v100：v83 背景太花吃字的教训'],
+  ['杯型可手动选',           'ORDER_VESSEL_PICK',                      'v101：v98 只有自动判定，没有选择入口'],
+  ['叫上TA弹梦角列表',       '叫谁一起点',                              'v101：原来只认当前聊天室，从桌面进必失败'],
+  ['发卡函数已挂window',     'window.sendKomoSelfFlowCard=',            'v101：跨 IIFE 拿不到，卡片一张都发不出'],
+  ['A 下单小票卡',           'order-slip:',                            'v101：聊天室留痕'],
+  ['B 配送进度原地更新',     'function orderUpdateTraceCard(',          'v101：cardId 去重 + 改 DOM，不刷屏'],
+  ['C 喝掉卡',               'order-drink:',                           'v101'],
+  ['D 解锁配方卡',           'order-secret:',                          'v101：只在首次撞中时发'],
+  ['E 邀请卡',               'order-invite:',                          'v101'],
+  ['挂件不被裁',             'not(:has(.chat-komo-flow-bubble))',      'v102：content-visibility 隐含 contain:paint 会切挂件'],
+  ['窄屏卡片收窄',           'max-width:calc(76% - 16px)',             'v102：320px 下猫爪会顶出屏幕本身'],
+  ['拼一拼固定分组',         "id: 'glyph', name: '拼一拼'",           'v103：字典字卡，单字/字母/数字'],
+  ['字库不混进普通池',       "kind: 'glyph'",                          'v103：kind 不是 content，单字不会当整句发'],
+  ['造句引擎',               'function composeGlyphSentence(',         'v103：按骨架取词 + 每字校验字库'],
+  ['程度副词不修饰动词',     'advsDeg',                                'v103：实测出过「太喝水」'],
+  ['动宾搭配约束',           "'drink'",                                'v103：实测出过「喝花」「喝点心」'],
+  ['磁贴渲染',               'function renderGlyphTiles(',             'v103：逐字小方块，轻微错位'],
+  ['老档案补种字库',         "definition.id === 'glyph' && !existing.cards.length", 'v103：有梦角的档案曾被迁移清成 0'],
+  ['连词成句开关',           'glyphCardsEnabled',                      'v103：全局设置，默认关'],
+  ['开关滑块用 i 不是 span', '<input id="globalGlyphCardsToggle" type="checkbox"><i>', 'v104：写成 span 时 CSS 不匹配 → 滑块 0x0，实测整行右侧空白，功能点不到'],
+  ['设置项叫连词成句',       '<strong>连词成句</strong>',              'v104：用户要求改名，不再叫「字典字卡」'],
+  ['存量梦角补挂 glyph',     'function backfillGlyphCardMount(',       'v104：v103 前配置过挂载的梦角白名单里没有 glyph，开了也拼不出一个字'],
+  ['补挂只跑一次',           'glyph-mount-backfill',                   'v104：marker 保证幂等，用户手动取消挂载后不会被强塞回来'],
 ];
 const NEG=[
   ['装饰价签已移除',          'background:var(--kk-tag) center/contain', 'v85：用户要求去掉价格牌标签'],
@@ -202,6 +268,11 @@ const NEG=[
   ['旧误导提示已移除',          "showChatToast('消息已显示，但本地缓存写入失败", 'v70：数据没丢也没法从存储中心恢复，文案是错的'],
   ['无条件裁挂件的规则已移除',  'html[data-perf-mode="lite"] .chat-message-line{content-visibility:auto', 'v71：这条会把顶部挂件从 26px 切到 4px'],
   ['只判气泡框的旧豁免已修正',  'html[data-perf-mode="lite"] #chatApp:not([data-chat-bubble="custom"]) .chat-message-line{content-visibility', 'v72：漏了主题 CSS 框，从那边贴的挂件仍被切'],
+  /* ⚠ 反向锚点必须查 class 引用/代码原形，不能用中文文案（纪律，已踩 7 次） */
+  ['无差别提速的假守卫已移除',  '*:not([style*="infinite"]){ animation-duration', 'v94：全文 0 个行内 infinite，守卫恒假'],
+  /* ⚠ 锚点不能只写 .chat-typing-dot —— v94 的说明注释里提到了这个名字，
+     会被自己的注释命中而误判。必须用「活规则」独有的形式（带 ] 前缀和 , / { 结尾）。 */
+  ['臆造的动画类名已移除',      '] .chat-voice-record-bar{',             'v94：该类名全文 DOM 引用为 0，规则从未生效'],
 ];
 
 function analyse(txt){
@@ -219,10 +290,10 @@ function render(r){
   const box=document.getElementById('res');
   const total=CHECKS.length+CHECKS60.length+NEG.length;
   const good=r.fail.length===0;
-  const isV53=/v93/.test(r.build);
+  const isV53=/v104/.test(r.build);
   let html='';
   html+=`<div class="verdict ${good?'good':'bad'}">
-    <b>${good?'✅ 这份是 v93，功能齐全':'⚠ 这份不是最新版，缺少下列功能'}</b>
+    <b>${good?'✅ 这份是 v104，功能齐全':'⚠ 这份不是最新版，缺少下列功能'}</b>
     通过 ${r.pass.length} / ${total} 项　·　构建号 <code>${esc(r.build)}</code>　·　${(r.size/1048576).toFixed(2)} MB
   </div>`;
   html+='<div class="card"><h3>逐项结果</h3>';
@@ -230,9 +301,9 @@ function render(r){
   r.fail.forEach(([n,d,k])=>{html+=`<div class="row no"><span class="ic">✕</span><span class="tx"><b>${esc(n)}</b><small>${esc(d)}<br>缺少标记：${esc(k)}</small></span></div>`;});
   html+='</div>';
   if(!good||!isV53){
-    html+=`<div class="fix"><h3>怎么更新到 v93</h3><ol>
-      <li>确认下载到的包是 <code>670,409 字节</code>，MD5 <code>2f082de5…</code>。文件偏小说明下载被截断了，重下。</li>
-      <li>把包里的 <b>index.html 和 sw.js 一起</b>替换掉，只换 index.html 不管用 —— sw.js 里的 <code>CACHE_VERSION</code> 要变成 v93 才会刷新缓存。</li>
+    html+=`<div class="fix"><h3>怎么更新到 v104</h3><ol>
+      <li>确认下载到的包是 <code>约 1.93 MB</code>（1,932,5xx 字节上下）。文件偏小说明下载被截断了，重下。</li>
+      <li>把包里的 <b>index.html 和 sw.js 一起</b>替换掉，只换 index.html 不管用 —— sw.js 里的 <code>CACHE_VERSION</code> 要变成 v104 才会刷新缓存。</li>
       <li>手机上把已安装的 Möbius <b>彻底关掉</b>（不是切到后台，是从多任务里划掉）。</li>
       <li>重新打开，等两三秒让 Service Worker 换版。若仍是旧的，在浏览器里清掉该站点数据再进。</li>
       <li>再回来点一次上面的检测。</li>
@@ -255,6 +326,15 @@ function fail(msg){
   const box=document.getElementById('res');
   box.innerHTML=`<div class="verdict bad"><b>读取失败</b>${esc(msg)}<div class="mini">直接用浏览器打开你的 index.html，全选复制，用上面的「手动粘贴」再试一次。</div></div>`;
   box.classList.add('on');
+}
+/* ⚠ v94 补：三个按钮里唯独「手动粘贴」调用的 runText 从来没有被定义过，
+   点了必然抛 ReferenceError。而它恰恰是手机用户唯一能走通的路径
+   （file:// 下 runFetch 会被 CORS 挡掉）。 */
+function runText(txt){
+  const t=String(txt||'').trim();
+  if(!t)return fail('粘贴框是空的。请先把 index.html 的内容整份复制进去。');
+  if(!t.includes('MOBIUS_BUILD'))return fail('这段内容里找不到 MOBIUS_BUILD，可能没复制完整，或复制的不是 index.html。');
+  render(analyse(t));
 }
 async function runFetch(url){
   try{
