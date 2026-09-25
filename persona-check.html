@@ -147,6 +147,11 @@ const CHECKS60=[
   ['KOMO 卡片拼贴样式',         'chat-komo-flow-bubble{',                 'v85：KOMO 卡改便利店实物拼贴，v75 拼贴当时漏了 KOMO'],
   ['KOMO 卡不再降级纯文字',     'komoSnapshotHasCard(role.id',            'v85：人不在聊天室时原本放弃画卡，只发一句白话'],
   ['KOMO 流水卡已实装',         'function buildKomoFlowCard(',            'v85：下单/充值/集章/使用/退款/里程碑原本聊天室零痕迹'],
+  ['后台落地不丢卡',            'function isChatThreadDomForHandle(',     'v109：判据从「聊天室在前台」改为「DOM 归属房间」——否则返回列表后发的代付卡只写快照、重进看不见'],
+  ['进房间补渲染',              'isChatThreadDomBehindSnapshot(nextHandle)','v109：快照比 DOM 新就重建线程，立刻重进即可看到卡'],
+  ['代付卡登记身份',            "['komo-pay-request', line.querySelector(", 'v109：与转账卡同样的老病根——不登记身份则去重/删除记忆/DOM 兜底三套机制全失效'],
+  ['代付结果卡不去重吃掉请求卡', "['komo-pay-result', line.querySelector(",  'v109：两种卡共用 task id，必须按气泡类型分开登记'],
+  ['KOMO 查重认 DOM 归属',      'isChatThreadDomForHandle(roleId)',       'v109：房间在后台时卡已在 DOM 里，查前台会漏判导致重复插卡'],
   ['代买「稍后」保留入口',      'keepAction:action===',                   'v85：原本点稍后按钮全消失，这条请求就死了'],
   ['收礼回应改成卡片',          "sendKomoFlowCard('gift-recv'",           'v85：原为纯文字白气泡，和送礼卡断开'],
   /* 锚点不要跨行：原本写的 \n 在源码里是转义反斜杠+n，查的是字面量，永不命中。 */
@@ -235,6 +240,24 @@ const CHECKS60=[
   ['挂件不被裁',             'not(:has(.chat-komo-flow-bubble))',      'v102：content-visibility 隐含 contain:paint 会切挂件'],
   ['窄屏卡片收窄',           'max-width:calc(76% - 16px)',             'v102：320px 下猫爪会顶出屏幕本身'],
   ['拼一拼固定分组',         "id: 'glyph', name: '拼一拼'",           'v103：字典字卡，单字/字母/数字'],
+                          ['预设字库已清空',         'var GLYPH_DEFAULT_CARDS = [];',          'v110：原 202 张预设单字全删，分组留空，用户自挂'],
+                          ['识别表就位',             'var GLYPH_POS = {',                       'v111：预设词表换成识别表，只做查表归类，不产生字卡'],
+                          ['词表由字卡现算',         'function buildGlyphLexFromCards(',        'v111：字卡是唯一来源；删字卡词表跟着瘦'],
+                          ['未归类不进词表',         'unclassified.push(w)',                    'v111：认不出的字不猜，等用户点一下'],
+                          ['固定 1:3',               'GLYPH_REPLY_RATIO = 0.25',                'v111：四分之一才尝试拼句'],
+                          ['3～6 字长度闸',          'GLYPH_MAX_CHARS = 6',                     'v111：按显示字数算，挑不中就回落普通字卡'],
+                          ['拼句气泡=拍一拍外衣',     'border-radius: 999px !important',        'v111j7：原来方形书签卡换成拍一拍那件虚线胶囊（旧「拼」签头已撤）'],
+                          ['拼句气泡跟主题色',       "'--glyph-chip-bg'",                     'v111j7：底/边/字三色由主题强调色派生，换主题跟着变'],
+                          ['节奏输入框不被抢',       'if (!input || input === document.activeElement) return;', 'v111j8：抖动落盘会把正在填的那格按设置重写，填 3 被夹回 20 —— 现在编辑中的框绝不覆盖'],
+                          ['节奏收笔才排秩序',       'if (edited === \'replyMax\') replyMin = clamp(replyMax',  'v111j8：下限 ≤ 上限的修正只在失焦/回车时做，打字途中不碰另一个框'],
+                          ['清空中不落盘',           "if (raw === '') return null",            'v111j8：清空准备重填时不会被默认值顶回来'],
+                          ['离开页面前补写',         'companionRhythmFlush',                   'v111j8：pagehide / 切后台把没落盘的编辑补上，打完马上刷新也不丢'],
+                          ['回复节奏边打边存',       'replyRhythmTimers',                      'v111j10：原来只有点「保存全局回复节奏」才落盘，手机上改完刷新=白改'],
+                          ['回复节奏离开前补写',     'flushReplyRhythm',                       'v111j10：切后台 / 关页面把没落盘的那一次补上'],
+                          ['月亮输入边打边存',       'moonLenTimers',                          'v111j10：周期长度 / 经期天数原本只听 change，填完切走不算数'],
+                          ['归类标签',               'glyph-pos-badge',                         'v111：字卡管理里每张卡标出词性，点一下改'],
+                          ['空词表直接回退',         "!L.frames.length) return ''",          'v110：没有骨架就返回空串，回落普通字卡，不抛异常'],
+                          ['无字卡不报错',           "if (avail.size < 6) return '';",         'v111：字池不足 6 张就直接回落，不抛异常'],
   ['字库不混进普通池',       "kind: 'glyph'",                          'v103：kind 不是 content，单字不会当整句发'],
   ['造句引擎',               'function composeGlyphSentence(',         'v103：按骨架取词 + 每字校验字库'],
   ['程度副词不修饰动词',     'advsDeg',                                'v103：实测出过「太喝水」'],
@@ -246,12 +269,21 @@ const CHECKS60=[
   ['设置项叫连词成句',       '<strong>连词成句</strong>',              'v104：用户要求改名，不再叫「字典字卡」'],
   ['存量梦角补挂 glyph',     'function backfillGlyphCardMount(',       'v104：v103 前配置过挂载的梦角白名单里没有 glyph，开了也拼不出一个字'],
   ['补挂只跑一次',           'glyph-mount-backfill',                   'v104：marker 保证幂等，用户手动取消挂载后不会被强塞回来'],
+  ['界面不会被滚出抽屉',     '#appScreen > .widget-drawer[data-idle="1"]', 'v107：关着的抽屉仍占 520px 可滚动溢出，一聚焦输入框整个界面上移、抽屉整块露出，overflow:hidden 又让用户滑不回去'],
+  ['容器不再可滚',           '#appScreen { overflow: clip; }',         'v107：overflow:clip 让容器连程序化滚动都无权（旧浏览器自动退回 hidden）'],
+  ['底栏隐藏不再依赖:has',   '#appScreen[data-active-app="chat"] > .bottom-nav', 'v107：旧 WebView 会整条丢弃 :has() 规则，底栏于是压在聊天输入框上'],
+  ['CHAT里抽屉也有兜底',     '#appScreen[data-active-app="chat"] > .widget-drawer', 'v107：同上，属性版规则与 :has() 版覆盖面一致'],
+  ['打字时底栏让位',         'root.dataset.editing = v',               'v107：部分安卓浏览器 innerHeight 跟着键盘一起缩，keyboardInset 恒为 0，data-keyboard-open 永远不亮'],
+  ['焦点进输入框先收抽屉',   "target.closest('#widgetDrawer')",        'v107：抽屉内部的 INS 组件本身可编辑，编辑它们时不能收抽屉'],
+  ['卡片不再推开头像',       '.chat-message-line.incoming:has(> .chat-message-content > .chat-komo-flow-bubble) > .chat-message-content', 'v108：原先「让位」的 26px 加在整行上，头像跟着内缩（收到 12→38 / 发出 343→317），同一屏普通消息却贴边'],
+  ['让位改记在卡片外侧',     '.chat-message-line.outgoing:has(> .chat-message-content > .chat-komo-flow-bubble) > .chat-message-content', 'v108：改成卡片自己的外边距，头像回到贴边位置，卡片坐标与装饰间距一个像素没动'],
   ['调度参数实时保存',       "schedulerSaveTimers",                    'v105：原本只听 change，手机上改完不失焦直接刷新就丢了'],
   ['调度参数切后台落盘',     'flushSchedulerPending',                  'v105：visibilitychange + pagehide 兜底'],
   ['调度参数 0 不当假值',    'function clampSchedulerValue(',          'v105：原写 Number(x)||默认值，填 0 会跳回默认值'],
   ['保存前强制夹紧',         'normalizeSchedulerSettings(globalAppSettings)', 'v105：load 命中缓存会跳过 clamp，越界值原样写盘'],
 ];
 const NEG=[
+  ['网页保存残留已清除',     '__CF$cv$params',                         'v106：网页保存时被 CDN 注入的挑战脚本 —— 自托管下必然 404，还会往 body 里塞一个隐藏 iframe'],
   ['装饰价签已移除',          'background:var(--kk-tag) center/contain', 'v85：用户要求去掉价格牌标签'],
   ['KOMO 代买纯文字降级已移除', '路过 KOMO 的话，可以帮我带一个',        'v85：这条降级文案应当完全消失'],
   ['全局「用户设定」已移除',    'phoneAICustomPrompt',                  '这个 id 应当完全消失'],
@@ -294,10 +326,10 @@ function render(r){
   const box=document.getElementById('res');
   const total=CHECKS.length+CHECKS60.length+NEG.length;
   const good=r.fail.length===0;
-  const isV53=/v105/.test(r.build);
+  const isV53=/v109/.test(r.build);
   let html='';
   html+=`<div class="verdict ${good?'good':'bad'}">
-    <b>${good?'✅ 这份是 v105，功能齐全':'⚠ 这份不是最新版，缺少下列功能'}</b>
+    <b>${good?'✅ 这份是 v109，功能齐全':'⚠ 这份不是最新版，缺少下列功能'}</b>
     通过 ${r.pass.length} / ${total} 项　·　构建号 <code>${esc(r.build)}</code>　·　${(r.size/1048576).toFixed(2)} MB
   </div>`;
   html+='<div class="card"><h3>逐项结果</h3>';
@@ -305,9 +337,9 @@ function render(r){
   r.fail.forEach(([n,d,k])=>{html+=`<div class="row no"><span class="ic">✕</span><span class="tx"><b>${esc(n)}</b><small>${esc(d)}<br>缺少标记：${esc(k)}</small></span></div>`;});
   html+='</div>';
   if(!good||!isV53){
-    html+=`<div class="fix"><h3>怎么更新到 v105</h3><ol>
+    html+=`<div class="fix"><h3>怎么更新到 v108</h3><ol>
       <li>确认下载到的包是 <code>约 1.84 MB</code>（1,934,xxx 字节上下）。文件偏小说明下载被截断了，重下。</li>
-      <li>把包里的 <b>index.html 和 sw.js 一起</b>替换掉，只换 index.html 不管用 —— sw.js 里的 <code>CACHE_VERSION</code> 要变成 v105 才会刷新缓存。</li>
+      <li>把包里的 <b>index.html 和 sw.js 一起</b>替换掉，只换 index.html 不管用 —— sw.js 里的 <code>CACHE_VERSION</code> 要变成 v108 才会刷新缓存。</li>
       <li>手机上把已安装的 Möbius <b>彻底关掉</b>（不是切到后台，是从多任务里划掉）。</li>
       <li>重新打开，等两三秒让 Service Worker 换版。若仍是旧的，在浏览器里清掉该站点数据再进。</li>
       <li>再回来点一次上面的检测。</li>

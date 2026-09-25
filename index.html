@@ -2212,23 +2212,27 @@ if(focused&&!viewport&&stableHeight>0)keyboardInset=Math.max(keyboardInset,Math.
     }
     .chat-history-empty strong { display: block; margin-bottom: 4px; color: #555; font-size: 13px; }
 
-    /* ═══ v103 · 拼一拼磁贴 ═══
-       每个字一片小方块，轻微错位，像从字盘上一片片摆出来的。 */
-    .chat-glyph-bubble .glyph-tiles{display:inline-flex;flex-wrap:wrap;gap:3px;align-items:center}
-    .chat-glyph-bubble .glyph-tile{
-      display:inline-flex;align-items:center;justify-content:center;
-      min-width:20px;height:22px;padding:0 3px;
-      font-style:normal;font-size:13px;font-weight:700;line-height:1;
-      color:#2E2A24;background:linear-gradient(180deg,#FFFDF6,#F3EEE0);
-      border:1px solid rgba(120,104,78,.28);border-radius:3px;
-      box-shadow:0 1px 0 rgba(120,104,78,.22),inset 0 1px 0 rgba(255,255,255,.9);
-      transform:rotate(var(--gt-rot,0deg)) translateY(var(--gt-dy,0));
+    /* 拼一拼气泡样式见 v111j7 那段（搜索「拍一拍」那件外衣）——
+       放在聊天室气泡总规则之后，否则会被它的 !important 压回去。 */
+    /* 字卡管理 · 归类标签与识别概况（v111） */
+    .glyph-pos-summary{
+      display:flex;flex-wrap:wrap;gap:8px;align-items:center;
+      margin:2px 0 10px;padding:9px 11px;border:1px dashed #d9d3c6;border-radius:8px;background:#fbfaf7;
+      font-size:12px;color:#6f6a62;
     }
-    /* 我方气泡是深色渐变，磁贴要反过来 */
-    .chat-message-line.outgoing .chat-glyph-bubble .glyph-tile{
-      color:#FFF;background:linear-gradient(180deg,rgba(255,255,255,.26),rgba(255,255,255,.14));
-      border-color:rgba(255,255,255,.4);
-      box-shadow:0 1px 0 rgba(0,0,0,.12),inset 0 1px 0 rgba(255,255,255,.3);
+    .glyph-pos-summary b{color:#2f2b26}
+    .glyph-pos-summary small{flex-basis:100%;color:#a4987f;font-size:11.5px;line-height:1.6}
+    /* 标签落在字卡下面一行 —— 挤在右边会把「主语」这类标签折成两行 */
+    .glyph-pos-badge{
+      display:block;width:fit-content;margin:3px 0 0;flex:0 0 auto;cursor:pointer;white-space:nowrap;
+      font:700 10px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.04em;
+      padding:1px 7px;border-radius:99px;background:#f2f8f4;border:1px solid #bcd8cd;color:#3f6b57;
+    }
+    .glyph-pos-badge.warn{background:#fdf7e8;border-color:#ecdbb0;color:#8a6a22}
+    .glyph-pos-badge.gray{background:#f5f4f1;border-color:#e4e2dc;color:#8f8a82}
+    .glyph-pos-select{
+      display:block;width:100%;margin:3px 0 0;max-width:100%;
+      font-size:11.5px;padding:3px 6px;border:1px solid #d9d3c6;border-radius:7px;background:#fff;color:#2f2b26;
     }
     .chat-typing {
       display: none;
@@ -3828,6 +3832,249 @@ if(focused&&!viewport&&stableHeight>0)keyboardInset=Math.max(keyboardInset,Math.
     .watch-future-list { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; margin: 6px 0 0; padding: 0; list-style: none; }
     .watch-future-list li { padding: 3px 5px; border-radius: 6px; background: rgba(255,255,255,.08); color: rgba(255,255,255,.62); font-size: 6px; }
 
+    /* ═══ v111h · 陪伴空间的说话区：收起是一行字，展开就是压在场上的评论流（无外框、无气泡） ═══ */
+    .companion-room-ref > .companion-talk,
+    .listen-together-stage > .companion-talk {
+      --ct-ink: rgba(255,255,255,.97);
+      --ct-dim: rgba(255,255,255,.66);
+      --ct-line: rgba(255,255,255,.2);
+      --ct-shadow: 0 1px 3px rgba(6,10,18,.92), 0 0 11px rgba(6,10,18,.5);
+      --ct-mine: #ffe2ae;
+      --ct-them: #b6dcff;
+      --ct-live: #ff6f8f;
+      position: absolute;
+      z-index: 9;
+      right: 14px;
+      bottom: 124px;
+      width: min(232px, 62%);
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 7px;
+      pointer-events: none;
+    }
+    .companion-room-ref > .companion-talk > *,
+    .listen-together-stage > .companion-talk > * { pointer-events: auto; }
+
+    /* 收起：一行字 + 一颗直播小点，没有胶囊壳 */
+    .companion-talk__peek {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 2px 0;
+      border: 0;
+      background: none;
+      color: var(--ct-ink);
+      text-align: left;
+      cursor: pointer;
+      text-shadow: var(--ct-shadow);
+    }
+    .companion-talk__peek b { display: none; }
+    .companion-talk__peek::before {
+      content: '';
+      flex: 0 0 auto;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--ct-live);
+      animation: companionTalkPulse 2.6s ease-out infinite;
+    }
+    @keyframes companionTalkPulse {
+      0% { box-shadow: 0 0 0 0 rgba(255,111,143,.5); }
+      70%, 100% { box-shadow: 0 0 0 7px rgba(255,111,143,0); }
+    }
+    .companion-talk__peek i {
+      flex: 0 1 auto;
+      min-width: 0;
+      overflow: hidden;
+      font-size: 8.5px;
+      font-style: normal;
+      line-height: 1.5;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .companion-talk__peek:hover i { text-decoration: underline; text-underline-offset: 2px; }
+    .companion-talk__peek.is-idle { opacity: .68; }
+    .companion-talk__peek.is-idle::before { animation: none; }
+    .companion-talk.is-flash .companion-talk__peek i { animation: companionTalkFlash 1.6s ease; }
+    @keyframes companionTalkFlash {
+      0% { opacity: .3; transform: translateX(3px); }
+      35% { opacity: 1; transform: none; }
+      100% { opacity: 1; transform: none; }
+    }
+
+    /* 展开：一列直接压在画面上的字 */
+    .companion-talk__panel { display: none; flex-direction: column; gap: 7px; color: var(--ct-ink); }
+    .companion-talk.is-open .companion-talk__panel { display: flex; }
+    .companion-talk.is-open .companion-talk__peek { display: none; }
+    /* 拖过之后改成左上角定位（不再靠右下角），位置按空间各自记着 */
+    .companion-room-ref > .companion-talk.has-pos,
+    .listen-together-stage > .companion-talk.has-pos { right: auto; bottom: auto; }
+    .companion-talk__grip {
+      flex: 0 0 auto;
+      margin-right: 1px;
+      color: var(--ct-dim);
+      font-size: 8px;
+      line-height: 1;
+      letter-spacing: 0;
+      cursor: grab;
+    }
+    .companion-talk__peek,
+    .companion-talk__head { cursor: grab; touch-action: none; }
+    .companion-talk__head button,
+    .companion-talk__compose,
+    .companion-talk__list { touch-action: auto; }
+    .companion-talk.is-dragging { cursor: grabbing; z-index: 12; }
+    .companion-talk.is-dragging .companion-talk__peek,
+    .companion-talk.is-dragging .companion-talk__panel { opacity: .94; }
+    .companion-talk.is-dragging .companion-talk__grip,
+    .companion-talk.is-dragging .companion-talk__head { cursor: grabbing; }
+    .companion-talk.is-dragging .companion-talk__peek i { color: rgba(255,255,255,.92); }
+    .companion-talk__head {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--ct-line);
+      color: var(--ct-dim);
+      font: 6.5px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      text-shadow: var(--ct-shadow);
+    }
+    .companion-talk__head strong { flex: 1; min-width: 0; overflow: hidden; font-size: 6.5px; font-weight: 700; letter-spacing: .16em; text-overflow: ellipsis; white-space: nowrap; }
+    .companion-talk__head small { flex: 0 0 auto; font-size: 6.5px; }
+    .companion-talk__head button { flex: 0 0 auto; padding: 0; border: 0; background: none; color: var(--ct-dim); font: inherit; cursor: pointer; }
+    .companion-talk__head button:hover { color: var(--ct-ink); text-decoration: underline; text-underline-offset: 2px; }
+
+    .companion-talk__list { display: flex; flex-direction: column; gap: 4px; max-height: min(32vh, 208px); overflow-y: auto; scrollbar-width: none; }
+    .companion-talk__list::-webkit-scrollbar { display: none; }
+    .companion-talk__empty { color: var(--ct-dim); font-size: 8.5px; line-height: 1.55; text-shadow: var(--ct-shadow); }
+    .companion-talk__row { font-size: 9px; line-height: 1.62; text-shadow: var(--ct-shadow); }
+    .companion-talk__name { margin-right: 5px; color: var(--ct-them); font-weight: 800; }
+    .companion-talk__row.mine .companion-talk__name { color: var(--ct-mine); }
+    .companion-talk__bubble { padding: 0; border: 0; background: none; color: var(--ct-ink); }
+    .companion-talk__row:not(.mine) .companion-talk__bubble { color: var(--ct-dim); }
+
+    .companion-talk__compose { display: flex; align-items: center; gap: 7px; }
+    .companion-talk__compose input {
+      flex: 1;
+      min-width: 0;
+      padding: 5px 0;
+      border: 0;
+      border-bottom: 1px solid var(--ct-line);
+      background: none;
+      color: var(--ct-ink);
+      caret-color: var(--ct-mine);
+      font-size: 9px;
+      outline: 0;
+      text-shadow: var(--ct-shadow);
+    }
+    .companion-talk__compose input::placeholder { color: var(--ct-dim); }
+    /* 手机端有全局 `html[data-android|ios] input{font-size:16px!important}`，这里要把它压回来，跟评论同号 */
+    .companion-room-ref > .companion-talk .companion-talk__compose input,
+    .listen-together-stage > .companion-talk .companion-talk__compose input { font-size: 9px !important; }
+    .companion-room-ref > .companion-talk .companion-talk__send,
+    .listen-together-stage > .companion-talk .companion-talk__send { font-size: 11px !important; }
+    .companion-talk__send {
+      flex: 0 0 auto;
+      width: 20px;
+      height: 20px;
+      padding: 0;
+      border: 0;
+      background: none;
+      color: var(--ct-ink);
+      font-size: 11px;
+      line-height: 1;
+      cursor: pointer;
+      opacity: .82;
+    }
+    .companion-talk__send:hover { opacity: 1; transform: translateY(-1px); }
+
+    /* 浅色房间（吃饭 / 一起听）：换成深墨字 + 浅色描边，一样不铺底 */
+    .companion-room-ref[data-activity="eat"] .companion-talk {
+      --ct-ink: #3f3027;
+      --ct-dim: rgba(63,48,39,.66);
+      --ct-line: rgba(95,73,62,.24);
+      --ct-shadow: 0 1px 2px rgba(255,253,248,.95), 0 0 12px rgba(255,253,248,.85);
+      --ct-mine: #b4562f;
+      --ct-them: #3f6ea8;
+      --ct-live: #d8536b;
+    }
+    .listen-together-stage .companion-talk {
+      --ct-ink: #23262b;
+      --ct-dim: rgba(35,38,43,.64);
+      --ct-line: rgba(32,33,36,.22);
+      --ct-shadow: 0 1px 2px rgba(255,255,255,.92), 0 0 12px rgba(255,255,255,.85);
+      --ct-mine: #a8452a;
+      --ct-them: #2f6ba6;
+      --ct-live: #d8536b;
+    }
+    .listen-together-stage > .companion-talk { right: 12px; bottom: 118px; width: min(228px, 62%); }
+
+    /* KOMO 相关卡片：不显示时间 / 已读回执（含历史里已经存下来的那些） */
+    #chatApp .chat-message-line:has(> .chat-message-content > [class*="chat-komo-"]) > .chat-message-content > .chat-message-meta { display: none !important; }
+    /* v111j · 老存档里已经落盘的「引用里又套一层引用」（会连出两个名字：我：她：原话），
+       渲染层直接把内层藏掉 —— 新消息在写入时就不再生成了，这条只管以前存的。 */
+    #chatApp .chat-quoted-context .chat-quoted-context,
+    #chatApp .chat-quoted-context .chat-quote-block,
+    #chatApp .chat-quoted-context .mail-reply-reference { display: none !important; }
+
+    /* 离开空间时的「要不要收进 BOX」 */
+    .companion-room-ref > .companion-talk-sheet,
+    .listen-together-stage > .companion-talk-sheet {
+      position: absolute;
+      inset: 0;
+      z-index: 26;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background: rgba(10,14,22,.36);
+      -webkit-backdrop-filter: blur(3px);
+      backdrop-filter: blur(3px);
+    }
+    .companion-talk-sheet__card {
+      width: min(272px, 100%);
+      padding: 15px 14px 12px;
+      border-radius: 17px;
+      background: rgba(255,255,255,.97);
+      color: #202124;
+      box-shadow: 0 16px 38px rgba(12,16,24,.24);
+    }
+    .companion-talk-sheet__card span { display: block; color: #8b8f97; font-size: 6.5px; font-weight: 800; letter-spacing: .16em; }
+    .companion-talk-sheet__card strong { display: block; margin-top: 5px; font-size: 12px; }
+    .companion-talk-sheet__card p { margin: 6px 0 0; color: #6e737c; font-size: 7.5px; line-height: 1.6; }
+    .companion-talk-sheet__actions { display: flex; gap: 7px; margin-top: 12px; }
+    .companion-talk-sheet__actions button {
+      flex: 1;
+      min-height: 30px;
+      border: 1px solid rgba(32,33,36,.13);
+      border-radius: 9px;
+      background: #fff;
+      color: #202124;
+      font-size: 7.5px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .companion-talk-sheet__actions button.keep { border-color: #202124; background: #202124; color: #fff; }
+    @media (max-width: 380px) {
+      .companion-room-ref > .companion-talk { width: min(202px, 68%); bottom: 116px; }
+      .listen-together-stage > .companion-talk { width: min(198px, 66%); bottom: 112px; }
+      .companion-talk__list { max-height: min(30vh, 186px); }
+    }
+    /* 活动选择界面里的节奏设置（信封里那一小块） */
+    .companion-rhythm { margin-top: 13px; padding: 9px 10px 8px; border: 1px dashed rgba(138,119,107,.34); border-radius: 11px; background: rgba(255,253,247,.72); }
+    .companion-rhythm__head { display: flex; align-items: baseline; gap: 6px; }
+    .companion-rhythm__head strong { font-size: 8px; color: #8a776b; }
+    .companion-rhythm__head small { flex: 1; min-width: 0; color: #b09f93; font-size: 6.5px; }
+    .companion-rhythm__row { display: flex; align-items: center; gap: 5px; margin-top: 7px; }
+    .companion-rhythm__row > span:first-child { flex: 0 0 46px; color: #8a776b; font-size: 7px; font-weight: 800; }
+    .companion-rhythm__row input { width: 46px; height: 26px; padding: 0 6px; border: 1px solid rgba(138,119,107,.26); border-radius: 7px; outline: 0; background: #fff; color: #4a3a30; font-size: 8px; }
+    .companion-rhythm__row i { color: #a8978a; font-size: 6.5px; font-style: normal; }
+    .companion-rhythm__row em { color: #c4b3a6; font-size: 7px; font-style: normal; }
+    .companion-rhythm__hint { display: block; margin-top: 7px; color: #a8978a; font-size: 6.5px; line-height: 1.5; }
+    .desktop-invite-app .companion-rhythm { margin-top: 10px; }
     /* 陪伴空间细节统一：字体、状态位置和背景保持静止 */
     .companion-room-ref,
     .companion-room-ref * { font-family: inherit !important; }
@@ -6434,6 +6681,31 @@ if(focused&&!viewport&&stableHeight>0)keyboardInset=Math.max(keyboardInset,Math.
       font-size: 11px !important;
       line-height: 1.52 !important;
     }
+    /* ═══ v111j7 · 拼一拼改用「拍一拍」那件外衣 ═══
+       虚线描边 + 胶囊圆角 + 柔光内高光；颜色全部由主题「强调色」派生，
+       变量在 applyDesktopThemeSettings 里注入（--glyph-chip-bg/border/text/out-bg），
+       fallback 是中性的青灰 —— 主题变量拿不到也不会露出旧书签卡的颜色。
+       上一版方形书签卡与右上角「拼」签头一起撤掉（那是上一个样式的部件）。 */
+    .chat-glyph-bubble{
+      background: var(--glyph-chip-bg, rgba(244,249,250,.95)) !important;
+      border: 1px dashed var(--glyph-chip-border, rgba(163,205,217,.74)) !important;
+      border-radius: 999px !important;
+      box-shadow: 0 3px 10px rgba(52,72,82,.06), inset 0 1px 0 rgba(255,255,255,.76) !important;
+      /* 内边距沿用聊天室气泡总规则（9px 12px）—— 那条带 !important 且权重更高，这里写了也不生效 */
+      color: var(--glyph-chip-text, #526a74) !important;
+    }
+    .chat-glyph-bubble::before { content: none !important; display: none !important; }
+    .chat-glyph-bubble .glyph-tiles { display: inline; white-space: pre-wrap; }
+    .chat-glyph-bubble .glyph-tile{
+      display:inline;min-width:0;width:auto;height:auto;padding:0;margin:0;vertical-align:baseline;
+      border:none;border-radius:0;background:none;box-shadow:none;transform:none;
+      font:inherit;font-size:11px;font-weight:500;letter-spacing:.01em;color:inherit;line-height:1.5;
+    }
+    .chat-message-line.outgoing .chat-glyph-bubble{
+      background: var(--glyph-chip-out-bg, rgba(82,106,116,.92)) !important;
+      border-color: rgba(255,255,255,.42) !important;
+      color: #fff !important;
+    }
     #chatApp .chat-sticker-bubble {
       max-width: 142px !important;
       padding: 7px !important;
@@ -7897,6 +8169,36 @@ if(focused&&!viewport&&stableHeight>0)keyboardInset=Math.max(keyboardInset,Math.
 #chatApp .chat-message-line.outgoing:has(> .chat-message-content > .chat-komo-flow-bubble){
   padding-right:26px;
 }
+
+/* ⚠ v108：上面这两条「让位」原本加在整行上，于是头像也被一起推进去了 26px ——
+   实测 KOMO 卡：收到的头像 12→38、发出的头像 343→317，而同一屏里的普通文字消息
+   头像仍贴边在 12 / 343，所以一有卡片，双方头像就像「往中间缩」了一下。
+   让位本身是必要的（装饰探出卡片外沿约 25px，要挡住胶带压到头像），所以不能删；
+   改成把这份 26px 记在卡片自己的外侧外边距上：
+     · 头像回到与普通消息完全一致的贴边位置；
+     · 卡片坐标一个像素都没动（收到的仍在 85–311、发出的仍在 82–308）；
+     · 装饰的间距也照旧。
+   注意这几条必须写在原规则之后（同优先级看顺序）。 */
+#chatApp .chat-message-line.incoming:has(> .chat-message-content > .chat-komo-gift-bubble),
+#chatApp .chat-message-line.incoming:has(> .chat-message-content > .chat-komo-request-bubble),
+#chatApp .chat-message-line.incoming:has(> .chat-message-content > .chat-komo-pay-request),
+#chatApp .chat-message-line.incoming:has(> .chat-message-content > .chat-komo-pay-result),
+#chatApp .chat-message-line.incoming:has(> .chat-message-content > .chat-komo-flow-bubble){ padding-left:0 !important; }
+#chatApp .chat-message-line.outgoing:has(> .chat-message-content > .chat-komo-gift-bubble),
+#chatApp .chat-message-line.outgoing:has(> .chat-message-content > .chat-komo-request-bubble),
+#chatApp .chat-message-line.outgoing:has(> .chat-message-content > .chat-komo-pay-request),
+#chatApp .chat-message-line.outgoing:has(> .chat-message-content > .chat-komo-pay-result),
+#chatApp .chat-message-line.outgoing:has(> .chat-message-content > .chat-komo-flow-bubble){ padding-right:0 !important; }
+#chatApp .chat-message-line.incoming:has(> .chat-message-content > .chat-komo-flow-bubble) > .chat-message-content{ margin-left:26px; }
+#chatApp .chat-message-line.outgoing:has(> .chat-message-content > .chat-komo-flow-bubble) > .chat-message-content{ margin-right:26px; }
+#chatApp .chat-message-line.incoming:has(> .chat-message-content > .chat-komo-gift-bubble) > .chat-message-content,
+#chatApp .chat-message-line.incoming:has(> .chat-message-content > .chat-komo-request-bubble) > .chat-message-content,
+#chatApp .chat-message-line.incoming:has(> .chat-message-content > .chat-komo-pay-request) > .chat-message-content,
+#chatApp .chat-message-line.incoming:has(> .chat-message-content > .chat-komo-pay-result) > .chat-message-content{ margin-left:26px; }
+#chatApp .chat-message-line.outgoing:has(> .chat-message-content > .chat-komo-gift-bubble) > .chat-message-content,
+#chatApp .chat-message-line.outgoing:has(> .chat-message-content > .chat-komo-request-bubble) > .chat-message-content,
+#chatApp .chat-message-line.outgoing:has(> .chat-message-content > .chat-komo-pay-request) > .chat-message-content,
+#chatApp .chat-message-line.outgoing:has(> .chat-message-content > .chat-komo-pay-result) > .chat-message-content{ margin-right:26px; }
 /* ⚠ 变量必须在这一层重新声明 —— 父级继承不到子级（卡片）上定义的自定义属性。
    v75 踩过同样的坑，叠纸伪元素当时也是挂在 .chat-message-content 上。 */
 #chatApp .chat-message-content:has(> .chat-komo-gift-bubble),
@@ -8496,7 +8798,7 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
     <!-- Header 区域 -->
     <div class="app-header">
       <div>
-        <div class="editable-sub" contenteditable="true" spellcheck="false">Möbius</div>
+        <div class="editable-sub" contenteditable="true" spellcheck="false" data-no-shell-draft-guard="true">Möbius</div>
         <div class="title" id="greetingTitle">晚上好，用户</div>
       </div>
       <div class="header-actions"><button class="notification-quick-open" id="notificationQuickOpen" type="button" onclick="openNotificationCenter()" aria-label="通知中心" hidden style="display:none !important"><i data-lucide="bell" size="14"></i></button>
@@ -9168,7 +9470,7 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
             <div class="dashboard-setting-row receipt-setting-row"><div><strong>已读回执</strong><small>显示我方消息的送达状态。</small></div><select id="globalReceiptStyleSelect" aria-label="已读回执样式"><option value="icon">图形</option><option value="text">文字</option></select><label class="setting-toggle"><input id="globalReadReceiptToggle" type="checkbox" checked><i></i></label></div>
             <div class="dashboard-setting-row"><div><strong>欲言又止与撤回</strong><small>小概率正在输入后取消，或发送后撤回对方文字。</small></div><label class="setting-toggle"><input id="globalHesitationToggle" type="checkbox" checked><i></i></label></div>
             <div class="dashboard-setting-row"><div><strong>正在输入的拟态</strong><small>回复等待期间显示动态输入状态，默认开启。</small></div><label class="setting-toggle"><input id="globalTypingMimicToggle" type="checkbox"><i></i></label></div>
-            <div class="dashboard-setting-row"><div><strong>连词成句</strong><small>开启后，对方会从「拼一拼」分组里逐字挑选，按句式拼成一句话。字库不够时自动回退普通字卡。</small></div><label class="setting-toggle"><input id="globalGlyphCardsToggle" type="checkbox"><i></i></label></div>
+            <div class="dashboard-setting-row"><div><strong>连词成句</strong><small>开启后，对方会从「拼一拼」分组里逐字挑选，按句式拼成一句话；分组里没有字卡时照常发普通字卡。</small></div><label class="setting-toggle"><input id="globalGlyphCardsToggle" type="checkbox"><i></i></label></div>
             <div class="dashboard-setting-row"><div><strong>拼字卡</strong><small>随机组合 1～3 条启用字卡，以空格拼成一句。</small></div><label class="setting-toggle"><input id="globalCardSentenceToggle" type="checkbox"><i></i></label></div>
             <div class="dashboard-setting-row"><div><strong>消息操作菜单</strong><small>允许长按消息使用复制、收藏、撤回和删除。</small></div><label class="setting-toggle"><input id="globalMessageActionsToggle" type="checkbox" checked><i></i></label></div>
             <div class="dashboard-setting-row"><div><strong>已读不回</strong><small>允许梦角看过消息后不回复，按各自回复概率触发；关闭后必定回复。</small></div><label class="setting-toggle"><input id="globalReadNoReplyToggle" type="checkbox" checked><i></i></label></div>
@@ -9188,6 +9490,7 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
               <label><span>群聊自主接话轮数</span><input id="globalGroupAutonomousRounds" type="number" min="0" max="5" step="1"><b>轮</b></label>
               <label><span>群聊自主接话概率</span><input id="globalGroupAutonomousChance" type="number" min="0" max="100" step="1"><b>%</b></label>
             </div>
+            <div class="dashboard-setting-row"><div><strong>换算成实际节奏</strong><small id="globalReplyRhythmHint">现在 ≈ 你发一条后 3 ~ 60 秒回你，一次最多 5 条。</small></div></div>
             <div class="dashboard-setting-row"><div><strong>群聊至少一人回复</strong><small>关闭后，无成员通过各自回复概率时允许群聊保持沉默。</small></div><label class="setting-toggle"><input id="globalGroupForceReplyToggle" type="checkbox"><i></i></label></div>
             <div class="global-role-weights"><span>各条数出现权重</span><small class="global-rhythm-help">填写相对权重即可，不必凑满 100；超出最多回复条数的档位不参与。</small><div><label>1<input id="globalReplyWeight1" type="number" min="0" max="1000" step="1"></label><label>2<input id="globalReplyWeight2" type="number" min="0" max="1000" step="1"></label><label>3<input id="globalReplyWeight3" type="number" min="0" max="1000" step="1"></label><label>4<input id="globalReplyWeight4" type="number" min="0" max="1000" step="1"></label><label>5<input id="globalReplyWeight5" type="number" min="0" max="1000" step="1"></label></div></div>
             <button class="global-settings-action" type="button" onclick="saveGlobalReplyRhythm()"><span><strong>保存全局回复节奏</strong><small>保存后对所有聊天室生效</small></span><b>保存</b></button>
@@ -9198,7 +9501,8 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
           <div class="dashboard-section-head"><span>03</span><div><strong>主动事件调度</strong><small>Proactive Scheduler</small></div></div>
           <div class="dashboard-setting-list">
             <div class="dashboard-setting-row"><div><strong>主动事件</strong><small>默认开启，仅按照概率与时间随机触发。</small></div><b class="setting-value-note">默认开启</b></div>
-            <div class="dashboard-setting-row"><div><strong>主动发送消息</strong><small>最快秒数 / 最慢分钟数</small></div><span class="global-scheduler-pair"><input id="proactiveMessageMinSecondsInput" type="number" min="1" max="3600"><i>秒</i><input id="proactiveMessageMaxMinutesInput" type="number" min="1" max="1440"><i>分</i></span></div>
+            <div class="dashboard-setting-row"><div><strong>主动发送消息</strong><small id="proactiveMessageRangeHint">最快 / 最慢（分）</small></div><span class="global-scheduler-pair"><input id="proactiveMessageMinSecondsInput" type="number" min="1" max="60" step="1"><i>分</i><input id="proactiveMessageMaxMinutesInput" type="number" min="1" max="1440"><i>分</i></span></div>
+            <div class="dashboard-setting-row"><div><strong>主动来电</strong><small>最快 / 最慢（分）· 每次到期只有 1/4 概率真的打来</small></div><span class="global-scheduler-pair"><input id="proactiveContactMinMinutesInput" type="number" min="1" max="180"><i>分</i><input id="proactiveContactMaxMinutesInput" type="number" min="1" max="360"><i>分</i></span></div>
             <div class="dashboard-setting-row"><div><strong>主动写信</strong><small>最短分钟 / 最长小时</small></div><span class="global-scheduler-pair"><input id="proactiveLetterMinMinutesInput" type="number" min="1" max="180"><i>分</i><input id="proactiveLetterMaxHoursInput" type="number" min=".5" max="72" step=".5"><i>时</i></span></div>
             <div class="dashboard-setting-row"><div><strong>对方回信</strong><small>默认开启，只调节收到梦笺后的等待时间</small></div><span class="global-scheduler-pair"><input id="letterReplyMinMinutesInput" type="number" min=".1" max="180" step=".1"><i>分</i><input id="letterReplyMaxHoursInput" type="number" min=".1" max="24" step=".1"><i>时</i></span></div>
             <div class="dashboard-setting-row"><div><strong>主动发布朋友圈</strong><small>最短分钟 / 最长小时</small></div><span class="global-scheduler-pair"><input id="circlePostMinMinutesInput" type="number" min="1" max="180"><i>分</i><input id="circlePostMaxHoursInput" type="number" min=".5" max="72" step=".5"><i>时</i></span></div>
@@ -9581,7 +9885,7 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
 
         <div class="companion-space-modal" id="companionSpaceModal" aria-hidden="true" onclick="if(event.target === this) closeCompanionSpace()">
           <section class="companion-room-ref" id="companionSpaceStage" data-activity="work" data-light-mode="normal" role="dialog" aria-modal="true" aria-label="陪伴空间" onclick="event.stopPropagation()">
-            <button class="companion-room-close" type="button" onclick="closeCompanionSpace()" aria-label="离开陪伴空间">×</button>
+            <button class="companion-room-close" type="button" onclick="companionSpaceExit()" aria-label="离开陪伴空间">×</button>
             <header class="companion-room-label">
               <span>COMPANION ROOM</span>
               <strong id="companionSpaceTitle">WORKING SPACE</strong>
@@ -9600,7 +9904,7 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
                 <header><div><span>COMPANION TIMER</span><strong>陪伴时长</strong></div><button type="button" onclick="closeCompanionTimerOptions()" aria-label="关闭">×</button></header>
                 <div class="companion-time-options"><button type="button" onclick="setCompanionDuration(15)">15 分钟</button><button type="button" onclick="setCompanionDuration(30)">30 分钟</button><button type="button" onclick="setCompanionDuration(60)">60 分钟</button><button type="button" onclick="setCompanionDuration(120)">120 分钟</button><button type="button" onclick="setCompanionDuration(0)">不限时</button></div>
                 <label class="companion-custom-time"><span>自定义分钟数</span><input id="companionCustomTimeInput" type="number" min="1" max="1440" step="1" placeholder="例如 45"><button type="button" onclick="setCompanionCustomDuration()">应用</button></label>
-                <button class="companion-end-session" type="button" onclick="endCompanionSession()">结束本次陪伴</button>
+                <button class="companion-end-session" type="button" onclick="companionEndSession()">结束本次陪伴</button>
               </section>
             </div>
           </section>
@@ -9617,7 +9921,7 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
           <section class="listen-together-stage" role="dialog" aria-modal="true" aria-label="一起听音乐" onclick="event.stopPropagation()">
             <div class="listen-wallpaper-layer" id="listenWallpaperLayer" aria-hidden="true"></div>
             <header class="listen-together-head">
-              <button class="listen-circle-button" type="button" onclick="closeListenTogether({forceClose:true})" aria-label="关闭一起听"><i data-lucide="chevron-left" size="16"></i></button>
+              <button class="listen-circle-button" type="button" onclick="listenSpaceExit()" aria-label="关闭一起听"><i data-lucide="chevron-left" size="16"></i></button>
               <div class="listen-head-center"></div>
               <div style="display:flex; gap:4px;"><button class="listen-circle-button" type="button" onclick="toggleListenWallpaperPanel()" aria-label="设置一起听壁纸" title="一起听壁纸"><i data-lucide="image" size="14"></i></button><button class="listen-circle-button" type="button" onclick="openKomoListenSnacks()" aria-label="打开 KOMO 零食货架" title="KOMO 零食"><i data-lucide="shopping-basket" size="14"></i></button><button class="listen-circle-button" type="button" onclick="minimizeListenTogether()" aria-label="缩小播放器"><i data-lucide="minus" size="16"></i></button><button class="listen-circle-button" type="button" onclick="openListenSongForm()" aria-label="添加歌曲"><i data-lucide="more-horizontal" size="16"></i></button></div>
             </header>
@@ -10464,7 +10768,7 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
       const diaryCards = getRoleGroupCardPool(role, 'diary');
       if (state.whisperDate !== today || (!state.whisper && whisperCards.length)) {
         state.whisperDate = today;
-        state.whisper = pickRoleReplyBatch(role, 1, 3).join(' ');
+        state.whisper = pickRoleReplyBatch(role, 1, 3).map(stripGlyphMark).join(' ');
       }
       if (state.diaryDate !== today) {
         // 换日生成新日记前，先把上一篇存进归档，否则旧日记会被直接覆盖丢失。
@@ -10802,7 +11106,7 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
       try { if(document.getElementById('circleApp')?.classList.contains('is-visible')){renderCirclePosts();if(document.getElementById('circleVisitorsModal')?.classList.contains('is-open'))renderCircleVisitors();} } catch (_) {}
       try { if(document.getElementById('mailApp')?.classList.contains('is-visible')){renderMailList();if(activeMailId)openMailLetter(activeMailId);} } catch (_) {}
       try { if(document.getElementById('komoApp')?.classList.contains('is-visible'))renderKomo(); } catch (_) {}
-      try { if(document.getElementById('featureInviteHistoryList'))renderInviteHistoryFeature();if(document.querySelector('#desktopInviteBody .desktop-invite-history'))renderDesktopInviteHistory();if(desktopInviteActiveId&&document.getElementById('desktopInviteApp')?.classList.contains('is-visible')){const record=(desktopInviteSettings().inviteHistory||[]).find(item=>item.id===desktopInviteActiveId);if(record)renderDesktopInviteStatus(record);}if(activeInviteId&&document.getElementById('inviteFlowModal')?.classList.contains('is-open')){const record=(getChatSettings(role.id).inviteHistory||[]).find(item=>item.id===activeInviteId);if(record)openInviteFlow(record);} } catch (_) {}
+      try { if(document.getElementById('featureInviteHistoryList'))renderInviteHistoryFeature();if(document.querySelector('#desktopInviteBody .desktop-invite-history'))renderDesktopInviteHistory();if(desktopInviteActiveId&&document.getElementById('desktopInviteApp')?.classList.contains('is-visible')&&window.isCompanionRhythmEditing?.()!==true){const record=(desktopInviteSettings().inviteHistory||[]).find(item=>item.id===desktopInviteActiveId);if(record)renderDesktopInviteStatus(record);}if(activeInviteId&&document.getElementById('inviteFlowModal')?.classList.contains('is-open')){const record=(getChatSettings(role.id).inviteHistory||[]).find(item=>item.id===activeInviteId);if(record)openInviteFlow(record);} } catch (_) {}
       try { updateAppBadgeFromCenter?.(); } catch (_) {}
       try { window.dispatchEvent(new CustomEvent('dream:role-display-name-changed',{detail:{roleId:role.id,displayName:display,previousDisplayName:previousDisplay}})); } catch (_) {}
     }
@@ -10931,9 +11235,13 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
          所有现有调用点（回复/主动消息/查岗/朋友圈）都不用改。 */
     function pickRoleReplyBatch(roleOrId, min = 1, max = min) {
       try {
-        if (getGlobalAppSettings().glyphCardsEnabled === true) {
+        /* v111：固定 1:3（主动/批量路径与主回复同一条比例线） */
+        if (getGlobalAppSettings().glyphCardsEnabled === true && Math.random() < GLYPH_REPLY_RATIO) {
           const line = composeGlyphSentence(roleOrId);
-          if (line) return [line];
+          /* v111 修复：这里原先返回未打标记的纯文本 —— 拼句走到「主动消息 / 查岗 / 朋友圈」
+             这几条路径时会被当成普通文字，不会渲染成书签卡（v103 起就存在，因为当时没有
+             素材可用，一直没暴露）。主回复路径 pickRoleReplyText 一直是带标记的，这里补齐。 */
+          if (line) return [GLYPH_MARK + line];
         }
       } catch (_) {}
       return pickRoleCardBatch(roleOrId, min, max);
@@ -10960,7 +11268,8 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
     }
 
     function pickProactiveCheckText(roleOrId = currentPartnerHandle) {
-      const cards = pickRoleReplyBatch(roleOrId, 1, 3);
+      /* v111：查岗是纯文本出口，把拼句的零宽标记剥掉（否则会跟着写进查岗记录） */
+      const cards = pickRoleReplyBatch(roleOrId, 1, 3).map(stripGlyphMark);
       return cards.length ? `【查岗：${cards.join(' ')}】` : '';
     }
 
@@ -11063,7 +11372,9 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
       /* v103 · 连词成句：开启后优先「拼」一句，拼不出来再走普通字卡。
          放在最前面 —— 这是聊天室主回复路径，不接这里等于功能没生效。 */
       try {
-        if (getGlobalAppSettings().glyphCardsEnabled === true) {
+        /* v111：固定 1:3 —— 掷中四分之一才尝试拼句，其余直接发普通字卡。
+           ⚠ 骰子一次调用只掷一下：重试句式是上面 compose 内部的事，不放大比例。 */
+        if (getGlobalAppSettings().glyphCardsEnabled === true && Math.random() < GLYPH_REPLY_RATIO) {
           for (let tries = 0; tries < 6; tries += 1) {
             const line = composeGlyphSentence(role);
             /* 用零宽标记包住，渲染层据此拆成磁贴。
@@ -11122,6 +11433,21 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
       if (proactiveEventState) return proactiveEventState;
       const stored = readDreamJSON(PROACTIVE_EVENTS_STORAGE_KEY, {});
       proactiveEventState = stored && typeof stored === 'object' ? stored : {};
+      /* v111j3：中间有一版试过「所有梦角共用一条节奏」，按你的要求撤掉了 ——
+         数据里若还留着那条共用排期，摊回给各位梦角后把这个键删掉，
+         免得两套路一起跑（正常升级路径上不会出现，纯兜底）。 */
+      const shared = proactiveEventState.__shared;
+      if (shared && typeof shared === 'object') {
+        const at = Number(shared.messageAt) || 0;
+        try {
+          if (at > 0) getProactiveContactRoles().forEach(role => {
+            const roleState = proactiveEventState[role.id] || (proactiveEventState[role.id] = {});
+            if (!Number(roleState.messageAt)) roleState.messageAt = at;
+          });
+        } catch (_) {}
+        delete proactiveEventState.__shared;
+        try { writeDreamJSON(PROACTIVE_EVENTS_STORAGE_KEY, proactiveEventState); } catch (_) {}
+      }
       return proactiveEventState;
     }
 
@@ -11169,6 +11495,7 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
 
     function appendProactiveIncomingMessage(role, text) {
       if (isRoleTemporarilyAway(role) || !String(text || '').trim()) return false;
+      const arrivalAt = proactiveCatchupAt > 0 ? proactiveCatchupAt : Date.now();
       if (isChatConversationLoaded(role.id)) {
         const body = document.getElementById('chatThreadBody');
         const typing = document.getElementById('chatTyping');
@@ -11182,14 +11509,21 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
           else _b.textContent = text;
         }
         setChatAvatarVisual(line.querySelector('.partner-avatar'), role.initials, role.avatarImage ? { type: 'image', src: role.avatarImage } : `linear-gradient(135deg,${role.color1},${role.color2})`);
+        if (proactiveCatchupAt > 0) {
+          line.dataset.createdAt = String(arrivalAt);
+          const meta = line.querySelector('.chat-message-meta');
+          if (meta) meta.textContent = typeof formatChatMessageTimestamp === 'function' ? formatChatMessageTimestamp(arrivalAt) : '刚刚';
+        }
         body.insertBefore(line, typing || null);
         body.scrollTop = body.scrollHeight;
-        playGlobalSound('message');
-        showChatToast(`${getRoleDisplayNameForApp(role)} 发来一条新传讯`);
+        if (!proactiveCatchupQuiet) {
+          playGlobalSound('message');
+          showChatToast(`${getRoleDisplayNameForApp(role)} 发来一条新传讯`);
+        }
         return true;
       }
       const settings = getChatSettings(role.id);
-      settings.pendingProactiveMessages = [...(settings.pendingProactiveMessages || []), { id: `proactive-${Date.now()}-${Math.random().toString(16).slice(2)}`, text, createdAt: Date.now() }].slice(-20);
+      settings.pendingProactiveMessages = [...(settings.pendingProactiveMessages || []), { id: `proactive-${Date.now()}-${Math.random().toString(16).slice(2)}`, text, createdAt: arrivalAt }].slice(-20);
       return saveChatSettings(settings, role.id) === true;
     }
 
@@ -11202,7 +11536,7 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
         settings.pendingProactiveMessages = [...(settings.pendingProactiveMessages || []), {
           id: `proactive-${messageKind}-${Date.now()}-${Math.random().toString(16).slice(2)}`,
           kind: messageKind, src: item.src || '', emoji: item.emoji || item.text || '', name: item.name || '',
-          caption: item.caption || '', createdAt: Date.now()
+          caption: item.caption || '', createdAt: (proactiveCatchupAt > 0 ? proactiveCatchupAt : Date.now())
         }].slice(-20);
         saveChatSettings(settings, role.id);
         return true;
@@ -11213,6 +11547,7 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
       const line = document.createElement('div');
       line.className = 'chat-message-line incoming';
       line.dataset.messageKind = messageKind;
+      if (proactiveCatchupAt > 0) line.dataset.createdAt = String(proactiveCatchupAt);
       const avatar = document.createElement('div');
       avatar.className = 'chat-message-avatar partner-avatar';
       const content = document.createElement('div');
@@ -11234,14 +11569,16 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
       if (item.caption) attachComboTextToBubble(bubble, String(item.caption).slice(0, 500));
       const meta = document.createElement('div');
       meta.className = 'chat-message-meta';
-      meta.textContent = '刚刚';
+      meta.textContent = proactiveCatchupAt > 0 && typeof formatChatMessageTimestamp === 'function' ? formatChatMessageTimestamp(proactiveCatchupAt) : '刚刚';
       content.append(bubble, meta);
       setChatAvatarVisual(avatar, role.initials, role.avatarImage ? { type: 'image', src: role.avatarImage } : `linear-gradient(135deg,${role.color1},${role.color2})`);
       line.append(avatar, content);
       body.insertBefore(line, typing || null);
       body.scrollTop = body.scrollHeight;
-      playGlobalSound('message');
-      showChatToast(messageKind === 'kaomoji' ? `${getRoleDisplayNameForApp(role)} 发来一个颜文字` : `${getRoleDisplayNameForApp(role)} 发来一个表情`);
+      if (!proactiveCatchupQuiet) {
+        playGlobalSound('message');
+        showChatToast(messageKind === 'kaomoji' ? `${getRoleDisplayNameForApp(role)} 发来一个颜文字` : `${getRoleDisplayNameForApp(role)} 发来一个表情`);
+      }
       return true;
     }
 
@@ -11256,13 +11593,20 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
         used.push(text);
       }
       if (!texts.length) return false;
+      /* v111j3：多条之间的间隔跟回复用同一条规则（面板上的「最短 / 最长延迟」）——
+         v111g 已经把回复连发改成这样，主动消息不该还留着写死的 1.5~5.6 秒。 */
+      const nextGap = () => (typeof roleReplyDelay === 'function' ? roleReplyDelay() : 1500 + Math.random() * 3600);
       const isOpen = isChatConversationLoaded(role.id);
       if (!isOpen) {
         const settings = getChatSettings(role.id);
-        const now = Date.now();
+        const now = proactiveCatchupAt > 0 ? proactiveCatchupAt : Date.now();
+        let cursor = now;
         settings.pendingProactiveMessages = [
           ...(settings.pendingProactiveMessages || []),
-          ...texts.map((text, index) => ({ id: `proactive-${now}-${index}`, text, createdAt: now + index * 1800 }))
+          ...texts.map((text, index) => {
+            if (index) cursor += nextGap();
+            return { id: `proactive-${now}-${index}`, text, createdAt: cursor };
+          })
         ].slice(-20);
         saveChatSettings(settings, role.id);
         return true;
@@ -11270,17 +11614,18 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
       const appendNext = index => {
         if (index >= texts.length || currentPartnerHandle !== role.id) return;
         appendProactiveIncomingMessage(role, texts[index]);
-        if (index + 1 < texts.length) {
-          const text = texts[index];
-          const nextMax = Math.min(5600, 1900 + 135 * text.length);
-          window.setTimeout(() => appendNext(index + 1), 1500 + Math.random() * Math.max(0, nextMax - 1500));
-        }
+        if (index + 1 < texts.length) window.setTimeout(() => appendNext(index + 1), nextGap());
       };
       appendNext(0);
       return true;
     }
 
     function triggerProactiveMessage(role) {
+      /* v111j3：主动消息一次可以说两三句 —— 条数按「全局回复节奏」里的
+         「最多条数 + 各条数出现权重」抽（pickRoleReplyCount 读的就是它们）。
+         想让某位梦角永远只说一条，把权重 1 调成 100、其余清 0 即可。
+         多条之间的间隔跟回复一样听面板上的「最短 / 最长延迟」
+         （见 triggerProactiveTextBatch，不再是写死的 1.5~5.6 秒机关枪）。 */
       const kind = chooseMessageKind('proactive', role);
       if (kind === 'text') return triggerProactiveTextBatch(role, pickRoleReplyCount());
       const sent = triggerUnifiedMessageKind(role, kind);
@@ -11299,7 +11644,7 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
       // 不加这段的话 appendProactiveIncomingSticker 里的 caption 分支就是死代码 —— 永远没人传值。
       let caption = '';
       if (Math.random() < 0.35) {
-        const line = String(pickRoleReplyText(role) || '').trim();
+        const line = String(stripGlyphMark(pickRoleReplyText(role)) || '').trim();   /* v111：配文按纯文本量长度 */
         // 太长的字卡当配文会喧宾夺主，只取短句
         if (line && line.length <= 18) caption = line;
       }
@@ -11639,7 +11984,7 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
       const isOpen = isChatConversationLoaded(role.id);
       if (!isOpen) {
         const settings = getChatSettings(role.id);
-        settings.pendingProactiveMessages = [...(settings.pendingProactiveMessages || []), { id: `proactive-voice-${Date.now()}-${Math.random().toString(16).slice(2)}`, kind: 'voice', text, duration: seconds, createdAt: Date.now() }].slice(-20);
+        settings.pendingProactiveMessages = [...(settings.pendingProactiveMessages || []), { id: `proactive-voice-${Date.now()}-${Math.random().toString(16).slice(2)}`, kind: 'voice', text, duration: seconds, createdAt: (proactiveCatchupAt > 0 ? proactiveCatchupAt : Date.now()) }].slice(-20);
         saveChatSettings(settings, role.id);
         return true;
       }
@@ -11665,7 +12010,7 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
     function appendProactiveIncomingVoiceCard(role, card) {
       if (isRoleTemporarilyAway(role) || getChatSettings(role?.id).partnerVoiceEnabled === false || !card?.src) return false;
       const isOpen=isChatConversationLoaded(role.id),seconds=Math.max(1,Math.min(3600,Number(card.duration)||1));
-      if(!isOpen){const settings=getChatSettings(role.id);settings.pendingProactiveMessages=[...(settings.pendingProactiveMessages||[]),{id:`proactive-voice-card-${Date.now()}-${Math.random().toString(16).slice(2)}`,kind:'voice-card',audioSrc:card.src,audioName:card.name||'MP3 语音字卡',duration:seconds,createdAt:Date.now()}].slice(-20);saveChatSettings(settings,role.id);return true;}
+      if(!isOpen){const settings=getChatSettings(role.id);settings.pendingProactiveMessages=[...(settings.pendingProactiveMessages||[]),{id:`proactive-voice-card-${Date.now()}-${Math.random().toString(16).slice(2)}`,kind:'voice-card',audioSrc:card.src,audioName:card.name||'MP3 语音字卡',duration:seconds,createdAt:(proactiveCatchupAt>0?proactiveCatchupAt:Date.now())}].slice(-20);saveChatSettings(settings,role.id);return true;}
       const body=document.getElementById('chatThreadBody'),typing=document.getElementById('chatTyping');if(!body)return false;const line=document.createElement('div');line.className='chat-message-line incoming';line.dataset.messageKind='voice-card';line.dataset.createdAt=String(Date.now());const avatar=document.createElement('div');avatar.className='chat-message-avatar partner-avatar';const content=document.createElement('div');content.className='chat-message-content';content.append(createChatVoiceBubble('',seconds,{audioSource:card.src,audioName:card.name,noTranscript:true}),Object.assign(document.createElement('div'),{className:'chat-message-meta',textContent:'刚刚'}));setChatAvatarVisual(avatar,role.initials,role.avatarImage?{type:'image',src:role.avatarImage}:`linear-gradient(135deg,${role.color1},${role.color2})`);line.append(avatar,content);body.insertBefore(line,typing||null);body.scrollTop=body.scrollHeight;playGlobalSound('message');showChatToast(`${getRoleDisplayNameForApp(role)} 发来一条语音`);return true;
     }
 
@@ -11674,7 +12019,7 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
       const voiceCards=(settings.voiceCards||[]).filter(card=>card?.src);
       // “语音”大类概率保持不变；进入语音大类后，MP3 字卡与普通拟态语音各占 50%。
       if(voiceCards.length&&Math.random()<.5){const card=voiceCards[Math.floor(Math.random()*voiceCards.length)];if(appendProactiveIncomingVoiceCard(role,card))return true;}
-      const cards = pickRoleReplyBatch(role, 1, 3);
+      const cards = pickRoleReplyBatch(role, 1, 3).map(stripGlyphMark);   /* v111：语音是纯文本出口 */
       if (!cards.length) return voiceCards.length ? appendProactiveIncomingVoiceCard(role,voiceCards[Math.floor(Math.random()*voiceCards.length)]) : false;
       return appendProactiveIncomingVoice(role, cards.join(' '));
     }
@@ -11745,7 +12090,7 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
       const isOpen = isChatConversationLoaded(role.id);
       if (!isOpen) {
         const settings = getChatSettings(role.id);
-        settings.pendingProactiveMessages = [...(settings.pendingProactiveMessages || []), { id: `proactive-poke-${Date.now()}-${Math.random().toString(16).slice(2)}`, kind: 'poke', text, createdAt: Date.now() }].slice(-20);
+        settings.pendingProactiveMessages = [...(settings.pendingProactiveMessages || []), { id: `proactive-poke-${Date.now()}-${Math.random().toString(16).slice(2)}`, kind: 'poke', text, createdAt: (proactiveCatchupAt > 0 ? proactiveCatchupAt : Date.now()) }].slice(-20);
         saveChatSettings(settings, role.id);
         return true;
       }
@@ -11789,7 +12134,7 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
 
     function triggerProactiveCircle(role) {
       if (isRoleTemporarilyAway(role)) return false;
-      let text = pickRoleReplyBatch(role, 2, 4).join(' ');
+      let text = pickRoleReplyBatch(role, 2, 4).map(stripGlyphMark).join(' ');   /* v111：朋友圈正文是纯文本 */
       if (!text) return;
       const chatSettings = getChatSettings(role.id);
       const kaomoji = Array.isArray(chatSettings.kaomoji) ? chatSettings.kaomoji.filter(Boolean) : [];
@@ -12014,7 +12359,10 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
       settings.pendingInvite = record;
       saveChatSettings(settings, role.id);
       if (isChatConversationLoaded(role.id)) showIncomingInviteModal(role, record);
-      else if (currentPartnerHandle === role.id && document.getElementById('desktopInviteApp')?.classList.contains('is-visible')) { desktopInviteActiveId = record.id; renderDesktopInviteStatus(record); }
+      else if (currentPartnerHandle === role.id && document.getElementById('desktopInviteApp')?.classList.contains('is-visible')) {
+        /* 正在填节奏那几个数字就先不翻页，等用户收笔（他离开这屏时自然会看到这封邀请） */
+        if (window.isCompanionRhythmEditing?.() !== true) { desktopInviteActiveId = record.id; renderDesktopInviteStatus(record); }
+      }
       return record;
     }
 
@@ -12225,8 +12573,18 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
             stateChanged = true;
           }
           if (Number(roleState[key]) && Number(roleState[key]) <= now) {
+            const dueAt = Number(roleState[key]);
             roleState[key] = 0;
-            trigger(role);
+            if (type === 'message') {
+              /* v111j5：网页没在跑的那段时间（关掉 / 被浏览器冻住），对方本该说的话要补出来 ——
+                 按面板节奏把错过的时刻一个个补上，各带自己的时间点；
+                 只在最后弹一次汇总横幅，而不是逐条炸一串通知。 */
+              const missedSlots = collectMissedProactiveMessageSlots(dueAt, now);
+              if (missedSlots.length > 1) runProactiveChatCatchup(role, missedSlots);
+              else trigger(role);
+            } else {
+              trigger(role);
+            }
             scheduleProactiveEvent(role.id, type, true, false);
             stateChanged = true;
           }
@@ -12272,6 +12630,102 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
       proactiveHeartbeatTimer = null;
     }
 
+    /* ══════════════════════════════════════════════════════════════
+       v111j4 → v111j5 · 待收队列：进房间直接补齐
+       ---------------------------------------------------------------
+       待收队列 = 聊天室不在前台时收到的消息暂存处。队列里的每一条在到达那一刻
+       就已经算「收到」：未读、角标、列表预览、横幅、系统通知都发过了。
+       v111j5 起不再按节奏慢放 —— 进房间时按顺序一次补齐（各带自己的到达时间），
+       因为「收到」不该等你进房间，更不该让你在房间里干等两分钟。
+       ══════════════════════════════════════════════════════════════ */
+    /* ══════════════════════════════════════════════════════════════
+       v111j5 · 「到点就算收到」
+       ---------------------------------------------------------------
+       ① 不在房间（含页面被切到后台）时到的消息，到达那一刻就算收到：
+          未读 + 角标 + 列表预览 + 顶部横幅 + 系统通知（前台可见时再补一声提示音）。
+       ② 网页没在跑的那段时间（关掉 / 被浏览器冻住），对方本该说的话按面板节奏
+          整串补出来 —— 各带自己的时间点，只在最后弹一次汇总横幅，不逐条炸通知。
+       ③ 进房间不再按节奏慢放：这些消息你早就收到了，直接一次补齐。
+       ④ 页面在后台时横幅弹不出来 —— 回到前台补弹那一次。
+       ══════════════════════════════════════════════════════════════ */
+    let proactiveCatchupAt = 0;            // >0：这一轮是补话，用它当这些消息的到达时间
+    let proactiveCatchupQuiet = false;     // 补话期间不逐条弹提示音 / 小提示
+    let chatArrivalNotificationsMuted = false;
+    const PROACTIVE_CATCHUP_MAX = 12;              // 一次最多补几条（睡一觉回来也不会爆屏）
+    const PROACTIVE_CATCHUP_WINDOW_MS = 24 * 3600 * 1000;   // 只补最近 24 小时里错过的
+
+    /* 把「从 firstDueAt 到 now 之间本该响、却被错过的时刻」列出来（只留最近 24 小时、最多 12 个） */
+    function collectMissedProactiveMessageSlots(firstDueAt, now) {
+      const range = proactiveEventRange('message');
+      const floor = Number(now) - PROACTIVE_CATCHUP_WINDOW_MS;
+      const slots = [];
+      let at = Number(firstDueAt) || 0;
+      let guard = 0;
+      while (at > 0 && at <= now && guard < 400) {
+        if (at >= floor) slots.push(at);
+        at += range.minMs + Math.floor(Math.random() * Math.max(1, range.maxMs - range.minMs));
+        guard += 1;
+      }
+      return slots.slice(-PROACTIVE_CATCHUP_MAX);
+    }
+
+    function pendingProactiveQueueLength(handle) {
+      try { return (getChatSettings(handle).pendingProactiveMessages || []).length; } catch (_) { return 0; }
+    }
+
+    /* 补话只走「会进待收队列」的几种（文字 / 表情 / 颜文字 / 语音 / 拍一拍）：
+       查岗、红包、邀请、画板各有自己的通知通道，整串补出来会变成一串通知。 */
+    function triggerProactiveCatchupMessage(role) {
+      const roll = Math.random();
+      try {
+        if (roll < 0.60) return triggerProactiveTextBatch(role, pickRoleReplyCount());
+        if (roll < 0.76) { if (triggerProactiveSticker(role)) return true; }
+        else if (roll < 0.84) { if (triggerProactiveKaomoji(role)) return true; }
+        else if (roll < 0.92) { if (triggerProactiveVoice(role)) return true; }
+        else if (triggerProactivePoke(role)) return true;
+      } catch (_) {}
+      return triggerProactiveTextBatch(role, pickRoleReplyCount());
+    }
+
+    /* 离线补话：给每个错过的时刻生成一条（那一刻该说什么就说什么），
+       最后只发一次汇总通知（横幅 + 系统通知）。 */
+    function runProactiveChatCatchup(role, slots) {
+      const handle = String(role?.id || '');
+      if (!handle || !Array.isArray(slots) || !slots.length) return false;
+      const before = pendingProactiveQueueLength(handle);
+      /* 待收队列上限 20 条：先算好这次能补多少，别让后补的把先补的挤掉 */
+      const budget = Math.max(0, Math.min(PROACTIVE_CATCHUP_MAX, 20 - before));
+      if (!budget) return false;
+      chatArrivalNotificationsMuted = true;
+      try {
+        for (const slot of slots) {
+          proactiveCatchupAt = Number(slot) || 0;
+          proactiveCatchupQuiet = true;
+          try { triggerProactiveCatchupMessage(role); } catch (_) {}
+          if (pendingProactiveQueueLength(handle) - before >= budget) break;
+        }
+      } finally {
+        proactiveCatchupAt = 0;
+        proactiveCatchupQuiet = false;
+        chatArrivalNotificationsMuted = false;
+      }
+      const added = pendingProactiveQueueLength(handle) - before;
+      if (added <= 0) return false;
+      try {
+        const settings = getChatSettings(handle);
+        if (!isChatConversationBeingRead(handle)) {
+          dispatchChatArrivalNotifications(handle, pendingChatArrivalPreview(settings), normalizeChatUnreadCount(settings.unreadCount) || added);
+        }
+      } catch (_) {}
+      return true;
+    }
+
+    let pendingRevealTimers = [];
+    function clearPendingRevealTimers() {
+      pendingRevealTimers.forEach(id => window.clearTimeout(id));
+      pendingRevealTimers = [];
+    }
+
     function restorePendingProactiveMessages(handle) {
       const settings = getChatSettings(handle);
       const pending = Array.isArray(settings.pendingProactiveMessages) ? settings.pendingProactiveMessages : [];
@@ -12282,12 +12736,27 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
       if (!body || activeChatHandle !== handle) return false;
       const role = getRoleRecord(handle) || ensureRoleRecord(handle, { name: currentPartnerName, initials: currentPartnerInitials, color1: '#ff9966', color2: '#ff5e62' });
       const alreadyRestored = id => Boolean(id) && [...body.querySelectorAll('[data-pending-incoming-id]')].some(node => node.dataset.pendingIncomingId === String(id));
-      pending.forEach(item => {
-        if (alreadyRestored(item.id)) return;
+      /* 从待收队列里摘掉一条（已经出现在记录里的） */
+      const dropPendingMessage = id => {
+        if (!id) return;
+        try {
+          const latest = getChatSettings(handle);
+          latest.pendingProactiveMessages = (latest.pendingProactiveMessages || [])
+            .filter(entry => String(entry?.id || '') !== String(id));
+          saveChatSettings(latest, handle);
+        } catch (_) {}
+      };
+      const revealPendingMessage = (item, options = {}) => {
+        if (alreadyRestored(item.id)) return false;
         if (item.kind === 'poke') {
           const notice = appendChatPokeNotice(item.text || '', { direction: 'incoming', createdAt: item.createdAt, scroll: false });
           if (notice && item.id) notice.dataset.pendingIncomingId = String(item.id);
-          return;
+          if (options.keepInQueue !== true) dropPendingMessage(item.id);
+          /* ⚠ 迟到的拍一拍也必须写进历史 —— 只插 DOM 不落盘的话，
+             下次重进房间它就没了（others109 的「戳一戳」用例逮到的就是这个）。 */
+          try { saveChatHistoryForHandle(handle, { reason: 'pending-proactive' }); } catch (_) {}
+          if (options.announce === true) { try { playGlobalSound('message'); } catch (_) {} }
+          return true;
         }
         const line = document.createElement('div');
         line.className = 'chat-message-line incoming';
@@ -12295,6 +12764,9 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
         if (item.id) line.dataset.pendingIncomingId = String(item.id);
         if (item.kind) line.dataset.messageKind = item.kind;
         line.innerHTML = '<div class="chat-message-avatar partner-avatar"></div><div class="chat-message-content"><div class="chat-bubble"></div><div class="chat-message-meta">刚刚</div></div>';
+        /* v111j5：迟到的消息带上它本来的到达时间（不再一律写「刚刚」） */
+        const revealMeta = line.querySelector('.chat-message-meta');
+        if (revealMeta) revealMeta.textContent = typeof formatChatMessageTimestamp === 'function' ? formatChatMessageTimestamp(Number(item.createdAt) || Date.now()) : '刚刚';
         const bubble = line.querySelector('.chat-bubble');
         if (item.kind === 'voice') {
           bubble.replaceWith(createChatVoiceBubble(item.text || '', item.duration || 0));
@@ -12320,7 +12792,23 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
         }
         setChatAvatarVisual(line.querySelector('.partner-avatar'), role.initials, role.avatarImage ? { type: 'image', src: role.avatarImage } : `linear-gradient(135deg,${role.color1},${role.color2})`);
         body.insertBefore(line, typing || null);
-      });
+        if (options.keepInQueue !== true) dropPendingMessage(item.id);
+        try { saveChatHistoryForHandle(handle, { reason: 'pending-proactive' }); } catch (_) {}
+        /* 迟到的那几条是在你正看着的时候出现的：跟实时消息一样给个声音和提示 */
+        if (options.announce === true) {
+          try { playGlobalSound('message'); showChatToast(`${getRoleDisplayNameForApp(role)} 发来一条新传讯`); } catch (_) {}
+        }
+        return true;
+      };
+      /* 队列按时间排稳（本来就是按顺序追加的，这里只是防老数据乱序） */
+      const queueItems = pending
+        .map((item, index) => ({ item, index, at: Number(item?.createdAt) || 0 }))
+        .sort((a, b) => (a.at - b.at) || (a.index - b.index))
+        .map(entry => entry.item);
+      /* v111j5：到点就算收到 —— 这些消息在你不在房间时就已经到了（横幅、系统通知、
+         未读角标当时都发过），进房间时按顺序一次补齐，不再按节奏慢慢浮现
+         （面板设 5~10 分钟时，慢放一条要等两分钟，看着像「根本没收到」）。 */
+      queueItems.forEach(item => { if (!alreadyRestored(item.id)) revealPendingMessage(item); });
       pendingBoards.forEach(item => {
         if (alreadyRestored(item.id)) return;
         const line = document.createElement('div');
@@ -12344,10 +12832,13 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
         showChatToast('本地空间快满了，消息已存进数据库；可到设置 · 存储空间清理一下');
         return false;
       }
-      settings.pendingProactiveMessages = [];
-      settings.pendingProactiveBoards = [];
-      settings.historyDeleted = false;
-      if (!saveChatSettings(settings, handle)) {
+      /* v111j4：已经出现的那几条在 revealPendingMessage 里各自从队列里摘掉了；
+         还没到点的那几条留在待收队列里 —— 离开再回来接着按节奏放。
+         （画板仍按原样立即补上。） */
+      const latestSettings = getChatSettings(handle);
+      latestSettings.pendingProactiveBoards = [];
+      latestSettings.historyDeleted = false;
+      if (!saveChatSettings(latestSettings, handle)) {
         showChatToast('聊天记录已保存，待收状态将在稍后自动同步');
         return false;
       }
@@ -14188,8 +14679,44 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
       if (flow) { moonDraft.flow = Number(flow.dataset.moonFlow); syncMoonDraftUI(); }
       if (color) { moonDraft.color = color.dataset.moonColor; syncMoonDraftUI(); }
     });
-    document.getElementById('moonCycleLen')?.addEventListener('change', event => { loadMoonData().cycleLen = Math.max(15, Math.min(60, Number(event.target.value) || 28)); persistMoonData(); renderMoonSummary(); });
-    document.getElementById('moonPeriodLen')?.addEventListener('change', event => { loadMoonData().periodLen = Math.max(1, Math.min(14, Number(event.target.value) || 5)); persistMoonData(); renderMoonCalendar(); });
+    /* v111j10 · 月亮（周期追踪）：原来只听 change —— 手机上填完直接切走 / 下拉刷新（不点别处 = 不失焦）
+       就不算数，和 v105 调度面板、v111j9 陪伴节奏是同一个坑。现在 input 防抖 500ms 先存，
+       失焦 / 回车再规范化回填，切后台 / 关页面前补写一次。 */
+    const moonLenTimers = new Map();
+    const moonLenField = key => key === 'cycle' ? 'moonCycleLen' : 'moonPeriodLen';
+    const moonLenCommit = (key, finalize) => {
+      window.clearTimeout(moonLenTimers.get(key));
+      moonLenTimers.delete(key);
+      const input = document.getElementById(moonLenField(key));
+      const raw = String(input?.value ?? '').trim();
+      if (raw === '') return;                                    // 清空中：不猜，等收笔
+      const parsed = Number(raw);
+      if (!Number.isFinite(parsed)) return;
+      const value = key === 'cycle' ? Math.max(15, Math.min(60, Math.round(parsed))) : Math.max(1, Math.min(14, Math.round(parsed)));
+      const data = loadMoonData();
+      const settingKey = key === 'cycle' ? 'cycleLen' : 'periodLen';
+      if (data[settingKey] !== value) { data[settingKey] = value; persistMoonData(); }
+      if (!finalize) return;                                     // 打字途中不重渲染（日历那一下太吵）
+      if (input && String(input.value) !== String(value)) input.value = String(value);
+      if (key === 'cycle') renderMoonSummary(); else renderMoonCalendar();
+    };
+    ['cycle', 'period'].forEach(key => {
+      const input = document.getElementById(moonLenField(key));
+      if (!input) return;
+      input.addEventListener('input', () => {
+        window.clearTimeout(moonLenTimers.get(key));
+        moonLenTimers.set(key, window.setTimeout(() => moonLenCommit(key, false), 500));
+      });
+      input.addEventListener('change', () => moonLenCommit(key, true));
+      input.addEventListener('blur', () => moonLenCommit(key, true));
+      input.addEventListener('keydown', event => {
+        if (event.key !== 'Enter') return;
+        event.preventDefault(); moonLenCommit(key, true); input.blur();
+      });
+    });
+    const flushMoonLen = () => { if (!moonLenTimers.size) return; [...moonLenTimers.keys()].forEach(key => moonLenCommit(key, false)); moonLenTimers.clear(); };
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushMoonLen(); });
+    window.addEventListener('pagehide', flushMoonLen);
     document.getElementById('moonRemind')?.addEventListener('change', event => { loadMoonData().remind = event.target.checked; persistMoonData(); });
     document.addEventListener('keydown', event => { if (event.key === 'Escape' && document.getElementById('moonApp')?.classList.contains('is-visible')) closeMoonTracker(); });
 
@@ -14320,6 +14847,12 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
               <button class="invite-envelope__activity" type="button" data-desktop-invite-activity="listen"><span class="invite-envelope__icon"><i data-lucide="disc-3" size="12"></i></span><span><strong>一起听</strong><small>进入共享黑胶房间</small></span><em class="invite-envelope__stamp">✓</em></button>
             </div>
             <label class="invite-envelope__note-wrap"><span>写给对方的话</span><textarea class="invite-envelope__note" id="desktopInviteNote" maxlength="80" placeholder="留一句只给对方的碎碎念（可选）"></textarea><small><b id="desktopInviteNoteCount">0</b>/80</small></label>
+            <div class="companion-rhythm">
+              <div class="companion-rhythm__head"><strong>对方的节奏</strong><small>进入陪伴空间后，TA 主动说话与回你的间隔（五个空间共用）</small></div>
+              <div class="companion-rhythm__row"><span>主动开口</span><input data-companion-rhythm="proactiveMin" type="number" min="1" max="180" step="1"><i>分</i><em>~</em><input data-companion-rhythm="proactiveMax" type="number" min="1" max="360" step="1"><i>分</i></div>
+              <div class="companion-rhythm__row"><span>回我一句</span><input data-companion-rhythm="replyMin" type="number" min="1" max="600" step="1"><i>秒</i><em>~</em><input data-companion-rhythm="replyMax" type="number" min="1" max="1800" step="1"><i>秒</i></div>
+              <small class="companion-rhythm__hint"></small>
+            </div>
             <div class="invite-envelope__footer"><button class="invite-envelope__history" type="button" onclick="renderDesktopInviteHistory()">活动记录</button><button class="invite-envelope__send" type="button" onclick="sendDesktopInvite()">贴好邮票并寄出 ✉︎</button></div>
           </div>
         </div>`;
@@ -14331,12 +14864,16 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
       const desktopNote = body.querySelector('#desktopInviteNote');
       const desktopNoteCount = body.querySelector('#desktopInviteNoteCount');
       desktopNote?.addEventListener('input', () => { if (desktopNoteCount) desktopNoteCount.textContent = String(desktopNote.value.length); });
+      bindCompanionRhythm(body);   /* v111h */
       lucide.createIcons();
     }
 
     function renderDesktopInviteStatus(record) {
       const body = document.getElementById('desktopInviteBody');
       if (!body || !record) return;
+      /* 用户正在节奏那块填数字时，谁都不许把表单换成状态卡 ——
+         手指还在键盘上、屏幕自己翻页是最烦的。收笔之后自然会翻过去。 */
+      if (window.isCompanionRhythmEditing?.() === true && body.querySelector('.companion-rhythm')) return;
       record.activity = normalizeInviteActivity(record.activity);
       const activity = desktopInviteActivityLabel(record.activity);
       const partner = currentPartnerName || '当前梦角';
@@ -14875,8 +15412,8 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
 
     // 回复文本：优先该角色自己的内容字卡，空池时回退到内置安慰句（不复用“已读不回”逻辑，评论必须可回）。
     function pickCircleReplyText(role) {
-      let text = pickRoleReplyBatch(role, 2, 4).join(' ').trim();
-      if (!text) text = pickRoleReplyText(role);
+      let text = pickRoleReplyBatch(role, 2, 4).map(stripGlyphMark).join(' ').trim();   /* v111：评论是纯文本 */
+      if (!text) text = stripGlyphMark(pickRoleReplyText(role));
       return String(text || '').trim();
     }
 
@@ -15014,7 +15551,7 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
     function scheduleCircleCommentTaskHeartbeat() { window.clearTimeout(circleCommentTaskTimer); circleCommentTaskTimer = null; const tasks = loadCircleCommentTasks(); if (!tasks.length) return; const next = Math.min(...tasks.map(task => Number(task.dueAt) || Date.now())); circleCommentTaskTimer = window.setTimeout(processCircleCommentTasks, Math.max(250, Math.min(60000, next - Date.now()))); }
 
     function pickProactiveCircleComment(role) {
-      const cards = pickRoleReplyBatch(role, 1, 3);
+      const cards = pickRoleReplyBatch(role, 1, 3).map(stripGlyphMark);   /* v111：主动评论是纯文本 */
       if (!cards.length) return null;
       let text = cards.join(' ');
       const chatSettings = getChatSettings(role.id);
@@ -15061,7 +15598,7 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
           if (shouldComment) {
             const comment = pickProactiveCircleComment(freshRole);
             if (!comment || !String(comment.text || '').trim()) {
-              const fallbackText = pickRoleReplyText(freshRole);
+              const fallbackText = stripGlyphMark(pickRoleReplyText(freshRole));   /* v111 */
               if (fallbackText) post.comments = [...(post.comments || []), {
                 id: `comment-${Date.now()}-${Math.random().toString(16).slice(2)}`,
                 owner: 'partner', author: roleName, text: fallbackText, replyTo: '', stickerUrl: '', emoji: '', roleId: freshRole.id
@@ -15575,7 +16112,7 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
 
     function loadGlobalAppSettings() {
       if (globalAppSettings) return globalAppSettings;
-      const defaults = { theme: 'mono', glyphCardsEnabled: false, quoteReply: true, readReceipt: true, receiptStyle: 'icon', autonomyHesitationEnabled: true, readNoReplyEnabled: true, typingMimic: true, cardSentence: false, messageActionsEnabled: true, simulationEnabled: true, messageSoundEnabled: false, messageSoundSrc: '', messageSoundName: '', ringtoneEnabled: false, ringtoneSrc: '', ringtoneName: '', globalFontSource: '', globalFontName: '', auroraPalette: 'cream', backgroundNotification: false, inAppPopup: true, usageAnnouncementEnabled: true, systemNotificationEnabled: true, notificationAppBadgeEnabled: true, notificationOnlyBackground: false, notificationPreviewMode: 'full', notificationDndEnabled: false, notificationDndStart: '22:00', notificationDndEnd: '08:00', notificationServiceWorkerEnabled: true, fontScale: 100, desktopIconShape: 'rounded', desktopIconMaterial: 'glass', desktopThemeColor: '', desktopAccentColor: '', desktopThemeOpacity: 75, desktopThemeBlur: 12, desktopWallpaper: '', replyMaxReplies: 5, replyMinSeconds: 3, replyMaxSeconds: 60, replyWeights: [45,32,15,6,2], groupReplyMaxMembers: 3, groupForceReply: true, groupAutonomousRounds: 2, groupAutonomousChance: 45, schedulerEnabled: true, proactiveContactEnabled: true, proactiveContactMinMinutes: 15, proactiveContactMaxMinutes: 60, proactiveMessageEnabled: true, proactiveLetterEnabled: true, proactiveCircleEnabled: true, proactiveMessageMinSeconds: 300, proactiveMessageMaxMinutes: 36, proactiveLetterMinMinutes: 60, proactiveLetterMaxHours: 24, letterReplyMinMinutes: 1, letterReplyMaxHours: 2, circlePostMinMinutes: 30, circlePostMaxHours: 4, circleVisitorEnabled: true, circleVisitorMinMinutes: 30, circleVisitorMaxHours: 6, circleCommentReplyEnabled: true, circleCommentMinMinutes: 5, circleCommentMaxMinutes: 30, proactiveMinMinutes: 5, proactiveMaxMinutes: 30 };
+      const defaults = { theme: 'mono', glyphCardsEnabled: false, quoteReply: true, readReceipt: true, receiptStyle: 'icon', autonomyHesitationEnabled: true, readNoReplyEnabled: true, typingMimic: true, cardSentence: false, messageActionsEnabled: true, simulationEnabled: true, messageSoundEnabled: false, messageSoundSrc: '', messageSoundName: '', ringtoneEnabled: false, ringtoneSrc: '', ringtoneName: '', globalFontSource: '', globalFontName: '', auroraPalette: 'cream', backgroundNotification: false, inAppPopup: true, usageAnnouncementEnabled: true, systemNotificationEnabled: true, notificationAppBadgeEnabled: true, notificationOnlyBackground: false, notificationPreviewMode: 'full', notificationDndEnabled: false, notificationDndStart: '22:00', notificationDndEnd: '08:00', notificationServiceWorkerEnabled: true, fontScale: 100, desktopIconShape: 'rounded', desktopIconMaterial: 'glass', desktopThemeColor: '', desktopAccentColor: '', desktopThemeOpacity: 75, desktopThemeBlur: 12, desktopWallpaper: '', replyMaxReplies: 5, replyMinSeconds: 3, replyMaxSeconds: 60, replyWeights: [45,32,15,6,2], companionProactiveMinMinutes: 2, companionProactiveMaxMinutes: 8, companionReplyMinSeconds: 20, companionReplyMaxSeconds: 90, groupReplyMaxMembers: 3, groupForceReply: true, groupAutonomousRounds: 2, groupAutonomousChance: 45, schedulerEnabled: true, proactiveContactEnabled: true, proactiveContactMinMinutes: 15, proactiveContactMaxMinutes: 60, proactiveMessageEnabled: true, proactiveLetterEnabled: true, proactiveCircleEnabled: true, proactiveMessageMinSeconds: 300, proactiveMessageMaxMinutes: 36, proactiveLetterMinMinutes: 60, proactiveLetterMaxHours: 24, letterReplyMinMinutes: 1, letterReplyMaxHours: 2, circlePostMinMinutes: 30, circlePostMaxHours: 4, circleVisitorEnabled: true, circleVisitorMinMinutes: 30, circleVisitorMaxHours: 6, circleCommentReplyEnabled: true, circleCommentMinMinutes: 5, circleCommentMaxMinutes: 30, proactiveMinMinutes: 5, proactiveMaxMinutes: 30 };
       const saved = readDreamJSON(GLOBAL_SETTINGS_KEY, {});
       globalAppSettings = { ...defaults, ...(saved && typeof saved === 'object' ? saved : {}) };
       globalAppSettings.theme = ['mono', 'fog-blue', 'aurora', 'custom'].includes(globalAppSettings.theme) ? globalAppSettings.theme : 'mono';
@@ -15643,10 +16180,21 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
       globalAppSettings.proactiveLetterEnabled = true;
       globalAppSettings.proactiveCircleEnabled = true;
       normalizeSchedulerSettings(globalAppSettings);
+      /* v111j：老面板「主动发送消息」最快那一格标的是「秒」，按「分」填 5 会留下 5 秒。
+         新面板两格都是分钟、下面一格最小 1 分钟 —— 小于 60 秒的值再也填不出来，
+         属于老数据残留，这里直接抬到 1 分钟（幂等，每次读取都会兜底）。 */
+      if (Number(globalAppSettings.proactiveMessageMinSeconds) < 60) globalAppSettings.proactiveMessageMinSeconds = 60;
+      /* v111j3：撤掉共用节奏的设置位（有就删掉，不留死字段） */
+      delete globalAppSettings.proactiveMessageShared;
       globalAppSettings.circleVisitorEnabled = globalAppSettings.circleVisitorEnabled !== false;
       globalAppSettings.circleCommentReplyEnabled = true;
       globalAppSettings.proactiveMinMinutes = Math.max(1, Math.min(180, Number(globalAppSettings.proactiveMinMinutes) || 5));
       globalAppSettings.proactiveMaxMinutes = Math.max(globalAppSettings.proactiveMinMinutes, Math.min(720, Number(globalAppSettings.proactiveMaxMinutes) || 30));
+      /* v111h · 陪伴空间里的说话节奏（五个空间共用一组；在选择活动界面里改） */
+      globalAppSettings.companionProactiveMinMinutes = Math.max(1, Math.min(180, Number(globalAppSettings.companionProactiveMinMinutes) || 2));
+      globalAppSettings.companionProactiveMaxMinutes = Math.max(globalAppSettings.companionProactiveMinMinutes, Math.min(360, Number(globalAppSettings.companionProactiveMaxMinutes) || 8));
+      globalAppSettings.companionReplyMinSeconds = Math.max(1, Math.min(600, Number(globalAppSettings.companionReplyMinSeconds) || 20));
+      globalAppSettings.companionReplyMaxSeconds = Math.max(globalAppSettings.companionReplyMinSeconds, Math.min(1800, Number(globalAppSettings.companionReplyMaxSeconds) || 90));
       return globalAppSettings;
     }
 
@@ -15884,7 +16432,12 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
         '--widget-accent': tokens.accent,
         '--widget-warm': widgetWarm,
         '--widget-paper': tokens.card,
-        '--widget-line': tokens.border
+        '--widget-line': tokens.border,
+        /* v111j7 · 拼一拼气泡：颜色跟主题强调色走（底色取强调色的极浅调，边框取它的半透明，文字取它压深一档） */
+        '--glyph-chip-bg': rgbaTheme(mixThemeHex(tokens.accent, '#ffffff', .9), .95),
+        '--glyph-chip-border': rgbaTheme(tokens.accent, .34),
+        '--glyph-chip-text': mixThemeHex(tokens.accent, '#1b1b22', .3),
+        '--glyph-chip-out-bg': rgbaTheme(tokens.accent, .9)
       };
       Object.entries(globalVars).forEach(([key, value]) => screen.style.setProperty(key, value));
       const desktopVars = {
@@ -16047,6 +16600,7 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
     }
 
     function updateChatLineReceipt(line, status = line?.dataset.receiptStatus || 'delivered') {
+      if (isKomoCardChatLine(line)) { stripKomoCardMeta(line); return; }
       if (!line?.classList.contains('outgoing')) return;
       const meta = line.querySelector('.chat-message-meta');
       if (!meta) return;
@@ -16073,6 +16627,7 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
     }
 
     function scheduleChatUnreadReceipt(line) {
+      if (isKomoCardChatLine(line)) return;
       window.setTimeout(() => {
         if (line?.isConnected && ['delivered', 'unread'].includes(line.dataset.receiptStatus || 'unread')) updateChatLineReceipt(line, 'read');
       }, 1500 + Math.floor(Math.random() * 2501));
@@ -16501,7 +17056,7 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
       if (fontStatus) fontStatus.textContent = settings.globalFontSource ? `已启用：${settings.globalFontName || '自定义字体'} · 应用到全站` : '当前使用网站默认字体。';
       if (fontUrl) fontUrl.value = /^https?:\/\//i.test(settings.globalFontSource || '') ? settings.globalFontSource : '';
       const schedulerValues = {
-        proactiveMessageMinSecondsInput: settings.proactiveMessageMinSeconds,
+        proactiveMessageMinSecondsInput: Math.max(1, Math.round(Number(settings.proactiveMessageMinSeconds) / 60)),   /* v111g：内部存秒，面板显示分 */
         proactiveMessageMaxMinutesInput: settings.proactiveMessageMaxMinutes,
         proactiveLetterMinMinutesInput: settings.proactiveLetterMinMinutes,
         proactiveLetterMaxHoursInput: settings.proactiveLetterMaxHours,
@@ -16515,6 +17070,27 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
         circleCommentMaxMinutesInput: settings.circleCommentMaxMinutes
       };
       Object.entries(schedulerValues).forEach(([id, value]) => { const input = document.getElementById(id); if (input) input.value = value; });
+      /* v111g：把换算后的人话写在行内，避免再把「分」填进「秒」框 */
+      const rangeHint = document.getElementById('proactiveMessageRangeHint');
+      if (rangeHint) {
+        const mins = Math.max(1, Math.round(Number(settings.proactiveMessageMinSeconds) / 60));
+        const maxM = Math.max(1, Number(settings.proactiveMessageMaxMinutes) || 36);
+        const human = hours => hours >= 1 ? `${Math.round(hours * 10) / 10} 小时` : `${Math.round(hours * 60)} 分钟`;
+        /* v111j3：主动消息「每个梦角各算一条」—— 把这件事和「一次几句」
+           （条数权重）都写在明面上，并把 N 位梦角合起来的平均间隔算给你看。 */
+        const burstMax = Math.max(1, Math.min(5, Number(settings.replyMaxReplies) || 5));
+        let combined = '';
+        try {
+          const roleCount = Math.max(1, (typeof getProactiveContactRoles === 'function' ? getProactiveContactRoles().length : 1) || 1);
+          if (roleCount > 1) {
+            const avgMs = (Math.max(1, Number(settings.proactiveMessageMinSeconds) || 300) * 1000
+              + Math.max(1, Number(settings.proactiveMessageMaxMinutes) || 36) * 60000) / 2 / roleCount;
+            combined = `；${roleCount} 位梦角合起来 ≈ 每 ${avgMs >= 60000 ? human(avgMs / 3600000) : `${Math.max(1, Math.round(avgMs / 1000))} 秒`}就有人来一条`;
+          }
+        } catch (_) {}
+        rangeHint.textContent = `最快 / 最慢（分）· 现在 ≈ 每 ${human(mins / 60)} ~ ${human(maxM / 60)}来一条`
+          + `（每个梦角各算一条 · 一次按「回复节奏」里的条数权重说 1~${burstMax} 句）${combined}`;
+      }
       renderGlobalReplyRhythm();
       applyGlobalSettingsFilter();
       lucide.createIcons();
@@ -16537,6 +17113,18 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
         const input = document.getElementById(`globalReplyWeight${index + 1}`);
         if (input) input.value = value;
       });
+      /* v111j：把三个数换算成人话。很多人以为「一次回复 = 一条」，
+         其实条数是按下面的权重抽的（默认最多 5 条），且每条之间也等这个延迟 ——
+         这是「设了 5~10 分，却像一直在来消息」最容易被忽略的一处。 */
+      const replyHint = document.getElementById('globalReplyRhythmHint');
+      if (replyHint) {
+        const maxN = Math.max(1, Math.min(5, Number(settings.replyMaxReplies) || 5));
+        const rMin = Math.max(1, Number(settings.replyMinSeconds) || 3);
+        const rMax = Math.max(rMin, Number(settings.replyMaxSeconds) || 60);
+        const span = (a, b, unit) => a === b ? `${a} ${unit}` : `${a} ~ ${b} ${unit}`;
+        replyHint.textContent = `现在 ≈ 你发一条后 ${span(rMin, rMax, '秒')}回你，一次最多 ${maxN} 条`
+          + (maxN > 1 ? `（回多条时，每条之间也按这个延迟，不是一秒一条）` : '（一次只回一条）');
+      }
     }
 
     function saveGlobalReplyRhythm() {
@@ -16551,6 +17139,13 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
       settings.replyWeights = [1,2,3,4,5].map(index => Math.max(0, Number(document.getElementById(`globalReplyWeight${index}`)?.value) || 0));
       if (!settings.replyWeights.some(value => value > 0)) settings.replyWeights = [45,32,15,6,2];
       persistGlobalAppSettings();
+      /* v111g：回信等待时间也按新值重排（已寄出、还没回的信） */
+      try {
+        if (typeof scheduleMailReply === 'function' && typeof mailLetters === 'object') {
+          Object.values(mailLetters).filter(letter => letter && letter.direction === 'out' && !letter.replyResolved)
+            .forEach(letter => scheduleMailReply(letter.id, false));
+        }
+      } catch (_) { }
       renderGlobalSettings();
       showGlobalSettingsToast('全局回复节奏已保存');
     }
@@ -17232,6 +17827,40 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
       });
     }
 
+    /* v111g · 节奏设置 → 对应的主动事件类型 */
+    const SCHEDULER_KEY_TYPES = {
+      proactiveMessageMinSeconds: 'message', proactiveMessageMaxMinutes: 'message',
+      proactiveContactMinMinutes: 'contact', proactiveContactMaxMinutes: 'contact',
+      proactiveLetterMinMinutes: 'letter', proactiveLetterMaxHours: 'letter',
+      circlePostMinMinutes: 'circle', circlePostMaxHours: 'circle',
+      circleVisitorMinMinutes: 'visitor', circleVisitorMaxHours: 'visitor'
+    };
+
+    /* v111g · 把某几类主动事件的「未到期时间戳」按当前设置从当下重排。
+       只在用户改设置时调用；拿不到范围或还没排过的（该类型从未启用）不碰。 */
+    function rebaseProactiveTimestamps(types = []) {
+      const wanted = (Array.isArray(types) ? types : [types]).filter(Boolean);
+      try {
+        if (wanted.length) {
+          const state = loadProactiveEventState();
+          const now = Date.now();
+          let changed = false;
+          getProactiveContactRoles().forEach(role => {
+            const roleState = state[role.id] || (state[role.id] = {});
+            wanted.forEach(type => {
+              const key = `${type}At`;
+              if (!Number(roleState[key])) return;                 // 没排过 = 该类型未启用，交给心跳首排
+              const range = proactiveEventRange(type);
+              roleState[key] = now + range.minMs + Math.floor(Math.random() * Math.max(1, range.maxMs - range.minMs));
+              changed = true;
+            });
+          });
+          if (changed) persistProactiveEventState();
+        }
+      } catch (_) { /* 设置面板不该因为调度失败而中断 */ }
+      try { scheduleProactiveHeartbeat(); } catch (_) {}
+    }
+
     function bindGlobalSettingsControls() {
       const app = document.getElementById('globalSettingsApp');
       if (!app || app.dataset.bound === 'true') return;
@@ -17241,6 +17870,7 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
       document.getElementById('globalMessageActionsToggle')?.addEventListener('change', event => { loadGlobalAppSettings().messageActionsEnabled = event.target.checked; persistGlobalAppSettings(); showGlobalSettingsToast(event.target.checked ? '已开启消息操作菜单' : '已关闭消息操作菜单'); });
       const schedulerInputs = {
         proactiveMessageMinSecondsInput: 'proactiveMessageMinSeconds', proactiveMessageMaxMinutesInput: 'proactiveMessageMaxMinutes',
+        proactiveContactMinMinutesInput: 'proactiveContactMinMinutes', proactiveContactMaxMinutesInput: 'proactiveContactMaxMinutes',
         proactiveLetterMinMinutesInput: 'proactiveLetterMinMinutes', proactiveLetterMaxHoursInput: 'proactiveLetterMaxHours',
         letterReplyMinMinutesInput: 'letterReplyMinMinutes', letterReplyMaxHoursInput: 'letterReplyMaxHours',
         circlePostMinMinutesInput: 'circlePostMinMinutes', circlePostMaxHoursInput: 'circlePostMaxHours',
@@ -17255,12 +17885,18 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
       const schedulerSaveTimers = new Map();
       const commitSchedulerValue = (id, key, rawValue, fromInput) => {
         const settings = loadGlobalAppSettings();
-        const next = Number(rawValue);
+        /* v111g：「主动发送消息」的最快一格在面板上填的是分钟，内部仍按秒存（1~60 分）。
+           其余各行本来就是分钟/小时，原样。 */
+        const minuteInput = id === 'proactiveMessageMinSecondsInput';
+        const next = minuteInput ? Math.round(Number(rawValue) * 60) : Number(rawValue);
         if (rawValue === '' || !Number.isFinite(next)) return;   // 清空中途不保存，等失焦兜底
         if (settings[key] === next) return;
         settings[key] = next;
         persistGlobalAppSettings();
         startProactiveHeartbeat();
+        /* v111g：改完节奏，已排好的时间戳跟着重排 —— 否则调慢了也会按旧节奏再发一条，
+           用户看到的就是「设了没用」。 */
+        rebaseProactiveTimestamps(SCHEDULER_KEY_TYPES[key]);
         /* 正在打字时不整页重渲染：只在失焦/回车那次把 clamp 后的结果回填。
            ⚠ 必须回填 —— 超出上下限时存的是夹紧值，输入框却还显示原数（实测填 99999
            存 1440 但框里仍是 99999），看起来就像「设了没生效」。 */
@@ -17297,6 +17933,108 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
       };
       document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushSchedulerPending(); });
       window.addEventListener('pagehide', flushSchedulerPending);
+      /* ── v111j10 · 全局回复节奏（02 节奏）：从「必须点保存」改成边打边存 ──
+         ⚠ 为什么改：这里原来只有「保存全局回复节奏」那一个按钮才落盘。
+         手机上改完直接下拉刷新 / 切走（不点按钮）= 白改，回来还是旧值 ——
+         和 v105 调度面板踩过的坑是同一个。现在照调度面板的办法：
+         ① input 防抖 420ms 自动存；
+         ② 打字途中不整页重渲染、也不回写输入框（否则打「30」时先来的「3」会被夹掉）；
+         ③ 收笔（失焦 / 回车 / 点保存）时才排秩序：最长 ≥ 最短、权重全 0 时回默认；
+         ④ 切后台 / 关页面前把没落盘的那一次补写。
+         ⚠ roleReplyDelay 里本来就有 Math.max(min, max)，所以「先写了 5 再改最小」这种
+         中间态不会算出负数区间，放心边打边存。 */
+      const replyRhythmClamp = {
+        globalReplyMaxReplies: ['replyMaxReplies', 1, 5],
+        globalReplyMinSeconds: ['replyMinSeconds', 1, 3600],
+        globalReplyMaxSeconds: ['replyMaxSeconds', 1, 7200],
+        globalGroupReplyMaxMembers: ['groupReplyMaxMembers', 1, 7],
+        globalGroupAutonomousRounds: ['groupAutonomousRounds', 0, 5],
+        globalGroupAutonomousChance: ['groupAutonomousChance', 0, 100]
+      };
+      const replyRhythmWeightIds = [1, 2, 3, 4, 5].map(index => `globalReplyWeight${index}`);
+      const replyRhythmTimers = new Map();
+      const replyRhythmValue = id => {
+        const raw = String(document.getElementById(id)?.value ?? '').trim();
+        if (raw === '') return null;                       // 清空中：不猜，等收笔
+        const num = Number(raw);
+        return Number.isFinite(num) ? num : null;
+      };
+      const replyRhythmWrite = (id, value) => {
+        const settings = loadGlobalAppSettings();
+        if (id.startsWith('globalReplyWeight')) {
+          const index = Number(id.replace('globalReplyWeight', '')) - 1;
+          const weights = [...(settings.replyWeights || [45, 32, 15, 6, 2])];
+          weights[index] = Math.max(0, Math.min(1000, Math.round(value)));
+          settings.replyWeights = weights;
+        } else {
+          const [key, lo, hi] = replyRhythmClamp[id] || [];
+          if (!key) return false;
+          settings[key] = Math.max(lo, Math.min(hi, Math.round(value)));
+        }
+        persistGlobalAppSettings();
+        return true;
+      };
+      const replyRhythmHint = () => { try { renderGlobalReplyRhythm(); } catch (_) {} };
+      const commitReplyRhythm = (id = '', finalize = false) => {
+        if (id) { window.clearTimeout(replyRhythmTimers.get(id)); replyRhythmTimers.delete(id); }
+        if (!finalize) {
+          /* 打字途中：只写你正在编辑的那一格，别的框一个都不动，也不碰输入框 */
+          if (!id) return;
+          const value = replyRhythmValue(id);
+          if (value === null) return;
+          if (replyRhythmWrite(id, value)) replyRhythmHint();
+          return;
+        }
+        const settings = loadGlobalAppSettings();
+        Object.entries(replyRhythmClamp).forEach(([fieldId, [key, lo, hi]]) => {
+          const value = replyRhythmValue(fieldId);
+          if (value === null) return;
+          settings[key] = Math.max(lo, Math.min(hi, Math.round(value)));
+        });
+        const weights = [...(settings.replyWeights || [45, 32, 15, 6, 2])];
+        replyRhythmWeightIds.forEach((fieldId, index) => {
+          const value = replyRhythmValue(fieldId);
+          if (value === null) return;
+          weights[index] = Math.max(0, Math.min(1000, Math.round(value)));
+        });
+        if (!weights.some(value => value > 0)) { weights[0] = 45; weights[1] = 32; weights[2] = 15; weights[3] = 6; weights[4] = 2; }
+        settings.replyWeights = weights;
+        /* 秩序：最短 ≤ 最长（只抬/降另一格，你正在编辑的那格保持原样由收笔时机保证） */
+        if (Number(settings.replyMinSeconds) > Number(settings.replyMaxSeconds)) {
+          if (id === 'globalReplyMinSeconds') settings.replyMaxSeconds = settings.replyMinSeconds;
+          else settings.replyMinSeconds = settings.replyMaxSeconds;
+        }
+        if (Number(settings.groupReplyMaxMembers) > 7) settings.groupReplyMaxMembers = 7;
+        persistGlobalAppSettings();
+        replyRhythmHint();                                 // 收笔时整块回填 + 提示行刷新
+      };
+      const bindReplyRhythmInput = id => {
+        const input = document.getElementById(id);
+        if (!input || input.dataset.rhythmBound === 'true') return;
+        input.dataset.rhythmBound = 'true';
+        input.addEventListener('input', () => {
+          window.clearTimeout(replyRhythmTimers.get(id));
+          replyRhythmTimers.set(id, window.setTimeout(() => commitReplyRhythm(id, false), 420));
+        });
+        input.addEventListener('change', () => commitReplyRhythm(id, true));
+        input.addEventListener('blur', () => commitReplyRhythm(id, true));
+        input.addEventListener('keydown', event => {
+          if (event.key !== 'Enter') return;
+          event.preventDefault();
+          commitReplyRhythm(id, true);
+          input.blur();
+        });
+      };
+      Object.keys(replyRhythmClamp).forEach(bindReplyRhythmInput);
+      replyRhythmWeightIds.forEach(bindReplyRhythmInput);
+      const flushReplyRhythm = () => {
+        if (!replyRhythmTimers.size) return;
+        [...replyRhythmTimers.keys()].forEach(id => commitReplyRhythm(id, false));
+        replyRhythmTimers.clear();
+      };
+      document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushReplyRhythm(); });
+      window.addEventListener('pagehide', flushReplyRhythm);
+
       document.getElementById('globalQuoteReplyToggle')?.addEventListener('change', event => { loadGlobalAppSettings().quoteReply = event.target.checked; persistGlobalAppSettings(); showGlobalSettingsToast(event.target.checked ? '已开启引用回复' : '已关闭引用回复'); });
       document.getElementById('globalReadReceiptToggle')?.addEventListener('change', event => { loadGlobalAppSettings().readReceipt = event.target.checked; persistGlobalAppSettings(); applyGlobalReceiptState(); showGlobalSettingsToast(event.target.checked ? '已开启已读回执' : '已关闭已读回执'); });
       document.getElementById('globalReceiptStyleSelect')?.addEventListener('change', event => { loadGlobalAppSettings().receiptStyle = event.target.value === 'text' ? 'text' : 'icon'; persistGlobalAppSettings(); applyGlobalReceiptState(); });
@@ -18305,6 +19043,7 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
       applyCompanionBackground();
       scheduleCompanionPartnerJoin(activeCompanionInviteId);
       startCompanionTimer();
+      companionTalkEnter('space', currentCompanionActivity);   /* v111h */
       lucide.createIcons();
     }
 
@@ -18349,6 +19088,588 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
         stage.style.backgroundRepeat = '';
       }
     }
+
+    /* ═══════════════════════════════════════════════════════════════
+       v111h · 陪伴空间的说话区
+       ---------------------------------------------------------------
+       收起时是一枚小胶囊（露出最新一句），点开就是 ins 直播评论那种面板：
+       半透明、贴右下、往上滚。五个空间共用同一套（work / sleep / tv / eat / listen）。
+
+       节奏只认全局设置里那一组（在选择活动界面里改）：
+         companionProactiveMinMinutes / companionProactiveMaxMinutes —— TA 主动开口的间隔
+         companionReplyMinSeconds    / companionReplyMaxSeconds    —— 你说话后 TA 回你的延迟
+       话术沿用该角色的字卡池（含「连词成句」，出口按纯文本处理）。
+
+       记录默认不留：离开空间时问一次要不要收进 BOX，面板里也随时能点「收进 BOX」。
+       ═══════════════════════════════════════════════════════════════ */
+    const COMPANION_TALK_LABELS = { work: '一起工作', sleep: '一起睡觉', tv: '一起看电视', eat: '一起吃饭', listen: '一起听' };
+    /* 这一块在主聊天脚本里，没有 PHONE 模块的 esc —— 自带一个，避免渲染时抛错。 */
+    const companionTalkEsc = value => String(value ?? '').replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+    const COMPANION_TALK_FALLBACK = ['我在这儿呢。', '你先忙，我在旁边陪着。', '刚刚走神了一下，想起你了。'];
+    let companionTalk = null;
+
+    function companionTalkSettings() {
+      const s = getGlobalAppSettings();
+      const pMin = Math.max(1, Math.min(180, Number(s.companionProactiveMinMinutes) || 2));
+      const pMax = Math.max(pMin, Math.min(360, Number(s.companionProactiveMaxMinutes) || 8));
+      const rMin = Math.max(1, Math.min(600, Number(s.companionReplyMinSeconds) || 20));
+      const rMax = Math.max(rMin, Math.min(1800, Number(s.companionReplyMaxSeconds) || 90));
+      return { pMin, pMax, rMin, rMax };
+    }
+
+    function companionTalkRhythmHint() {
+      const { pMin, pMax, rMin, rMax } = companionTalkSettings();
+      const span = (a, b, unit) => a === b ? `${a} ${unit}` : `${a} ~ ${b} ${unit}`;
+      return `现在 ≈ 每 ${span(pMin, pMax, '分钟')}主动说一次；你说话后 ${span(rMin, rMax, '秒')}回你`;
+    }
+
+    /* 活动选择界面里的那一小块设置：两处选择界面共用同一个绑定。
+       ⚠ v111j8：旧写法是「输入 → 420ms 抖动 → 落盘 → 按设置把四个框全部重写」。
+       用户把「回我一句」上限填成 3（下限还是 20）时，抖动一落就被夹成 20 再写回输入框 ——
+       看着就是数字自己乱跳、根本填不进去。现在的规矩：
+       ① 正在编辑的那个框永远不覆盖（fill 跳过焦点框 / 刚编辑过的框）；
+       ② 秩序修正（下限 ≤ 上限）只动「另一个框」，且以你正在编辑的那个为准；
+       ③ 清空准备重填时不猜、不落盘，不会被默认值顶回来；
+       ④ 结束编辑（失焦 / 回车）才规范化回填；另外刷新、切后台、关页面之前强制落盘，
+          所以「打完马上刷新」也不会丢。 */
+    let companionRhythmFlush = null;   // 最近绑定的那块设置：离开页面时用它把没落盘的编辑补写
+
+    function bindCompanionRhythm(container) {
+      const block = container?.querySelector('.companion-rhythm');
+      if (!block || block.dataset.bound === 'true') return;
+      block.dataset.bound = 'true';
+      const KEYS = ['proactiveMin', 'proactiveMax', 'replyMin', 'replyMax'];
+      const RANGE = { proactiveMin: [1, 180], proactiveMax: [1, 360], replyMin: [1, 600], replyMax: [1, 1800] };
+      const FALLBACK = { proactiveMin: 2, proactiveMax: 8, replyMin: 20, replyMax: 90 };
+      const SETTING_KEY = {
+        proactiveMin: 'companionProactiveMinMinutes', proactiveMax: 'companionProactiveMaxMinutes',
+        replyMin: 'companionReplyMinSeconds', replyMax: 'companionReplyMaxSeconds'
+      };
+      const pick = key => block.querySelector(`[data-companion-rhythm="${key}"]`);
+      const hint = block.querySelector('.companion-rhythm__hint');
+      const refreshHint = () => { if (hint) hint.textContent = companionTalkRhythmHint(); };
+      const clamp = (value, key) => {
+        const [lo, hi] = RANGE[key];
+        const raw = Number(value);
+        return Math.max(lo, Math.min(hi, Number.isFinite(raw) ? Math.round(raw) : lo));
+      };
+      const currentValues = () => {
+        const settings = getGlobalAppSettings();
+        const out = {};
+        KEYS.forEach(key => { out[key] = clamp(Number(settings[SETTING_KEY[key]]) || FALLBACK[key], key); });
+        return out;
+      };
+      const fill = (skip = '') => {
+        const map = currentValues();
+        KEYS.forEach(key => {
+          if (key === skip) return;
+          const input = pick(key);
+          if (!input || input === document.activeElement) return;   // 焦点所在的那个框绝不抢
+          input.value = String(map[key]);
+        });
+        refreshHint();
+      };
+      let editingKey = '';
+      let timer = null;
+      let lastEditAt = 0;
+      const typedValues = {};   // 刚敲进去的原文：万一界面被重渲染（比如刚好收到一封邀请），也不至于把这次编辑丢掉
+      const commit = (finalize = false) => {
+        window.clearTimeout(timer);
+        timer = null;
+        const settings = loadGlobalAppSettings();
+        const now = currentValues();
+        const read = key => {
+          const input = pick(key);
+          const raw = String(input ? input.value : (typedValues[key] ?? '')).trim();
+          if (raw === '') return null;                     // 清空中 / 拿不到：不猜，保留原值
+          const value = Number(raw);
+          return Number.isFinite(value) && value > 0 ? value : null;
+        };
+        const edited = editingKey;
+        if (!finalize) {
+          /* 打字途中：只写你正在编辑的那一格。别的框一个都不动 ——
+             上下限的秩序修正留到收笔（失焦/回车/离开页面），
+             否则「上限想填 30、先打了 3」这种中间态会把下限也拖下去。 */
+          if (edited) {
+            const value = read(edited);
+            if (value !== null) settings[SETTING_KEY[edited]] = clamp(value, edited);
+            persistGlobalAppSettings();
+            if (companionTalk) companionTalkRescheduleAll();
+            refreshHint();
+          }
+          return;
+        }
+        let proactiveMin = clamp(read('proactiveMin') ?? now.proactiveMin, 'proactiveMin');
+        let proactiveMax = clamp(read('proactiveMax') ?? now.proactiveMax, 'proactiveMax');
+        let replyMin = clamp(read('replyMin') ?? now.replyMin, 'replyMin');
+        let replyMax = clamp(read('replyMax') ?? now.replyMax, 'replyMax');
+        /* 收笔时才排秩序（下限 ≤ 上限）：只抬/降另一格，你编辑的那格保持原样 */
+        if (proactiveMin > proactiveMax) {
+          if (edited === 'proactiveMax') proactiveMin = clamp(proactiveMax, 'proactiveMin');
+          else proactiveMax = clamp(proactiveMin, 'proactiveMax');
+        }
+        if (replyMin > replyMax) {
+          if (edited === 'replyMax') replyMin = clamp(replyMax, 'replyMin');
+          else replyMax = clamp(replyMin, 'replyMax');
+        }
+        settings.companionProactiveMinMinutes = proactiveMin;
+        settings.companionProactiveMaxMinutes = proactiveMax;
+        settings.companionReplyMinSeconds = replyMin;
+        settings.companionReplyMaxSeconds = replyMax;
+        persistGlobalAppSettings();
+        if (companionTalk) companionTalkRescheduleAll();   // 正在空间里的话，新节奏马上生效
+        editingKey = '';
+        fill();
+      };
+      const schedule = () => {
+        window.clearTimeout(timer);
+        timer = window.setTimeout(() => commit(false), 420);
+      };
+      KEYS.forEach(key => {
+        const input = pick(key);
+        if (!input) return;
+        input.addEventListener('input', () => { editingKey = key; lastEditAt = Date.now(); typedValues[key] = String(input.value); schedule(); });
+        input.addEventListener('change', () => { editingKey = key; commit(true); });
+        input.addEventListener('blur', () => { lastEditAt = Date.now(); if (editingKey === key) commit(true); });
+        input.addEventListener('keydown', event => {
+          if (event.key !== 'Enter') return;
+          event.preventDefault();
+          commit(true);
+          input.blur();
+        });
+      });
+      /* 还没落盘就刷新 / 切后台 / 关页面：走之前把这次编辑补上 */
+      companionRhythmFlush = () => { if (timer !== null || editingKey) commit(true); };
+      /* 别人（收到邀请、昵称刷新…）要重画这一屏之前先问一句：用户正在填这四个框吗？
+         正在填就别把信封翻走 —— 手指还在键盘上，表单被人抽掉是最讨厌的一种体验。 */
+      window.isCompanionRhythmEditing = () => {
+        const active = document.activeElement;
+        if (active && typeof active.closest === 'function' && active.closest('.companion-rhythm')) return true;
+        if (timer !== null || editingKey) return true;
+        return Date.now() - lastEditAt < 1500;
+      };
+      fill();
+      showGlobalSettingsToast?.('陪伴空间的节奏已读取');
+    }
+
+    /* 离开页面 / 切后台：把陪伴节奏里还没落盘的那次编辑补写（一次绑定，全局一份） */
+    window.addEventListener('pagehide', () => companionRhythmFlush?.());
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') companionRhythmFlush?.(); });
+
+    function companionTalkHost(kind) {
+      if (kind === 'listen') return document.querySelector('#listenTogetherModal .listen-together-stage');
+      return document.getElementById('companionSpaceStage');
+    }
+
+    function companionTalkRole() {
+      const handle = String(window.currentPartnerHandle || currentPartnerHandle || '').trim();
+      return handle ? getRoleRecord(handle) : null;
+    }
+
+    function companionTalkActivityLabel(activity) {
+      return COMPANION_TALK_LABELS[activity] || COMPANION_TALK_LABELS.work;
+    }
+
+    function companionTalkTimeLabel(at) {
+      const d = new Date(at);
+      return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    }
+
+    function companionTalkRender() {
+      if (!companionTalk) return;
+      const { root, kind } = companionTalk;
+      const list = root.querySelector('.companion-talk__list');
+      const peek = root.querySelector('.companion-talk__peek i');
+      const state = companionTalk;
+      if (list) {
+        if (!state.messages.length) {
+          list.innerHTML = `<div class="companion-talk__empty">${kind === 'listen' ? '一边听一边说点什么' : '想说什么就说，对方也在'}</div>`;
+        } else {
+          const role = companionTalkRole();
+          const mineName = '我';
+          const theirName = role ? getRoleDisplayNameForApp(role) : (window.currentPartnerName || '对方');
+          list.innerHTML = state.messages.map(message => {
+            const mine = message.who === 'me';
+            const name = mine ? mineName : theirName;
+            /* 评论流：只有名字和一句话，没有头像框、没有气泡 */
+            return `<div class="companion-talk__row${mine ? ' mine' : ''}"><b class="companion-talk__name">${companionTalkEsc(name)}</b><span class="companion-talk__bubble">${companionTalkEsc(message.text)}</span></div>`;
+          }).join('');
+        }
+        list.scrollTop = list.scrollHeight;
+      }
+      if (peek) {
+        const last = state.messages[state.messages.length - 1];
+        peek.textContent = last ? `${last.who === 'me' ? '我：' : ''}${last.text}`.slice(0, 40) : '一起说说话';
+        peek.closest('.companion-talk__peek')?.classList.toggle('is-idle', !last);
+      }
+      const count = root.querySelector('.companion-talk__count');
+      if (count) count.textContent = state.messages.length ? `${state.messages.length} 句` : 'LIVE';
+    }
+
+    function companionTalkFlash() {
+      if (!companionTalk || companionTalk.open) return;
+      const { root } = companionTalk;
+      root.classList.add('is-flash');
+      window.setTimeout(() => root.classList.remove('is-flash'), 1700);
+    }
+
+    function companionTalkClearTimers() {
+      if (!companionTalk) return;
+      (companionTalk.timers || []).forEach(timer => window.clearTimeout(timer));
+      companionTalk.timers = [];
+    }
+
+    function companionTalkRescheduleAll() {
+      if (!companionTalk) return;
+      companionTalkClearTimers();
+      companionTalkScheduleProactive();
+    }
+
+    function companionTalkPush(who, text) {
+      if (!companionTalk || !String(text || '').trim()) return false;
+      companionTalk.messages.push({ id: `talk-${Date.now()}-${Math.random().toString(16).slice(2, 6)}`, who, text: String(text).trim().slice(0, 120), at: Date.now() });
+      companionTalkRender();
+      return true;
+    }
+
+    /* TA 主动开口 */
+    function companionTalkScheduleProactive() {
+      if (!companionTalk) return;
+      const { pMin, pMax } = companionTalkSettings();
+      const delay = (pMin * 60000) + Math.random() * Math.max(1000, (pMax - pMin) * 60000);
+      const timer = window.setTimeout(() => {
+        if (!companionTalk) return;
+        companionTalkPartnerSay();
+        companionTalkScheduleProactive();
+      }, Math.max(3000, delay));
+      companionTalk.timers.push(timer);
+    }
+
+    /* 我方说话后 TA 回一句 */
+    function companionTalkScheduleReply() {
+      if (!companionTalk) return;
+      const { rMin, rMax } = companionTalkSettings();
+      const delay = (rMin * 1000) + Math.random() * Math.max(500, (rMax - rMin) * 1000);
+      // 已经排了主动开口就先撤掉：TA 刚回过你，不需要紧接着又主动说一句
+      companionTalk.timers.forEach(timer => window.clearTimeout(timer));
+      companionTalk.timers = [];
+      const timer = window.setTimeout(() => {
+        if (!companionTalk) return;
+        companionTalkPartnerSay();
+        companionTalkScheduleProactive();
+      }, Math.max(1200, delay));
+      companionTalk.timers.push(timer);
+    }
+
+    function companionTalkPartnerSay() {
+      if (!companionTalk) return false;
+      const role = companionTalkRole();
+      // 这几类状态下 TA 不该说话
+      if (!role) return false;
+      if (typeof isRoleTemporarilyAway === 'function' && isRoleTemporarilyAway(role)) return false;
+      let text = '';
+      try { text = String(stripGlyphMark(pickRoleReplyText(role, companionTalk.messages.filter(m => m.who === 'them').map(m => m.text))) || '').trim(); } catch (_) { text = ''; }
+      if (!text) text = COMPANION_TALK_FALLBACK[Math.floor(Math.random() * COMPANION_TALK_FALLBACK.length)];
+      const ok = companionTalkPush('them', text);
+      if (ok) { companionTalkFlash(); try { playGlobalSound('message'); } catch (_) {} }
+      return ok;
+    }
+
+    /* ═══ 说话区可以随意拖：收起那行字、展开后的标题栏都能拖；位置按空间各记各的 ═══ */
+    const COMPANION_TALK_POS_KEY = 'mobius.companionTalk.pos.v1';
+    function companionTalkPosStore() {
+      try {
+        const raw = localStorage.getItem(COMPANION_TALK_POS_KEY);
+        const parsed = raw ? JSON.parse(raw) : null;
+        return parsed && typeof parsed === 'object' ? parsed : {};
+      } catch (_) { return {}; }
+    }
+    function companionTalkSaveSlot(slot, spot) {
+      try {
+        const store = companionTalkPosStore();
+        store[slot] = spot;
+        localStorage.setItem(COMPANION_TALK_POS_KEY, JSON.stringify(store));
+      } catch (_) {}
+    }
+    function companionTalkPosKey() {
+      if (!companionTalk) return 'work';
+      return companionTalk.kind === 'listen' ? 'listen' : (companionTalk.activity || 'work');
+    }
+    function companionTalkClamp(root, host, x, y) {
+      const hostRect = host.getBoundingClientRect();
+      const width = root.offsetWidth || 0;
+      const height = root.offsetHeight || 0;
+      const maxX = Math.max(6, hostRect.width - width - 6);
+      const maxY = Math.max(6, hostRect.height - height - 6);
+      return {
+        x: Math.round(Math.min(Math.max(6, x), maxX)),
+        y: Math.round(Math.min(Math.max(6, y), maxY))
+      };
+    }
+    function companionTalkPlace(root, host, x, y, remember) {
+      if (!root || !host) return null;
+      const spot = companionTalkClamp(root, host, x, y);
+      root.classList.add('has-pos');
+      root.style.left = `${spot.x}px`;
+      root.style.top = `${spot.y}px`;
+      if (remember) companionTalkSaveSlot(companionTalkPosKey(), spot);
+      return spot;
+    }
+    function companionTalkRestorePos() {
+      if (!companionTalk?.root || !companionTalk?.host) return;
+      const saved = companionTalkPosStore()[companionTalkPosKey()];
+      if (!saved || !Number.isFinite(saved.x) || !Number.isFinite(saved.y)) return;
+      companionTalkPlace(companionTalk.root, companionTalk.host, saved.x, saved.y, false);
+    }
+    function companionTalkReclamp() {
+      const root = companionTalk?.root;
+      const host = companionTalk?.host;
+      if (!root || !host || !root.classList.contains('has-pos')) return;
+      const x = parseFloat(root.style.left) || 0;
+      const y = parseFloat(root.style.top) || 0;
+      companionTalkPlace(root, host, x, y, true);
+    }
+    window.addEventListener('resize', companionTalkReclamp);
+    window.addEventListener('orientationchange', () => window.setTimeout(companionTalkReclamp, 120));
+
+    function companionTalkSetupDrag() {
+      const root = companionTalk?.root;
+      const host = companionTalk?.host;
+      if (!root || !host) return;
+      const handles = [root.querySelector('.companion-talk__peek'), root.querySelector('.companion-talk__head')].filter(Boolean);
+      handles.forEach(handle => {
+        let drag = null;
+        handle.addEventListener('pointerdown', event => {
+          if (event.pointerType === 'mouse' && event.button !== 0) return;
+          /* 标题栏里的按钮（收进 BOX / 收起）和输入区不参与拖拽 */
+          if (event.target.closest('.companion-talk__head button')) return;
+          const rootRect = root.getBoundingClientRect();
+          const hostRect = host.getBoundingClientRect();
+          drag = {
+            id: event.pointerId,
+            startX: event.clientX,
+            startY: event.clientY,
+            x: rootRect.left - hostRect.left,
+            y: rootRect.top - hostRect.top,
+            moved: false
+          };
+          try { handle.setPointerCapture(event.pointerId); } catch (_) {}
+        });
+        handle.addEventListener('pointermove', event => {
+          if (!drag || event.pointerId !== drag.id) return;
+          const dx = event.clientX - drag.startX;
+          const dy = event.clientY - drag.startY;
+          if (!drag.moved && Math.hypot(dx, dy) < 5) return;
+          if (!drag.moved) { drag.moved = true; root.classList.add('is-dragging'); }
+          event.preventDefault();
+          companionTalkPlace(root, host, drag.x + dx, drag.y + dy, false);
+        });
+        const finish = event => {
+          if (!drag || event.pointerId !== drag.id) return;
+          const moved = drag.moved;
+          drag = null;
+          root.classList.remove('is-dragging');
+          try { handle.releasePointerCapture(event.pointerId); } catch (_) {}
+          if (moved) {
+            const x = parseFloat(root.style.left) || 0;
+            const y = parseFloat(root.style.top) || 0;
+            companionTalkPlace(root, host, x, y, true);
+            /* 刚才是拖动：紧接着那一下 click 要吞掉，否则松手就顺手展开了 */
+            root.dataset.talkDragged = '1';
+            window.setTimeout(() => { delete root.dataset.talkDragged; }, 340);
+          }
+          /* 没挪动就不管：让随后的 click 去展开（合成的 click 也走这条路） */
+        };
+        handle.addEventListener('pointerup', finish);
+        handle.addEventListener('pointercancel', finish);
+      });
+      companionTalkRestorePos();
+    }
+
+    function companionTalkToggle(force) {
+      if (!companionTalk) return;
+      const open = force === undefined ? !companionTalk.open : Boolean(force);
+      companionTalk.open = open;
+      companionTalk.root.classList.toggle('is-open', open);
+      if (open) {
+        companionTalkRender();
+        window.setTimeout(() => companionTalk?.root.querySelector('.companion-talk__compose input')?.focus({ preventScroll: true }), 60);
+      }
+      /* 展开/收起会改变高度：拖过位置的，重新夹回房间里 */
+      window.setTimeout(companionTalkReclamp, 0);
+      try { lucide.createIcons(); } catch (_) {}
+    }
+
+    function companionTalkSend() {
+      if (!companionTalk) return;
+      const input = companionTalk.root.querySelector('.companion-talk__compose input');
+      const text = String(input?.value || '').trim();
+      if (!text) { showChatToast('先写一句再发'); return; }
+      if (input) input.value = '';
+      companionTalkPush('me', text);
+      companionTalkScheduleReply();
+    }
+
+    function companionTalkSessionKey() {
+      if (!companionTalk) return '';
+      return `companion-space:${companionTalk.roleId || 'unknown'}:${companionTalk.sessionId}`;
+    }
+
+    function companionTalkSaveToBox(options = {}) {
+      if (!companionTalk || !companionTalk.messages.length) { if (!options.silent) showChatToast('这次还没有可收藏的内容'); return false; }
+      const entries = window.BoxTimeline?.loadEntries?.();
+      if (!Array.isArray(entries)) { if (!options.silent) showChatToast('BOX 尚未就绪，请先打开一次 BOX'); return false; }
+      const sourceKey = companionTalkSessionKey();
+      if (entries.some(entry => entry?.sourceKey === sourceKey)) { if (!options.silent) showChatToast('这次对话已经在 BOX 里了'); return false; }
+      const role = companionTalkRole();
+      const name = role ? getRoleDisplayNameForApp(role) : (window.currentPartnerName || '对方');
+      const label = companionTalkActivityLabel(companionTalk.activity);
+      const now = Date.now();
+      const messages = companionTalk.messages.map(message => ({
+        id: message.id,
+        direction: message.who === 'me' ? 'outgoing' : 'incoming',
+        senderId: message.who === 'me' ? '' : (companionTalk.roleId || ''),
+        sender: message.who === 'me' ? (getDefaultChatSelfName?.() || '我') : name,
+        type: 'text',
+        text: message.text,
+        createdAt: message.at,
+        timeLabel: companionTalkTimeLabel(message.at),
+        mediaRef: '', quote: '', duration: 0
+      }));
+      entries.push({
+        id: `box-companion-${now}-${Math.random().toString(16).slice(2, 8)}`,
+        kind: 'chat-snapshot',
+        occurredAt: companionTalk.startedAt || now,
+        createdAt: now,
+        updatedAt: now,
+        title: `${label} · 陪伴空间`,
+        tags: ['陪伴空间', label].filter(Boolean),
+        sourceKey,
+        note: '',
+        conversation: {
+          type: 'direct',
+          id: companionTalk.roleId || '',
+          name,
+          initials: role?.initials || String(name).slice(0, 2),
+          avatar: String(role?.avatarImage || role?.avatar || '')
+        },
+        snapshot: { anchorMessageId: messages[0]?.id || '', messageIds: messages.map(item => item.id), messages, previewRef: '', note: '' }
+      });
+      const saved = window.BoxTimeline?.saveEntries?.(entries);
+      const ok = Array.isArray(saved) && saved.some(entry => entry?.sourceKey === sourceKey);
+      if (!ok) { if (!options.silent) showChatToast('收藏失败，请稍后再试'); return false; }
+      try { window.BoxTimeline?.render?.(); } catch (_) {}
+      if (!options.silent) showChatToast('已收进 BOX');
+      return true;
+    }
+
+    /* 离开空间前问一次：要不要把刚才说的话收进 BOX */
+    function companionTalkRequestLeave() {
+      if (!companionTalk || !companionTalk.messages.length || companionTalk.asked) return false;
+      const { root, host, kind } = companionTalk;
+      if (!host || !root) return false;
+      companionTalk.asked = true;
+      host.querySelector('.companion-talk-sheet')?.remove();
+      const sheet = document.createElement('div');
+      sheet.className = 'companion-talk-sheet';
+      sheet.innerHTML = `<div class="companion-talk-sheet__card">
+        <span>LEAVING THE ROOM</span>
+        <strong>把刚才说的话收进 BOX 吗？</strong>
+        <p>这次在「${companionTalkEsc(companionTalkActivityLabel(companionTalk.activity))}」里一共说了 ${companionTalk.messages.length} 句。收进 BOX 后可以随时回看；不收就随空间一起消失。</p>
+        <div class="companion-talk-sheet__actions">
+          <button type="button" class="keep">收进 BOX</button>
+          <button type="button" data-talk-sheet="skip">不用了</button>
+        </div>
+      </div>`;
+      host.appendChild(sheet);
+      sheet.addEventListener('click', event => {
+        const keep = event.target.closest('.keep');
+        const skip = event.target.closest('[data-talk-sheet="skip"]');
+        if (!keep && !skip) return;
+        sheet.remove();
+        if (keep) companionTalkSaveToBox();
+        companionTalkLeave();
+        if (kind === 'listen') closeListenTogether({ forceClose: true }); else closeCompanionSpace();
+      });
+      return true;
+    }
+
+    function companionTalkEnter(kind, activity) {
+      companionTalkLeave();
+      const host = companionTalkHost(kind);
+      if (!host) return;
+      companionTalk = {
+        kind,
+        activity: activity || (kind === 'listen' ? 'listen' : currentCompanionActivity),
+        roleId: String(window.currentPartnerHandle || currentPartnerHandle || '').trim(),
+        sessionId: `${Date.now()}`,
+        startedAt: Date.now(),
+        messages: [],
+        timers: [],
+        open: false,
+        asked: false,
+        host
+      };
+      const root = document.createElement('div');
+      root.className = 'companion-talk';
+      root.innerHTML = `<button class="companion-talk__peek" type="button" aria-label="说话区"><i></i></button>
+        <div class="companion-talk__panel">
+          <div class="companion-talk__head">
+            <span class="companion-talk__grip" aria-hidden="true">⠿</span>
+            <strong>一起说说话</strong>
+            <small class="companion-talk__count">LIVE</small>
+            <button type="button" data-talk-save="1">收进 BOX</button>
+            <button type="button" data-talk-close="1" aria-label="收起">收起</button>
+          </div>
+          <div class="companion-talk__list"></div>
+          <div class="companion-talk__compose">
+            <input type="text" maxlength="120" placeholder="说点什么…" autocomplete="off">
+            <button class="companion-talk__send" type="button" aria-label="发送">↑</button>
+          </div>
+        </div>`;
+      host.appendChild(root);
+      companionTalk.root = root;
+      /* 收起那行字：点一下 = 展开（拖拽在 companionTalkSetupDrag 里处理，拖完那一下会被吞掉） */
+      root.querySelector('.companion-talk__peek')?.addEventListener('click', () => {
+        if (root.dataset.talkDragged === '1') return;
+        companionTalkToggle(true);
+      });
+      root.querySelector('[data-talk-close]')?.addEventListener('click', () => companionTalkToggle(false));
+      root.querySelector('[data-talk-save]')?.addEventListener('click', () => companionTalkSaveToBox());
+      root.querySelector('.companion-talk__send')?.addEventListener('click', companionTalkSend);
+      const input = root.querySelector('.companion-talk__compose input');
+      input?.addEventListener('keydown', event => {
+        event.stopPropagation();
+        if (event.key === 'Enter') { event.preventDefault(); companionTalkSend(); }
+      });
+      companionTalkRender();
+      companionTalkSetupDrag();
+      /* 开场不塞固定台词：TA 什么时候先开口，完全由「主动开口」那一组节奏决定。 */
+      companionTalkScheduleProactive();
+    }
+
+    function companionTalkLeave() {
+      if (!companionTalk) return;
+      companionTalkClearTimers();
+      companionTalk.host?.querySelector('.companion-talk-sheet')?.remove();
+      companionTalk.root?.remove();
+      companionTalk = null;
+    }
+
+    /* 供内联 onclick 使用：先问 BOX，再真的关 */
+    window.companionTalkRequestLeave = companionTalkRequestLeave;
+    window.companionSpaceExit = function () {
+      if (window.companionTalkRequestLeave?.() === true) return;
+      closeCompanionSpace();
+    };
+    window.companionEndSession = function () {
+      if (window.companionTalkRequestLeave?.() === true) return;
+      endCompanionSession();
+    };
+    window.listenSpaceExit = function () {
+      if (window.companionTalkRequestLeave?.() === true) return;
+      closeListenTogether({ forceClose: true });
+    };
 
     function updateCompanionTimerDisplay() {
       const timer = document.getElementById('companionTimerDisplay');
@@ -18448,6 +19769,7 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
       window.clearInterval(companionTimer);
       companionTimer = null;
       companionStartedAt = 0;
+      companionTalkLeave();   /* v111h */
     }
 
     function resetCompanionBackground() {
@@ -18522,10 +19844,12 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
       const partner = document.getElementById('listenPartnerAvatar');
       if (partner) setChatAvatarVisual(partner, currentPartnerInitials, currentPartnerVisual);
       renderListenTogether();
+      companionTalkEnter('listen', 'listen');   /* v111h */
       lucide.createIcons();
     }
 
     function closeListenTogether(options = {}) {
+      companionTalkLeave();   /* v111h：收起/离开一起听都结束这次说话 */
       const preservePlayback = options.preservePlayback === true;
       const forceClose = options.forceClose === true;
       const modal = document.getElementById('listenTogetherModal');
@@ -19306,6 +20630,12 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
                 <button class="invite-envelope__activity" type="button" data-invite-activity="listen"><span class="invite-envelope__icon"><i data-lucide="disc-3" size="11"></i></span><span><strong>一起听</strong><small>进入共享黑胶房间</small></span><em class="invite-envelope__stamp">✓</em></button>
               </div>
               <label class="invite-envelope__note-wrap"><span>写给对方的话</span><textarea class="invite-envelope__note" id="featureInviteNote" maxlength="80" placeholder="留一句只给对方的碎碎念（可选）"></textarea><small><b id="featureInviteNoteCount">0</b>/80</small></label>
+            <div class="companion-rhythm">
+              <div class="companion-rhythm__head"><strong>对方的节奏</strong><small>进入陪伴空间后，TA 主动说话与回你的间隔（五个空间共用）</small></div>
+              <div class="companion-rhythm__row"><span>主动开口</span><input data-companion-rhythm="proactiveMin" type="number" min="1" max="180" step="1"><i>分</i><em>~</em><input data-companion-rhythm="proactiveMax" type="number" min="1" max="360" step="1"><i>分</i></div>
+              <div class="companion-rhythm__row"><span>回我一句</span><input data-companion-rhythm="replyMin" type="number" min="1" max="600" step="1"><i>秒</i><em>~</em><input data-companion-rhythm="replyMax" type="number" min="1" max="1800" step="1"><i>秒</i></div>
+              <small class="companion-rhythm__hint"></small>
+            </div>
               <div class="invite-envelope__footer"><button class="invite-envelope__history" type="button" onclick="openChatFeature('invite-history')">活动记录</button><button class="invite-envelope__send" type="button" data-feature-send="invite">贴好邮票并寄出 ✉︎</button></div>
             </div>
           </div>`;
@@ -19318,6 +20648,7 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
         const featureInviteNote = body.querySelector('#featureInviteNote');
         const featureInviteNoteCount = body.querySelector('#featureInviteNoteCount');
         featureInviteNote?.addEventListener('input', () => { if (featureInviteNoteCount) featureInviteNoteCount.textContent = String(featureInviteNote.value.length); });
+        bindCompanionRhythm(body);   /* v111h */
       } else if (type === 'invite-history') {
         renderInviteHistoryFeature();
       } else if (type === 'check') {
@@ -20242,7 +21573,7 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
         scheduleDirectCheckReply(record, handle);
         return;
       }
-      let replyText = pickRoleReplyText(role, []);
+      let replyText = stripGlyphMark(pickRoleReplyText(role, []));   /* v111：查岗回执是纯文本 */
       if (!String(replyText || '').trim()) replyText = '收到，已报备。';
       record.kind = 'question';
       record.status = 'replied';
@@ -21018,7 +22349,7 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
        取值即清空 —— 否则这段文字会被随后的 sendChatMessage 再发一遍。 */
     /* 诊断开关：在控制台执行 localStorage.setItem('mobius:combo-debug','1') 后刷新，
        发图片/表情时会 toast 出取值过程，便于定位真机上「文字没合并」的环节。 */
-    window.MOBIUS_BUILD = 'v105-schedsave';
+    window.MOBIUS_BUILD = 'v111-booktab';
     function comboDebug(msg) {
       try {
         if (localStorage.getItem('mobius:combo-debug') !== '1') return;
@@ -21484,6 +22815,13 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
         const index=readDreamJSON(CHAT_HISTORY_SHARD_INDEX_KEY,[]);
         if (snapshot?.lines) { success = writeDreamJSON(chatHistoryShardKey(key), snapshot) && success; if(!index.includes(key)) writeDreamJSON(CHAT_HISTORY_SHARD_INDEX_KEY,[...index,key]); }
         else { removeDreamStorage(chatHistoryShardKey(key)); writeDreamJSON(CHAT_HISTORY_SHARD_INDEX_KEY,index.filter(item=>item!==key)); }
+        /* ⚠ v109：这一版快照刚从 localStorage 落地。如果 #chatThreadBody 里装的正是这个房间的 DOM，
+           就记下「DOM 已对齐到这一版」；否则（房间在后台、只写快照的那种）坚决不记，
+           免得下一次进房间时 isChatThreadDomBehindSnapshot 误判成「已经对齐」而不补渲染。 */
+        if (success && isChatThreadDomForHandle(key)) {
+          const markerBody = document.getElementById('chatThreadBody');
+          if (markerBody) markerBody.dataset.renderedSnapshotAt = String(Number(snapshot?.updatedAt) || 0);
+        }
       } else {
         const currentKeys=new Set(Object.keys(state)); const oldIndex=readDreamJSON(CHAT_HISTORY_SHARD_INDEX_KEY,[]);
         (Array.isArray(oldIndex)?oldIndex:[]).forEach(key=>{if(!currentKeys.has(key))removeDreamStorage(chatHistoryShardKey(key));});
@@ -21540,8 +22878,27 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
       return `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')} ${clock}`;
     }
 
+    /* KOMO 相关卡片（礼物 / 代买 / 代付 / 流水分卡 …）不显示时间，也不显示已读回执。
+       三层一起挡：创建时抹掉 meta、恢复历史时抹掉、回执状态更新时跳过。 */
+    function isKomoCardChatLine(line) {
+      if (!line?.classList?.contains?.('chat-message-line')) return false;
+      /* ORDER 的流水卡（点单 / 配送进度 / 送达 / 喝完了 / 送人）走的是同一套卡，
+         卡号前缀是 order-*，这里一并认下来。 */
+      if (String(line.dataset.komoFlowId || '').startsWith('order')) return true;
+      if (line.dataset.komoOrderId || line.dataset.komoRequestId || line.dataset.komoPayRequestId) return true;
+      const content = line.querySelector(':scope > .chat-message-content');
+      if (!content) return false;
+      return [...content.children].some(node => /(^|\s)chat-komo-/.test(String(node.className || ''))
+        || String(node.dataset?.src || '') === 'order');
+    }
+    function stripKomoCardMeta(line) {
+      line?.querySelector(':scope > .chat-message-content > .chat-message-meta')?.remove();
+      return true;
+    }
+
     function stampChatMessageLine(line) {
       if (!line?.classList.contains('chat-message-line')) return;
+      if (isKomoCardChatLine(line)) { stripKomoCardMeta(line); return; }
       if (!Number(line.dataset.createdAt)) line.dataset.createdAt = String(Date.now());
       const meta = line.querySelector('.chat-message-meta');
       if (!meta) return;
@@ -21653,7 +23010,13 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
         ['check', line.querySelector('.chat-check-bubble')?.dataset.checkId],
         ['invite', line.querySelector('.chat-invite-bubble')?.dataset.inviteId],
         ['komo-order', line.dataset.komoOrderId || line.querySelector('[data-komo-order-id]')?.dataset.komoOrderId],
-        ['komo-request', line.dataset.komoRequestId || line.querySelector('[data-komo-request-id]')?.dataset.komoRequestId]
+        ['komo-request', line.dataset.komoRequestId || line.querySelector('[data-komo-request-id]')?.dataset.komoRequestId],
+        // ⚠ v109：代付请求卡和代付结果卡共用同一个 task id（都写在 data-komo-pay-request-id 上），
+        // 所以必须按气泡类型分开登记身份，否则两者会被当成同一张卡互相吃掉、只剩其中一张。
+        // 不登记身份的老病根与转账卡相同：历史清洗去重 / 删除记忆 / DOM 兜底去重三套机制同时失效，
+        // 卡会重复出现（用户实测过 count:2），删掉也记不住、下次进房间又回来。
+        ['komo-pay-request', line.querySelector('.chat-komo-pay-request') ? line.dataset.komoPayRequestId : ''],
+        ['komo-pay-result', line.querySelector('.chat-komo-pay-result') ? line.dataset.komoPayRequestId : '']
       ];
       const found = candidates.find(([, id]) => String(id || '').trim());
       return found ? `${found[0]}:${String(found[1])}` : '';
@@ -21707,7 +23070,7 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
     function dedupeChatSpecialCardsInDom(body) {
       if (!body) body = document.getElementById('chatThreadBody');
       if (!body) return 0;
-      const SPECIAL_BUBBLE_SELECTOR = '.chat-red-envelope-bubble,.chat-transfer-bubble,.chat-invite-bubble,.chat-decision-bubble,.chat-check-bubble,[data-komo-order-id],[data-komo-request-id]';
+      const SPECIAL_BUBBLE_SELECTOR = '.chat-red-envelope-bubble,.chat-transfer-bubble,.chat-invite-bubble,.chat-decision-bubble,.chat-check-bubble,[data-komo-order-id],[data-komo-request-id],.chat-komo-pay-request,.chat-komo-pay-result';
       const seen = new Map();
       let removed = 0;
       body.querySelectorAll(':scope > .chat-message-line').forEach(line => {
@@ -21852,6 +23215,9 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
       // outerHTML 不保存事件监听器；恢复历史时重新升级并绑定所有语音气泡。
       body.querySelectorAll('.chat-voice-bubble').forEach(bindChatVoiceBubbleInteractions);
       dedupeChatSpecialCardsInDom(body);
+      // v109：记录「DOM 已经对上快照的哪个版本」。saveChatHistoryForHandle 成功时也会刷新它，
+      // isChatThreadDomBehindSnapshot 靠这个差值判断 DOM 是否落后。
+      body.dataset.renderedSnapshotAt = String(Number(snapshot.updatedAt) || 0);
       window.ensureChatHistoryLoadEarlierButton?.(key);
       lucide.createIcons();
     }
@@ -21965,6 +23331,8 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
 
     let chatInAppBannerTimer = null;
     let chatInAppBannerHandle = '';
+    /* v111j5：页面在后台时横幅弹不出来 —— 记下最近一次错过的，回到前台补弹 */
+    let hiddenArrivalNotice = null;
 
     function countPendingChatIncoming(settings) {
       if (!settings || typeof settings !== 'object') return 0;
@@ -22013,6 +23381,35 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
         && app?.classList.contains('is-visible')
         && app.classList.contains('thread-open')
         && String(currentPartnerHandle || '') === key);
+    }
+
+    /* ⚠ v109：上面这个函数只回答「聊天室此刻是不是在前台」。
+       但它被很多「追加消息」的代码当成了「#chatThreadBody 里是不是这个房间的 DOM」在用 —— 两者不等价：
+       用户返回列表 / 切到 KOMO、相册等别的 App 时，chatApp 只是隐藏，activeChatHandle 和
+       #chatThreadBody 的 DOM 归属都没变。此时只写 localStorage 快照、不写 DOM，
+       用户立刻重进房间看到的就是那张「没有新卡」的旧 DOM（要等下次切房间/刷新才补上）。 */
+    function isChatThreadDomForHandle(handle = activeChatHandle) {
+      const key = String(handle || '');
+      const body = document.getElementById('chatThreadBody');
+      if (!key || !body) return false;
+      if (String(activeChatHandle || '') !== key) return false;
+      // 会话切换与历史重建期间 DOM 处于中间态，一律按「未加载」处理，交给快照分支。
+      if (chatHistorySwitching || restoringChatHistory) return false;
+      const loaded = String(body.dataset.loadedChatHandle || '');
+      return !loaded || loaded === key;
+    }
+
+    /* ⚠ v109：快照比 DOM 新 —— 说明有消息只写进了历史快照（后台收到的卡、原地更新了状态的卡）。
+       进入会话走「activeChatHandle 没变就不重绘」的快路径时靠它兜底重建，否则卡片永远看不见。 */
+    function isChatThreadDomBehindSnapshot(handle = activeChatHandle) {
+      const key = String(handle || '');
+      const body = document.getElementById('chatThreadBody');
+      if (!key || !body) return false;
+      if (!isChatThreadDomForHandle(key)) return false;
+      if (getChatSettings(key).historyDeleted) return false;
+      const snapshot = getChatHistorySnapshot(key);
+      if (!Array.isArray(snapshot?.lines) || !snapshot.lines.length) return false;
+      return (Number(snapshot.updatedAt) || 0) > (Number(body.dataset.renderedSnapshotAt) || 0);
     }
 
     function isChatConversationBeingRead(handle = currentPartnerHandle) {
@@ -22246,6 +23643,19 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
       const cleanPreview = String(preview || '发来一条新消息').replace(/\s+/g, ' ').trim().slice(0, 120);
       const count = Math.max(1, normalizeChatUnreadCount(batchCount));
       showChatInAppBanner(handle, cleanPreview, count);
+      if (document.visibilityState === 'hidden') {
+        // 后台期间站内横幅弹不出来：先记一笔，回到前台补弹（别让"收到"只停在系统通知里）
+        const previousNotice = hiddenArrivalNotice;
+        hiddenArrivalNotice = {
+          handle,
+          preview: cleanPreview,
+          count: previousNotice && previousNotice.handle === handle ? Math.max(previousNotice.count, count) : count,
+          at: Date.now()
+        };
+      } else {
+        // 页面开着（在别的界面也算）：除了横幅再给一声提示音，"收到"要看得见也听得见
+        try { playGlobalSound('message'); } catch (_) {}
+      }
       // 页面仍存活时通过 registration.showNotification 交给 SW；后台、切换应用和锁屏界面均使用系统通知通道。
       if (typeof window.showSystemNotification === 'function') {
         const identity = getChatBannerIdentity(handle);
@@ -22313,14 +23723,24 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
       if (!persisted) return false;
       // 联系人角标、桌面 CHAT 角标与 PWA 角标使用同一份持久化计数，并在写入后立即同步。
       refreshChatUnreadIndicators(key);
-      if (pendingDelta > 0 && !activelyRead) dispatchChatArrivalNotifications(key, pendingChatArrivalPreview(settings), pendingDelta);
+      if (pendingDelta > 0 && !activelyRead && !chatArrivalNotificationsMuted) dispatchChatArrivalNotifications(key, pendingChatArrivalPreview(settings), pendingDelta);
       return true;
     }
 
     if (!window.__chatUnreadVisibilityBound) {
       window.__chatUnreadVisibilityBound = true;
       document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState !== 'hidden' && isChatConversationBeingRead(currentPartnerHandle)) {
+        if (document.visibilityState === 'hidden') return;
+        /* v111j5：回到前台先把「后台期间错过的那次横幅」补上（切走 / 锁屏时横幅弹不出来） */
+        const notice = hiddenArrivalNotice;
+        hiddenArrivalNotice = null;
+        if (notice && notice.handle && !isChatConversationBeingRead(notice.handle)) {
+          try {
+            const unread = Math.max(normalizeChatUnreadCount(notice.count), getChatUnreadCount(notice.handle));
+            if (unread > 0) showChatInAppBanner(notice.handle, notice.preview, unread);
+          } catch (_) {}
+        }
+        if (isChatConversationBeingRead(currentPartnerHandle)) {
           markChatConversationRead(currentPartnerHandle);
         }
       });
@@ -22349,6 +23769,23 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
         try {
           body.innerHTML = defaultChatThreadMarkup;
           activeChatHandle = nextHandle;
+          body.dataset.loadedChatHandle = nextHandle;
+          restoreChatHistory(nextHandle, { preserveRestoreFlag: true });
+          applyChatHistoryState();
+        } finally {
+          restoringChatHistory = false;
+          chatHistorySwitching = false;
+        }
+      } else if (isChatThreadDomBehindSnapshot(nextHandle)) {
+        // v109：同一个房间、但快照里有 DOM 还没渲染出来的消息（房间在后台时收到/发出的卡片）。
+        // 走与切换房间同款的重建，保证「立刻重进聊天室就能看到」，不必等对方下一步动作或切房间。
+        window.clearTimeout(chatHistoryPersistTimer);
+        chatHistoryPersistTimer = null;
+        chatHistorySwitching = true;
+        chatHistoryMutationIgnoreUntil = Date.now() + 180;
+        restoringChatHistory = true;
+        try {
+          body.innerHTML = defaultChatThreadMarkup;
           body.dataset.loadedChatHandle = nextHandle;
           restoreChatHistory(nextHandle, { preserveRestoreFlag: true });
           applyChatHistoryState();
@@ -23518,6 +24955,9 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
     }
 
     function closeConversation() {
+      /* v111j4：离开聊天室就把「逐条浮现」的计时器停掉 ——
+         还没出现的那几条留在待收队列里，下次进房间接着按节奏放。 */
+      try { clearPendingRevealTimers(); } catch (_) {}
       exitChatMultiSelectMode();
       chatBatchToken += 1;
       chatBatchSending = false;
@@ -23657,10 +25097,17 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
       }
       if (bubble.classList.contains('chat-image-stack-bubble')) return `图片消息 ×${Math.max(1, Number(bubble.dataset.imageCount) || bubble.querySelectorAll('img').length)}`;
       const clone = bubble.cloneNode(true);
-      clone.querySelectorAll('img').forEach(image => image.replaceWith(document.createTextNode(image.alt || '图片')));
+      /* 被引用消息自己可能带着引用块（引用再引用）。剥掉它，
+         否则会拼出「我：对方：原来的话」这种两个人的名字连在一起的东西。 */
+      clone.querySelectorAll('.chat-quoted-context,.chat-quote-block,.mail-reply-reference').forEach(node => node.remove());
+      /* 图片不再用 alt —— 表情包/相册的 alt 是导出文件名（mmexport…_178568…），
+         当成引用内容会丑到没法看。这里统一按「这是哪一类东西」给词。 */
+      const sticker = bubble.classList.contains('chat-sticker-bubble');
+      clone.querySelectorAll('img').forEach(image => image.replaceWith(document.createTextNode(sticker ? '表情' : '图片')));
       clone.querySelectorAll('svg').forEach(icon => icon.remove());
-      const text = clone.textContent.replace(/\s+/g, ' ').trim();
-      return text || (bubble.querySelector('img') ? '图片消息' : '互动消息');
+      const text = clone.textContent.replace(/\s+/g, ' ').replace(/[\u200B\u2063]/g, '').trim();
+      if (text) return text;
+      return sticker ? '表情' : (bubble.querySelector('img') ? '图片消息' : '互动消息');
     }
 
     function getChatMessageQuoteText(line) {
@@ -23670,10 +25117,14 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
       if (bubble.classList.contains('chat-image-stack-bubble')) return `图片消息 ×${Math.max(1, Number(bubble.dataset.imageCount) || bubble.querySelectorAll('img').length)}`;
       const clone = bubble.cloneNode(true);
       clone.querySelectorAll('.chat-message-meta, [class*="status"], [class*="mood"], [class*="footer"]').forEach(node => node.remove());
-      clone.querySelectorAll('img').forEach(image => image.replaceWith(document.createTextNode(image.alt || '图片')));
+      /* 同上：引用里再带一层引用，只保留这一层的内容 */
+      clone.querySelectorAll('.chat-quoted-context,.chat-quote-block,.mail-reply-reference').forEach(node => node.remove());
+      const sticker = bubble.classList.contains('chat-sticker-bubble');
+      clone.querySelectorAll('img').forEach(image => image.replaceWith(document.createTextNode(sticker ? '表情' : '图片')));
       clone.querySelectorAll('svg').forEach(icon => icon.remove());
-      const text = clone.textContent.replace(/\s+/g, ' ').trim();
-      return text || (bubble.querySelector('img') ? '图片消息' : '互动消息');
+      const text = clone.textContent.replace(/\s+/g, ' ').replace(/[\u200B\u2063]/g, '').trim();
+      if (text) return text;
+      return sticker ? '表情' : (bubble.querySelector('img') ? '图片消息' : '互动消息');
     }
 
     function ensureChatMessageId(line) {
@@ -23762,7 +25213,9 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
       const sender = getChatMessageSender(line);
       // 媒体消息优先用结构化信息：拿得到缩略图，引用块就直接显示那张图
       const info = typeof getChatMediaQuoteInfo === 'function' ? getChatMediaQuoteInfo(line) : null;
-      const text = (info && info.text) || getChatMessageQuoteText(line);
+      /* 媒体走结构化摘要；文字才读正文。原写法在媒体摘要为空时会回落到读正文，
+         而表情包/相册的正文是导出文件名 —— 引用框里就出现 mmexport…_178568… */
+      const text = (info && info.text) || (info ? '' : getChatMessageQuoteText(line));
       chatQuoteState = { id: ensureChatMessageId(line), sender, text, thumb: info?.thumb || '', kind: info?.kind || 'text' };
       const preview = document.getElementById('chatQuotePreview');
       const senderNode = document.getElementById('chatQuoteSender');
@@ -24328,6 +25781,9 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
         const caption = bubble.querySelector('.chat-board-caption')?.textContent?.trim() || '';
         return { text: caption || '画板传讯', thumb: imgSrc(bubble.querySelector('img')), kind: 'board' };
       }
+      if (bubble.classList.contains('chat-image-bubble')) {
+        return { text: comboText || '图片', thumb: imgSrc(bubble.querySelector('img')), kind: 'image' };
+      }
       if (bubble.classList.contains('chat-image-stack-bubble')) {
         const n = Math.max(1, Number(bubble.dataset.imageCount) || bubble.querySelectorAll('img').length);
         return { text: comboText || `图片 ×${n}`, thumb: imgSrc(bubble.querySelector('img')), kind: 'image' };
@@ -24337,10 +25793,9 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
         const img = bubble.querySelector('img');
         // 纯 emoji 没有图，直接把字符当内容
         if (emoji && !img) return { text: comboText ? `${emoji} ${comboText}` : emoji, thumb: '', kind: 'emoji' };
-        return { text: comboText, thumb: imgSrc(img), kind: 'sticker' };
-      }
-      if (bubble.classList.contains('chat-image-bubble')) {
-        return { text: comboText, thumb: imgSrc(bubble.querySelector('img')), kind: 'image' };
+        /* 表情包没有配文时不要留空 —— 留空会让调用点回落到「读整段正文」，
+           而表情包的正文就是导出文件名（mmexport…_178568…）。 */
+        return { text: comboText || '表情', thumb: imgSrc(img), kind: 'sticker' };
       }
       return null;
     }
@@ -24362,7 +25817,7 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
       const pickable = line => {
         if (line.querySelector(CARD_SELECTOR)) return false;
         if (getChatMediaQuoteSummary(line)) return true;
-        const text = getChatMessageText(line);
+        const text = getChatMessageQuoteText(line);
         return !!text && text.trim().length >= 2 && text !== '互动消息' && text !== '图片消息';
       };
       let lines;
@@ -24375,7 +25830,10 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
       if (!lines.length) return null;
       const line = lines[Math.floor(Math.random() * lines.length)];
       const info = getChatMediaQuoteInfo(line);
-      const text = (info ? info.text : '') || getChatMessageText(line);
+      /* 媒体优先用结构化摘要；文字消息才去读正文。
+         ⚠ 这里原来直接用 getChatMessageText —— 一条「引用回复」的消息会把
+           自己那层引用块也读进来，于是引用块里出现「我：对方：原话」。 */
+      const text = (info ? info.text : '') || (info ? '' : getChatMessageQuoteText(line));
       // 带缩略图的媒体即使没有文字也可引用（引用块会直接显示那张图）
       if (!text && !info?.thumb) return null;
       return { id: ensureChatMessageId(line), sender: getChatSelfProfile(currentPartnerHandle).name || '我',
@@ -24890,7 +26348,7 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
             pending.remaining = Math.max(0, Number(pending.remaining) - 1);
             if (pending.remaining > 0) {
               const nextMax = Math.min(5600, 1900 + 135 * text.length);
-              pending.plannedAt = Date.now() + 1500 + Math.random() * Math.max(0, nextMax - 1500);
+              pending.plannedAt = Date.now() + (typeof roleReplyDelay === 'function' ? roleReplyDelay() : 1500 + Math.random() * 3600);   /* v111g：连发也听「最少/最长延迟」 */
               syncQueuedReplyCount();
               // appendProactiveIncomingMessage 已写入新的待收消息和未读数；必须基于最新设置更新 pendingReply，不能用旧快照覆盖它。
               const latest = getChatSettings(pending.roleId);
@@ -24941,7 +26399,7 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
           syncQueuedReplyCount();
           if (pending.remaining > 0) {
             const nextMax = Math.min(5600, 1900 + 135 * text.length);
-            pending.plannedAt = Date.now() + 1500 + Math.random() * Math.max(0, nextMax - 1500);
+            pending.plannedAt = Date.now() + (typeof roleReplyDelay === 'function' ? roleReplyDelay() : 1500 + Math.random() * 3600);   /* v111g：连发也听「最少/最长延迟」 */
             syncQueuedReplyCount();
           }
           const latest = getChatSettings(pending.roleId);
@@ -25334,9 +26792,30 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
       return new Set(Array.isArray(value) ? value.map(String).filter(Boolean) : []);
     }
 
+    /* v111f：墓碑必须两侧对称比对。
+       删除时写的键是 `cornerId::handle` 与 `::handle`；而角色注册表里梦角的 id 就是 handle
+       （dream.xxx）、handle 字段为空 —— 旧写法只查 (id,handle)/( '',handle)/(id,'')，
+       对 ('dream.xxx', undefined) 三条全落空，于是被删掉的梦角会在只认注册表的地方复活。
+       改成把「墓碑两侧」与「查询两侧」交叉比对，新旧数据都覆盖，不迁移、不改数据。 */
     function isDeletedDreamCorner(id, handle = '') {
-      const deleted = readDeletedDreamCornerKeys();
-      return deleted.has(dreamCornerTombstoneKey(id, handle)) || deleted.has(dreamCornerTombstoneKey('', handle)) || deleted.has(dreamCornerTombstoneKey(id, ''));
+      const mine = [id, handle].map(value => String(value || '').trim()).filter(Boolean);
+      if (!mine.length) return false;
+      for (const key of readDeletedDreamCornerKeys()) {
+        const sides = String(key).split('::').map(value => String(value || '').trim()).filter(Boolean);
+        if (sides.some(side => mine.includes(side))) return true;
+      }
+      return false;
+    }
+
+    /* v111f：选单只认「真实梦角联系人」。
+       以前 PHONE / 运势 直接列角色注册表，于是梦笺陌生收件人、通知路由、旧会话这类内部角色
+       会伪装成梦角出现。这份名单与「群聊创建」的白名单同源（getDreamCorners 驱动），
+       注册表只用来补头像、配色等资料。 */
+    function getDreamCornerContactRoles() {
+      try {
+        const list = typeof getProactiveContactRoles === 'function' ? getProactiveContactRoles() : [];
+        return (Array.isArray(list) ? list : []).filter(role => role?.id && !isDeletedDreamCorner(role.id, role.handle || role.id));
+      } catch (_) { return []; }
     }
 
     function markDeletedDreamCorner(id, handle = '') {
@@ -27714,10 +29193,148 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
     /* ⚠ 用 var 不用 const：readCardManagerGroups 可能在本 script 块求值完成前
        就被调用（实测抛 TDZ: Cannot access before initialization）。
        var 声明会提升，配合下面的惰性取值函数就不会炸。 */
-    var GLYPH_DEFAULT_CARDS = ["我", "你", "他", "她", "它", "们", "这", "那", "里", "外", "上", "下", "前", "后", "左", "右", "中", "间", "是", "有", "在", "去", "来", "做", "想", "说", "看", "听", "走", "吃", "喝", "买", "回", "等", "找", "给", "要", "能", "会", "到", "过", "开", "关", "好", "坏", "多", "少", "大", "小", "高", "低", "快", "慢", "冷", "热", "新", "旧", "真", "假", "很", "太", "最", "更", "还", "也", "都", "只", "就", "再", "今", "明", "昨", "天", "年", "月", "日", "早", "晚", "午", "夜", "现", "时", "候", "分", "点", "秒", "周", "末", "爱", "喜", "欢", "心", "难", "累", "困", "饿", "渴", "怕", "急", "烦", "闷", "甜", "苦", "酸", "辣", "香", "人", "家", "门", "口", "路", "车", "水", "火", "风", "雨", "云", "花", "草", "树", "山", "海", "地", "光", "影", "声", "的", "了", "吗", "呢", "吧", "啊", "呀", "嘛", "么", "不", "没", "别", "和", "跟", "与", "但", "却", "因", "所", "以", "如", "果", "算", "虽", "然", "一", "二", "三", "四", "五", "六", "七", "八", "九", "十", "百", "千", "万", "零", "两", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
+    var GLYPH_DEFAULT_CARDS = [];
+    /* ⚠ v110：原先这里挂着 202 张预设单字（汉字 166 · A–Z 26 · 0–9 10），
+       已按用户要求全部删除。刻意留成空数组 ——「拼一拼」分组默认不含任何字卡，
+       用户在字卡管理里自己挂卡后连词成句才会生效；没有字卡就照常回落普通字卡。 */
     /* 词表带搭配约束 —— 只按词性分类会造出「吃你」「听山」「他很很好」这类病句
        （第一版实测），所以动词声明宾语类型、形容词声明修饰对象和是否自带程度。 */
-    var GLYPH_LEX = {"nouns": {"person": ["你", "我", "他", "她"], "place": ["这里", "那里", "家", "门口", "路上", "山", "海"], "thing": ["花", "车"], "drink": ["水"], "food": ["点心"], "weather": ["天", "风", "雨", "光"]}, "verbs": [["想", ["person", "place"]], ["想要", ["thing", "drink", "food"]], ["喜欢", ["person", "place", "thing", "food"]], ["爱", ["person"]], ["看", ["person", "place", "thing", "weather"]], ["听", ["weather"]], ["等", ["person"]], ["找", ["person", "thing", "food"]], ["给", ["person"]], ["买", ["thing", "drink", "food"]], ["吃", ["food"]], ["喝", ["drink"]], ["去", ["place"]], ["来", ["place"]], ["回", ["place"]]], "verbsIntrans": ["回来", "回去", "走了", "来了", "开门", "关门"], "adjs": [["好", ["person", "place", "thing", "weather", "drink", "food"], false], ["不好", ["person", "place", "thing", "weather", "drink", "food"], true], ["开心", ["person"], false], ["难过", ["person"], false], ["累", ["person"], false], ["困", ["person"], false], ["饿", ["person"], false], ["渴", ["person"], false], ["冷", ["person", "weather"], false], ["热", ["person", "weather"], false], ["甜", ["drink", "food"], false], ["苦", ["drink", "food"], false], ["香", ["food"], false], ["快", ["person", "thing"], false], ["慢", ["person", "thing"], false], ["新", ["thing"], false], ["旧", ["thing"], false], ["真好", ["person", "place", "thing", "weather", "drink", "food"], true], ["很好", ["person", "place", "thing", "weather", "drink", "food"], true]], "advs": ["很", "太", "最", "更", "真", "也", "都", "只", "还", "就"], "advsDeg": ["很", "太", "最", "更", "真"], "advsScope": ["也", "都", "只", "还", "就"], "times": ["今天", "明天", "昨天", "早上", "晚上", "现在", "这时候", "周末", "中午", "今年"], "subjs": ["我", "你", "我们", "你们", "他", "她"], "tails": ["了", "吗", "呢", "吧", "啊", "呀", ""], "frames": ["S_ADV_ADJ", "S_V_O", "T_S_V_O", "S_T_ADV_ADJ", "T_ADV_ADJ", "S_V2", "N_ADV_ADJ", "S_ADV_V_O"]};
+    /* ═══ v111 · 识别表（G L Y P H _ P O S）═══
+       这张表**不是字卡**，它一张字卡都不产生。
+       字卡全部来自用户在「拼一拼」分组里自己上传；这张表只回答一件事：
+       用户传上来的这一张，在句子里能站哪个位置（名词的第几类 / 动词能接什么 / 形容词修饰什么）。
+       ⚠ 表里出现的「时间 / 副词 / 主语 / 语气尾」只有用户真的上传了对应字卡才会被用到。
+       ⚠ 认不出来的字不猜：进「未归类」，等用户在字卡管理里点一下。 */
+    var GLYPH_POS = {"nouns":{"person":["你","他","她"],"placeHome":["家","房间"],"placeGo":["外面","楼下","公园","山顶","海边","公司","车站","地铁站"],"thing":["花","信","照片","车","光","云","门","窗","灯","钥匙","杯子","包","伞","衣服","鞋","工牌"],"listen":["歌"],"drink":["水","茶","咖啡","牛奶","热水"],"food":["饭","面","粥","糖","水果","点心","菜","汤"],"weather":["天","风","雨"]},"verbs":[["想",["person"]],["喜欢",["person","placeGo","thing","food","drink"]],["爱",["person"]],["看",["person","placeGo","thing","weather"]],["听",["listen","weather"]],["等",["person"]],["找",["person","thing"]],["给",["person"]],["买",["thing","drink","food"]],["吃",["food"]],["喝",["drink"]],["去",["placeGo"]],["回",["placeHome"]],["做",["food"]],["煮",["food"]],["梦到",["person","placeGo"]]],"verbsIntrans":["来了","走了","回来","回来了","到家","下班","开门","关门","睡","睡着了","醒了","上车了","下车了","下雨了","停了","好多了","迟到了"],"adjs":[["好",["person","placeGo","thing","drink","food"],false],["不好",["person","placeGo","thing","drink","food"],true],["真好",["person","placeGo","thing","drink","food"],true],["很好",["person","placeGo","thing","drink","food"],true],["开心",["person"],false],["难过",["person"],false],["累",["person"],false],["困",["person"],false],["饿",["person"],false],["渴",["person"],false],["冷",["person","weather"],false],["热",["person","weather"],false],["暖",["person","weather"],false],["凉",["person","weather"],false],["闷",["person","weather"],false],["黑",["thing","weather"],false],["甜",["drink","food"],false],["香",["food","placeGo"],false],["淡",["food","drink"],false],["亮",["thing","weather"],false],["旧",["thing"],false],["好看",["person","thing","placeGo"],false],["安静",["person","placeGo","weather"],false],["挤",["placeGo"],false],["难受",["person"],false],["疼",["person"],false],["湿",["thing","placeGo"],false]],"advsDeg":["很","真","更"],"advsScope":["也","都","只","还","就"],"advs":["很","真","更","太","最","也","都","只","还","就"],"times":["今天","明天","昨天","早上","晚上","中午","下午","现在","这时候","周末","半夜","凌晨","早高峰","这两天","刚才","一会儿"],"subjs":["我","你","他","她","我们","你们"],"tails":["呢","啊","呀"],"ignore":["了","的","在","是","嗯","哦","啦","哈","吗","吧","，","。","？","！","…"]};
+    var GLYPH_FRAMES = ["S_ADV_ADJ", "S_V_O", "T_S_V_O", "S_T_ADV_ADJ", "T_ADV_ADJ", "S_V2", "N_ADV_ADJ", "S_ADV_V_O"];
+    /* 手改归类不写进 GLYPH_POS，单独存一份覆盖表 —— 用户改得动，也改得回来。 */
+    var GLYPH_POS_KEY = 'dream-messenger:glyph-pos-overrides:v1';
+    /* 动词/形容词被用户手改归类时用的默认搭配（表里没有这两个词的搭配信息） */
+    var GLYPH_POS_DEFAULT_VERB_OBJ = ["person", "placeGo", "placeHome", "thing", "food", "drink"];
+    var GLYPH_POS_DEFAULT_ADJ_ON = ["person", "placeGo", "thing", "food", "drink"];
+    var GLYPH_POS_LABEL = { person: '名词 · 人', placeGo: '名词 · 地方（去）', placeHome: '名词 · 地方（回）',
+      thing: '名词 · 东西', listen: '名词 · 听的', drink: '名词 · 喝的', food: '名词 · 吃的', weather: '名词 · 天气' };
+    var GLYPH_POS_OPTIONS = [
+      ['', '（未归类）'],
+      ['noun:person', '名词 · 人（你/我/他/她）'],
+      ['noun:placeGo', '名词 · 地方（去哪儿）'],
+      ['noun:placeHome', '名词 · 地方（回哪）'],
+      ['noun:thing', '名词 · 东西'],
+      ['noun:listen', '名词 · 听的东西（歌）'],
+      ['noun:drink', '名词 · 喝的'],
+      ['noun:food', '名词 · 吃的'],
+      ['noun:weather', '名词 · 天气'],
+      ['verb', '动词（要接一个东西）'],
+      ['vint', '动作（自己就能说：来了/下班）'],
+      ['adj', '形容词（很…）'],
+      ['advDeg', '程度词（很/真/更）'],
+      ['advScope', '范围词（也/都/只/还/就）'],
+      ['time', '时间（今天/晚上）'],
+      ['subj', '主语（我/你/他/她）'],
+      ['tail', '语气尾（呢/啊/呀）'],
+      ['ignore', '不参与造句']
+    ];
+    /* v111：1:3 —— 掷中才尝试拼句，其余直接发普通字卡。长度闸在 compose 里。 */
+    var GLYPH_REPLY_RATIO = 0.25;
+    var GLYPH_MIN_CHARS = 3;
+    var GLYPH_MAX_CHARS = 6;
+
+    var GLYPH_POS_MAP_CACHE = null;
+    function glyphPosMap() {
+      if (GLYPH_POS_MAP_CACHE) return GLYPH_POS_MAP_CACHE;
+      const m = {};
+      Object.keys(GLYPH_POS.nouns || {}).forEach(kind => (GLYPH_POS.nouns[kind] || []).forEach(w => { m[w] = 'noun:' + kind; }));
+      (GLYPH_POS.verbs || []).forEach(v => { m[v[0]] = 'verb'; });
+      (GLYPH_POS.verbsIntrans || []).forEach(w => { m[w] = 'vint'; });
+      (GLYPH_POS.adjs || []).forEach(a => { m[a[0]] = 'adj'; });
+      (GLYPH_POS.advsDeg || []).forEach(w => { m[w] = 'advDeg'; });
+      (GLYPH_POS.advsScope || []).forEach(w => { m[w] = 'advScope'; });
+      (GLYPH_POS.times || []).forEach(w => { m[w] = 'time'; });
+      (GLYPH_POS.subjs || []).forEach(w => { m[w] = 'subj'; });
+      (GLYPH_POS.tails || []).forEach(w => { m[w] = 'tail'; });
+      (GLYPH_POS.ignore || []).forEach(w => { m[w] = 'ignore'; });
+      GLYPH_POS_MAP_CACHE = m;
+      return m;
+    }
+
+    function glyphPosDetail() {
+      const d = {};
+      (GLYPH_POS.verbs || []).forEach(v => { d[v[0]] = { kinds: v[1] }; });
+      (GLYPH_POS.adjs || []).forEach(a => { d[a[0]] = { on: a[1], deg: a[2] === true }; });
+      return d;
+    }
+
+    function readGlyphPosOverrides() {
+      try { const v = typeof readDreamJSON === 'function' ? readDreamJSON(GLYPH_POS_KEY, {}) : null;
+        return v && typeof v === 'object' && !Array.isArray(v) ? v : {}; } catch (_) { return {}; }
+    }
+    function writeGlyphPosOverride(card, spec) {
+      try {
+        const m = readGlyphPosOverrides();
+        if (spec) m[card] = spec; else delete m[card];
+        writeDreamJSON(GLYPH_POS_KEY, m);
+      } catch (_) {}
+    }
+    /* 返回归类串：'noun:drink' / 'verb' / 'vint' / 'adj' / 'advDeg' / 'advScope' / 'time' / 'subj' / 'tail' / 'ignore'；认不出返回 '' */
+    function glyphPosSpec(card) {
+      const w = String(card || '').trim();
+      if (!w) return '';
+      const over = readGlyphPosOverrides();
+      if (over[w]) return String(over[w]);
+      return glyphPosMap()[w] || '';
+    }
+
+    /* 字卡管理里给每张卡看的状态（未归类 / 不进词表 / 归类结果） */
+    function glyphCardStatus(card) {
+      const w = String(card || '').trim();
+      const spec = glyphPosSpec(w);
+      const manual = Boolean(readGlyphPosOverrides()[w]);
+      if (!spec) return { spec: '', text: '未归类 · 点一下', cls: 'warn', manual: false };
+      const parts = spec.split(':');
+      if (parts[0] === 'ignore') return { spec, text: '不进词表', cls: 'gray', manual };
+      const label = parts[0] === 'noun' ? (GLYPH_POS_LABEL[parts[1]] || '名词')
+        : parts[0] === 'verb' ? '动词' : parts[0] === 'vint' ? '动作（自足）' : parts[0] === 'adj' ? '形容词'
+        : parts[0] === 'advDeg' ? '程度词' : parts[0] === 'advScope' ? '范围词'
+        : parts[0] === 'time' ? '时间' : parts[0] === 'subj' ? '主语' : parts[0] === 'tail' ? '语气尾' : parts[0];
+      return { spec, text: manual ? label + '（手改）' : label, cls: 'ok', manual };
+    }
+
+    /* ═══ 词表：从用户上传的字卡里现算，不再有任何预设内容 ═══
+       一份内存词表，挂靠「拼一拼」分组的字卡；删字卡词表就瘦。 */
+    function buildGlyphLexFromCards(cards) {
+      const lex = { nouns: {}, verbs: [], verbsIntrans: [], adjs: [], advs: [], advsDeg: [], advsScope: [],
+        times: [], subjs: [], tails: [''], frames: GLYPH_FRAMES.slice() };
+      const unclassified = [], ignored = [], labeled = [];
+      const list = (Array.isArray(cards) ? cards : [...(cards || [])]).map(x => String(x || '').trim()).filter(Boolean);
+      const detail = glyphPosDetail();
+      /* v111：没归类的字一律进「未归类」——与每张卡下面那个标签用同一个判据，
+         不会再出现「概况说 X 条不进词表、行里却写着未归类」这种自相矛盾。
+         ⚠ 即使这个字是某个已归类多字词（如「咖啡」）的一部分，也照样算未归类：
+           它单独确实不能当句子成分用，行内标签也是这么说的。 */
+      list.forEach(w => {
+        const spec = glyphPosSpec(w);
+        const parts = spec.split(':');
+        const pos = parts[0], kind = parts[1] || '';
+        if (!pos) { unclassified.push(w); return; }
+        if (pos === 'ignore') { ignored.push(w); return; }
+        labeled.push(w);
+        if (pos === 'noun') { const k = kind || 'thing'; (lex.nouns[k] = lex.nouns[k] || []).push(w); return; }
+        if (pos === 'verb') { lex.verbs.push([w, (detail[w] && detail[w].kinds) || GLYPH_POS_DEFAULT_VERB_OBJ]); return; }
+        if (pos === 'vint') { lex.verbsIntrans.push(w); return; }
+        if (pos === 'adj') { lex.adjs.push([w, (detail[w] && detail[w].on) || GLYPH_POS_DEFAULT_ADJ_ON, (detail[w] && detail[w].deg) === true]); return; }
+        if (pos === 'advDeg') { lex.advsDeg.push(w); lex.advs.push(w); return; }
+        if (pos === 'advScope') { lex.advsScope.push(w); lex.advs.push(w); return; }
+        if (pos === 'time') { lex.times.push(w); return; }
+        if (pos === 'subj') { lex.subjs.push(w); return; }
+        if (pos === 'tail') { lex.tails.push(w); return; }
+      });
+      return { lex, unclassified, ignored, labeled };
+    }
+    function buildRoleGlyphLex(roleOrId) {
+      let cards = [];
+      try { cards = [...getRoleGlyphPool(roleOrId)]; } catch (_) { cards = []; }
+      return buildGlyphLexFromCards(cards);
+    }
 
     /* 零宽字符做标记：不可见、不占位、不会被用户误输入 */
     var GLYPH_MARK = '\u200B\u2063';
@@ -27781,12 +29398,18 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
     function composeGlyphSentence(roleOrId = currentPartnerHandle) {
       const avail = getRoleGlyphPool(roleOrId);
       if (avail.size < 6) return '';
-      const L = GLYPH_LEX;
+      /* v111：词表不再写死在代码里 —— 每次按「这个梦角挂着的拼一拼字卡」现算
+         （识别表查表 → 归类 → 内存词表）。认不出的字不进词表，但仍在字池里。 */
+      const built = buildRoleGlyphLex(roleOrId);
+      const L = built.lex || {};
+      if (!Array.isArray(L.frames) || !L.frames.length) return '';
       const pick = a => a[Math.floor(Math.random() * a.length)];
-      const ok = w => w === '' || [...String(w)].every(c => avail.has(c));
+      /* v111：多字词（「咖啡」「今天」）只要这张卡本身在池子里就能用；
+         单字仍按单字校验 —— 不能凭空拼出用户没上传的字。 */
+      const ok = w => w === '' || avail.has(String(w)) || [...String(w)].every(c => avail.has(c));
 
       const nouns = {};
-      for (const k of Object.keys(L.nouns)) nouns[k] = L.nouns[k].filter(ok);
+      for (const k of Object.keys(L.nouns || {})) nouns[k] = L.nouns[k].filter(ok);
       const verbs = L.verbs.filter(v => ok(v[0]) && v[1].some(t => (nouns[t] || []).length));
       const vint  = L.verbsIntrans.filter(ok);
       const adjs  = L.adjs.filter(a => ok(a[0]));
@@ -27856,8 +29479,15 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
         return '';
       };
 
+      /* v111：长度闸 —— 只发 3～6 字的句子（按显示出来的字数算）。
+         8 条骨架各试一次，挑不中就返回空串，调用点回落到普通字卡。 */
       const order = [...L.frames].sort(() => Math.random() - .5);
-      for (const f of order) { const r = build(f); if (r) return r; }
+      for (const f of order) {
+        const r = build(f);
+        if (!r) continue;
+        const visible = [...r].filter(ch => ch.trim()).length;
+        if (visible >= GLYPH_MIN_CHARS && visible <= GLYPH_MAX_CHARS) return r;
+      }
       return '';
     }
 
@@ -27962,7 +29592,9 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
           existing.kind = definition.kind;
           existing.fixed = true;
           existing.cards = normalizeCardManagerCards(existing.cards).filter(card => !isDeletedCardManagerItem(existing.id, card));
-          /* ⚠ v103：拼一拼是「带预置内容」的固定分组，和其它空固定分组不同。
+          /* ⚠ v110：预设字库已清空，本段现在只会补出一个空数组 ——
+             留在这里是为了「用户自己挂过的卡不被迁移清掉」这条老逻辑继续成立。
+             ⚠ v103：拼一拼是「带预置内容」的固定分组，和其它空固定分组不同。
              老档案（已走过 legacy 迁移、存档里已有 6 个分组但 glyph 为空）
              会在这里被判成 existing 而保持 0 张字卡 —— 实测：有梦角的档案 202→0。
              所以只在「用户从未手动删过这个分组的字」时补种默认字库。 */
@@ -27998,6 +29630,41 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
       writeDreamStorageValue(marker,'1');cardManagerGroups=[];
     }
     purgeRemovedSystemCards();
+
+    /* ⚠ v111i：v103–v109 的「拼一拼」分组默认塞着 202 张预设单字（我/你/她/好/更/呢/看/风…），
+       v110 只删了代码里的那份，**已经写进用户数据的那些还在** ——
+       于是「连词成句」仍然拿这些预设字拼句子，出现「她更好呢」「你看风」这类怪句。
+       这里做一次性清理：只清「拼一拼」分组（kind/id = glyph）里的这 202 个字，
+       其余分组、其它功能一律不碰；已经清过就跳过。
+       安全闸：命中数 < 20 视为用户自己挑的字，不动（预设是整批 202 张，用户手挑不会一次挑中 20 个）。 */
+    const LEGACY_GLYPH_PRESET_CHARS = new Set('我你他她它们这那里外上下前后左右中间是有在去来做想说看听走吃喝买回等找给要能会到过开关好坏多少大小高低快慢冷热新旧真假很太最更还也都只就再今明昨天年月日早晚午夜现时候分点秒周末爱喜欢心难累困饿渴怕急烦闷甜苦酸辣香人家门口路车水火风雨云花草树山海地光影声的了吗呢吧啊呀嘛么不没别和跟与但却因所以如果算虽然一二三四五六七八九十百千万零两ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.split(''));
+    function purgeLegacyGlyphPresetCards() {
+      const marker = 'dream-messenger:glyph-preset-cards-removed:v1';
+      try {
+        if (readDreamStorageValue(marker, '') === '1') return;
+        const stored = readDreamJSON(CARD_MANAGER_STORAGE_KEY, null);
+        if (Array.isArray(stored)) {
+          let changed = false;
+          const next = stored.map(group => {
+            if (!group || typeof group !== 'object') return group;
+            const id = String(group.id || ''), kind = String(group.kind || '');
+            if (id !== 'glyph' && kind !== 'glyph') return group;
+            const cards = normalizeCardManagerCards(group.cards);
+            const hits = cards.filter(card => LEGACY_GLYPH_PRESET_CHARS.has(card));
+            /* 安全闸：像整批预设才动手 */
+            if (hits.length < 20) return group;
+            changed = true;
+            return { ...group, cards: cards.filter(card => !LEGACY_GLYPH_PRESET_CHARS.has(card)) };
+          });
+          if (changed) {
+            writeDreamJSON(CARD_MANAGER_STORAGE_KEY, next);
+            cardManagerGroups = [];   /* 让本次启动重新读盘 */
+          }
+        }
+      } catch (error) { /* 清理失败不能阻断启动 */ }
+      writeDreamStorageValue(marker, '1');
+    }
+    window.setTimeout(purgeLegacyGlyphPresetCards, 0);
 
     function purgeAiRelayFeatureData() {
       const marker='dream-messenger:ai-relay-removed:v1';if(readDreamStorageValue(marker,'')==='1')return;
@@ -28102,6 +29769,19 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
         source.textContent = `分组：${group.name}`;
         copy.appendChild(source);
       }
+      /* v111：拼一拼分组里，每张卡右边标出识别结果，点一下就能改 */
+      if (group.id === 'glyph' && !options.searchResult) {
+        try {
+          const info = glyphCardStatus(group.cards[index]);
+          const badge = document.createElement('button');
+          badge.type = 'button';
+          badge.className = `glyph-pos-badge ${info.cls}`;
+          badge.textContent = info.text;
+          badge.title = '点一下改归类';
+          badge.onclick = event => { event.stopPropagation(); openGlyphPosPicker(badge, group.cards[index]); };
+          copy.appendChild(badge);
+        } catch (_) {}
+      }
       const edit = document.createElement('button');
       edit.type = 'button';
       edit.dataset.editCard = 'true';
@@ -28175,8 +29855,45 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
         updateCardManagerBatchToolbar();
         return;
       }
+      /* v111：拼一拼分组顶部给出识别概况 —— 已识别 / 未归类 / 不进词表 */
+      if (group.id === 'glyph') {
+        try {
+          const built = buildGlyphLexFromCards(group.cards);
+          const summary = document.createElement('div');
+          summary.className = 'glyph-pos-summary';
+          const labeledCount = group.cards.length - built.unclassified.length - built.ignored.length;
+          summary.innerHTML = `<span>已识别 <b>${labeledCount}</b></span>`
+            + `<span>未归类 <b>${built.unclassified.length}</b></span>`
+            + `<span>不进词表 <b>${built.ignored.length}</b></span>`;
+          const hint = document.createElement('small');
+          hint.textContent = built.unclassified.length
+            ? '认出词性的字才参与造句；点每张卡右边的标签就能归类。未归类的字仍在字池里，只是不会被当成句子成分。'
+            : '这一组都认完了。点任意一张卡右边的标签可以改归类；删掉字卡，词表会跟着瘦。';
+          summary.appendChild(hint);
+          list.appendChild(summary);
+        } catch (_) {}
+      }
       group.cards.forEach((card, index) => list.appendChild(createCardManagerItemElement(group, index)));
       updateCardManagerBatchToolbar();
+    }
+
+    /* v111：点标签 → 就地变成下拉，选完写进覆盖表并重渲染 */
+    function openGlyphPosPicker(anchor, card) {
+      try {
+        const sel = document.createElement('select');
+        sel.className = 'glyph-pos-select';
+        GLYPH_POS_OPTIONS.forEach(([value, label]) => {
+          const option = document.createElement('option');
+          option.value = value; option.textContent = label;
+          sel.appendChild(option);
+        });
+        sel.value = glyphPosSpec(card) || '';
+        const restore = () => { try { renderCardManagerItems(); } catch (_) {} };
+        sel.onchange = () => { writeGlyphPosOverride(card, sel.value); restore(); showChatToast?.(sel.value ? '已归类' : '已设为未归类'); };
+        sel.onblur = restore;
+        anchor.replaceWith(sel);
+        sel.focus();
+      } catch (_) {}
     }
 
     function renderCardManager() {
@@ -29337,9 +31054,63 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
         } else if(msg.type==='PUSH_SUBSCRIPTION_CHANGED' && msg.resubscribeRequired){
           showGlobalSettingsToast('推送订阅已变化，请重新订阅锁屏通知');
         } else if(msg.type==='SHELL_UPDATED'){
-          // 离线壳已在后台更新。刻意不自动 reload：应用存在大量未落盘输入态
-          // （聊天草稿、编辑中的组件），强制刷新可能丢数据，交由用户下次冷启动生效。
-          try { showGlobalSettingsToast('已下载新版本，下次启动生效'); } catch(_){}
+          /* v111j：离线壳已在后台更新。原设计只发一句「下次启动生效」，
+             于是「一直挂着 App、从不冷启动」的机器永远读不到新版本 ——
+             前面几版的修复就是这样卡在半路的。现在改成：
+               · 页面在后台（切走 / 锁屏）：直接换上刚下载的新壳，回来就是新版；
+               · 页面在前台：照旧提示，并把「切到后台那一刻」当成换壳时机；
+               · 聊天输入框 / 正在编辑的文本里有没落盘的草稿时先不换，避免丢字。 */
+          try { showGlobalSettingsToast('已下载新版本，回到后台后自动生效'); } catch(_){}
+          const shellDraftPending = () => {
+            try {
+              /* 不只聊天输入框：任何「看得见、里面有没提交的字」的地方都算草稿 ——
+                 备忘、梦笺、朋友圈发帖框、陪伴空间那句…换壳会把这些内存态丢掉。
+                 ⚠ 判据要准：桌面上那个常驻的可编辑副标题（Möbius）一开始被算成了草稿，
+                   结果是永远不会换壳。所以这里量真实尺寸，并给常驻可编辑文本打标记。 */
+              const visible = node => {
+                const rect = node.getBoundingClientRect();
+                return (rect.width > 0 && rect.height > 0) || !!node.offsetParent;
+              };
+              const chatInput = document.getElementById('chatMessageInput');
+              /* 聊天输入框是主写字的地方：只要里面还有字就算草稿 ——
+                 哪怕此刻切到了别的页面，切回来那行字还在，换壳会把它抹掉。 */
+              if (chatInput && String(chatInput.value || '').trim()) return true;
+              const fields = document.querySelectorAll('textarea, input[type="text"], input:not([type])');
+              for (const node of fields) {
+                if (node === chatInput) continue;
+                if (node.dataset?.noShellDraftGuard === 'true') continue;
+                if (!String(node.value || '').trim()) continue;
+                if (visible(node)) return true;
+              }
+              const editables = document.querySelectorAll('[contenteditable="true"]');
+              for (const node of editables) {
+                if (node.dataset?.noShellDraftGuard === 'true') continue;
+                /* v111j5：聊天页顶栏的昵称是「点一下就改、失焦即存」的常驻文本，不是草稿 ——
+                   它一直有字，停在聊天列表时会把换壳永远挡住（正在输入它的时候由下面的
+                   activeElement 兜住，字不会丢）。 */
+                if (node.id === 'chatAccountName' && document.activeElement !== node) continue;
+                if (!String(node.textContent || '').trim()) continue;
+                if (visible(node)) return true;
+              }
+              const active = document.activeElement;
+              if (active && (active.isContentEditable || active.tagName === 'TEXTAREA' || active.tagName === 'INPUT')
+                && String(active.isContentEditable ? active.textContent : active.value).trim()) return true;
+            } catch(_) {}
+            return false;
+          };
+          const swapOfflineShell = () => {
+            if (window.__shellSwapDone) return;
+            if (shellDraftPending()) return;          // 有草稿：保住字，等下一次后台时机
+            window.__shellSwapDone = true;
+            window.setTimeout(() => { try { window.location.reload(); } catch(_) {} }, 900);
+          };
+          if (document.visibilityState === 'hidden') swapOfflineShell();
+          else if (!window.__shellSwapArmed) {          // 只挂一次，多次收到更新提示不叠监听
+            window.__shellSwapArmed = true;
+            document.addEventListener('visibilitychange', () => {
+              if (document.visibilityState === 'hidden') swapOfflineShell();
+            });
+          }
         }
       });
       navigator.serviceWorker.addEventListener('controllerchange', ()=>{
@@ -30835,7 +32606,8 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
       let text = null;
       try{
         if(typeof pickRoleReplyText==='function'){
-          text = pickRoleReplyText(role, []);
+          /* v111：群聊文本出口，剥掉拼句的零宽标记（这块 script 里没有 stripGlyphMark） */
+          text = String(pickRoleReplyText(role, []) || '').replace(/[\u200B\u2063]/g, '');
         } else if(typeof getManagedContentCardPool==='function'){
           const pool = getManagedContentCardPool();
           if(pool.length) text = pool[Math.floor(Math.random()*pool.length)];
@@ -31245,7 +33017,7 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
     try{
       const role=(typeof getRoleRecord==='function'? getRoleRecord(handle):null);
       if(role && typeof pickRoleReplyText==='function'){
-        const t = pickRoleReplyText(role, []);
+        const t = String(pickRoleReplyText(role, []) || '').replace(/[\u200B\u2063]/g, '');   /* v111 */
         if(t) replyText = t.slice(0,30);
       }
     }catch(e){}
@@ -32298,7 +34070,8 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
       sourceMemberId: task.memberId,
       sourceMemberName: roleName(task.memberId, group.id),
       sourceText: messageText(replyMessage),
-      dueAt: Date.now() + 1500 + Math.random() * 3600,
+      /* v111g：接话间隔原先写死 1.5~5.1 秒，完全不听「回复节奏」；现在跟首轮同一来源。 */
+      dueAt: Date.now() + Math.max(1500, (typeof roleReplyDelay === 'function' ? roleReplyDelay() : 1500 + Math.random() * 3600)),
       status: 'pending',
       typingShown: false,
       createdAt: Date.now()
@@ -32346,7 +34119,7 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
     try { if (typeof chooseMessageKind === 'function') kind = chooseMessageKind('reactive', role) || 'text'; } catch (_) {}
     const settings = getChatSettings(task.memberId);
     const baseText = () => {
-      try { return pickRoleReplyText(role, []) || ''; } catch (_) { return ''; }
+      try { return String(pickRoleReplyText(role, []) || '').replace(/[\u200B\u2063]/g, '') || ''; } catch (_) { return ''; }   /* v111 */
     };
     if (kind === 'sticker') {
       const pool = (settings.stickerTheirs || []).filter(item => item && (item.src || item.emoji));
@@ -34506,7 +36279,7 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
 })();
 
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2a087c97e071ed0',t:'MTc4NjU0ODcyMg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2aeacebcac6fe04',t:'MTc4NjY5NzA0Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>
+<script>
 /* ==================== KOMO 24H · CONVENIENCE STORE + WALLET ==================== */
 (function(){
 'use strict';
@@ -34798,7 +36571,10 @@ window.saveKomoWalletPrivacy=async function(roleId){const state=loadKomoState(),
    options.toast     —— 进聊天室时的提示文案（不传就用默认）
    options.unreadLabel —— 不在聊天室时，未读列表里显示的摘要
    options.silent    —— 不弹 toast / 不响提示音（代买请求这类自带卡片的场景） */
-function appendKomoChatLine(role,line,options={}){line.dataset.createdAt=String(line.dataset.createdAt||Date.now());if(isChatConversationLoaded(role.id)){const body=document.getElementById('chatThreadBody'),typing=document.getElementById('chatTyping');body?.insertBefore(line,typing||null);if(line.classList.contains('outgoing')){line.dataset.receiptStatus='unread';stampChatMessageLine(line);scheduleChatUnreadReceipt(line);}else stampChatMessageLine(line);if(body)body.scrollTop=body.scrollHeight;if(line.classList.contains('incoming')&&!options.silent){try{playGlobalSound('message');showChatToast(options.toast||`${getRoleDisplayNameForApp(role)} 发来一条 KOMO 消息`);}catch(_){}}saveChatHistoryForHandle(activeChatHandle,{reason:'komo-card'});return;}const snapshot=getChatHistorySnapshot(role.id)||{storageVersion:3,updatedAt:0,lines:[]};snapshot.lines=[...(snapshot.lines||[]),line.outerHTML];snapshot.updatedAt=Date.now();snapshot.storageVersion=3;const history=loadChatHistoryState();history[role.id]=snapshot;persistChatHistoryState(role.id);if(line.classList.contains('incoming')){try{incrementChatUnreadCount(role.id,1,options.unreadLabel||'[KOMO]');}catch(_){}}}
+function appendKomoChatLine(role,line,options={}){line.dataset.createdAt=String(line.dataset.createdAt||Date.now());/* ⚠ v109：判据从「聊天室在前台」换成「#chatThreadBody 的 DOM 归属这个房间」。
+   聊天室退到后台（返回列表、切到 KOMO/相册）时 DOM 依然属于该房间，若只写快照，
+   重进房间看到的就是缺了这张卡的旧 DOM —— 代付请求卡「要等对方下一步动作才出现」的根因。
+   声音 / Toast / 滚动这类前台反馈仍然只在聊天室可见时给。 */if(isChatThreadDomForHandle(role.id)){const visible=isChatConversationLoaded(role.id);const body=document.getElementById('chatThreadBody'),typing=document.getElementById('chatTyping');body?.insertBefore(line,typing||null);if(line.classList.contains('outgoing')){line.dataset.receiptStatus='unread';stampChatMessageLine(line);scheduleChatUnreadReceipt(line);}else stampChatMessageLine(line);if(body&&visible)body.scrollTop=body.scrollHeight;if(line.classList.contains('incoming')){if(visible&&!options.silent){try{playGlobalSound('message');showChatToast(options.toast||`${getRoleDisplayNameForApp(role)} 发来一条 KOMO 消息`);}catch(_){}}else if(!visible){/* v109：卡片补进了 DOM 但用户没在看，未读角标照旧。 */try{incrementChatUnreadCount(role.id,1,options.unreadLabel||'[KOMO]');}catch(_){}}}saveChatHistoryForHandle(activeChatHandle,{reason:'komo-card'});return;}const snapshot=getChatHistorySnapshot(role.id)||{storageVersion:3,updatedAt:0,lines:[]};snapshot.lines=[...(snapshot.lines||[]),line.outerHTML];snapshot.updatedAt=Date.now();snapshot.storageVersion=3;const history=loadChatHistoryState();history[role.id]=snapshot;persistChatHistoryState(role.id);if(line.classList.contains('incoming')){try{incrementChatUnreadCount(role.id,1,options.unreadLabel||'[KOMO]');}catch(_){}}}
 /* 判断某张卡是否已经写进该聊天室的历史快照 —— 防止重复补卡。
    用属性字符串直接在序列化 HTML 里查，比反序列化整个快照便宜得多。 */
 function komoSnapshotHasCard(roleId,attr,id){if(!id)return false;const needle=`${attr}="${id}"`;
@@ -34806,7 +36582,10 @@ function komoSnapshotHasCard(roleId,attr,id){if(!id)return false;const needle=`$
      两边都要查。 */
   /* CSS.escape 不是处处都有（jsdom 里就没有），没有时退回属性值转义，不能让整段被 catch 吞掉 */
   const safe=(typeof CSS!=='undefined'&&CSS.escape)?CSS.escape(String(id)):String(id).replace(/["\\]/g,'\\$&');
-  try{if(isChatConversationLoaded(roleId)&&document.querySelector(`#chatThreadBody [${attr}="${safe}"]`))return true;}catch(_){}
+  /* v109：DOM 侧判据也从「聊天室在前台」换成「DOM 归属这个房间」——
+     房间在后台（返回列表 / 切到 KOMO）时代付卡已经插进 DOM，这里若看不到它就会重复插一张。 */
+  try{const domOwner=(typeof isChatThreadDomForHandle==='function')?isChatThreadDomForHandle(roleId):isChatConversationLoaded(roleId);
+    if(domOwner&&document.querySelector(`#chatThreadBody [${attr}="${safe}"]`))return true;}catch(_){}
   try{const snapshot=getChatHistorySnapshot(roleId);if(snapshot?.lines?.length&&snapshot.lines.some(html=>String(html).includes(needle)))return true;}catch(_){}
   return false;}
 /* ══════════════════════════════════════════════════════════════
@@ -34887,7 +36666,12 @@ function sendKomoFlowCard(kind,role,config={}){
    只在「当前正开着的聊天室」留痕；没开聊天室就不留，避免随机塞给某个梦角。 */
 function sendKomoSelfFlowCard(kind,config={}){
   const handle=String(currentPartnerHandle||'');
-  if(!handle||!isChatConversationLoaded(handle))return false;
+  /* ⚠ v109：同样把「聊天室在前台」换成「DOM 归属这个房间」。
+     用户从聊天室切到 KOMO 下单 / 充值时，
+     isChatConversationLoaded 已经是 false，这些流水卡会被静默丢弃（实测：返回 false），
+     当当回到聊天室什么记录都没有。原意是「没有聊天室上下文就不留痕」，
+     而 DOM 归属恰恰就是「有没有聊天室上下文」的准确判据。 */
+  if(!handle||!isChatThreadDomForHandle(handle))return false;
   const role=getRoleRecord(handle);
   if(!role)return false;
   return sendKomoFlowCard(kind,role,{...config,direction:'outgoing'});
@@ -36248,7 +38032,7 @@ const esc=value=>String(value??'').replace(/[&<>"]/g,ch=>({'&':'&amp;','<':'&lt;
    末尾补一轮 xorshift-multiply 雪崩，把高位熵搅进低位。 */
 const phoneHash=value=>{let h=2166136261;for(const ch of String(value)){h^=ch.charCodeAt(0);h=Math.imul(h,16777619);}h^=h>>>16;h=Math.imul(h,2246822507);h^=h>>>13;h=Math.imul(h,3266489909);h^=h>>>16;return h>>>0;};
 const pick=(list,seed)=>list[phoneHash(seed)%list.length];
-const roles=()=>{try{return (getRoleRegistry()||[]).filter(role=>role?.id&&!isDeletedDreamCorner(role.id,role.handle));}catch(_){return[];}};
+const roles=()=>{try{return (typeof getDreamCornerContactRoles==='function'?getDreamCornerContactRoles():(getRoleRegistry()||[]).filter(role=>role?.id&&!isDeletedDreamCorner(role.id,role.handle)));}catch(_){return[];}};
 const roleName=role=>{try{return getRoleDisplayNameForApp(role);}catch(_){return role?.name||role?.id||'梦角';}};
 const dayKey=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;};
 function ensureApp(){
@@ -39936,7 +41720,7 @@ const esc=value=>String(value??'').replace(/[&<>\"]/g,ch=>({'&':'&amp;','<':'&lt
 const dayKey=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;};
 const readState=()=>{try{const v=readDreamJSON(KEY,{});return v&&typeof v==='object'?v:{};}catch(_){return{};}};
 const saveState=value=>{try{return writeDreamJSON(KEY,value);}catch(_){return false;}};
-const roles=()=>{try{return (getRoleRegistry()||[]).filter(role=>role?.id&&!isDeletedDreamCorner(role.id,role.handle));}catch(_){return[];}};
+const roles=()=>{try{return (typeof getDreamCornerContactRoles==='function'?getDreamCornerContactRoles():(getRoleRegistry()||[]).filter(role=>role?.id&&!isDeletedDreamCorner(role.id,role.handle)));}catch(_){return[];}};
 const zodiacOptions=selected=>ZODIACS.map(item=>`<option value="${item[0]}" ${item[0]===selected?'selected':''}>${item[1]}</option>`).join('');
 /* day 参数化：fortuneFor 是纯函数，给定日期即可复算任意一天的运势，
    趋势折线因此不需要额外存储历史分数。默认取今天，保持既有调用不变。 */
@@ -40576,6 +42360,41 @@ html[data-perf-mode="lite"] *{transition-duration:.12s!important}
 /* 设置面板里的模式选择行 */
 #mobiusPerfRow small{display:block;margin-top:3px;color:var(--text-muted,#8a979d);font-size:6px;line-height:1.5}
 #mobiusPerfRow .mobius-perf-stat{font:650 5.5px ui-monospace,monospace;letter-spacing:.06em;opacity:.75}
+
+    /* ===== v107 · 底栏 / 抽屉：防跳 + 不依赖 :has() 的兜底 =====
+       ① 抽屉防跳。
+          组件抽屉即使是关闭状态（transform:translateY(100%)），仍然算容器的
+          「可滚动溢出」—— 距底边整整 520px。浏览器只要因为任何理由滚一次容器
+          （聚焦输入框、scrollIntoView、键盘引起的高度变化），整个界面就会上移
+          520px 把抽屉整块露出来；而容器是 overflow:hidden，用户自己滑不回去，
+          看着就像卡死 —— 点「收起抽屉」也没用，收下去下一次滚动又被带回来。
+          实测复现（393×873 安卓视口）：写信页聚焦正文后 appScreen.scrollTop=520，
+          上限也是 520，抽屉 top 从 873 变成 353。
+          两层修法：
+          · overflow:clip —— 容器彻底不再是滚动容器，连程序化滚动都无权
+            （Chrome 90+ / Safari 16+；不支持的浏览器自动退回 overflow:hidden）。
+          · 抽屉关闭后 display:none —— 直接消掉那 520px 溢出，任何浏览器都成立。 */
+    #appScreen { overflow: clip; }
+    #appScreen > .widget-drawer[data-idle="1"] { display: none !important; }
+
+    /* ② 沉浸式页面隐藏底栏、CHAT 里隐藏抽屉，原先只写了 :has()。
+       旧 WebView 会把整条 :has() 规则丢弃，于是底部 Tab 栏直接压在聊天输入区上。
+       这里补一份由 JS 同步 data-active-app 的同义规则，覆盖面与 :has() 版一一对应。 */
+    #appScreen[data-active-app="chat"] > .bottom-nav,
+    #appScreen[data-active-app="mail"] > .bottom-nav,
+    #appScreen[data-active-app="moon"] > .bottom-nav,
+    #appScreen[data-active-app="invite"] > .bottom-nav,
+    #appScreen[data-active-app="box"] > .bottom-nav { display: none !important; }
+    #appScreen[data-active-app="chat"] > .widget-drawer,
+    #appScreen[data-active-app="chat"] > .drawer-overlay { display: none !important; pointer-events: none !important; }
+
+    /* ③ 键盘兜底：部分安卓浏览器 innerHeight 与 visualViewport 一起收缩，
+       keyboardInset 恒为 0，data-keyboard-open 永远不亮，底栏就压在输入框上。
+       这里按「有没有文本输入被聚焦」补一个与平台无关的开关。 */
+    @media (max-width: 600px) {
+      html[data-editing="true"] #appScreen > .bottom-nav { display: none !important; }
+      html[data-editing="true"]:not([data-ios]) .chat-composer { padding-bottom: 7px !important; }
+    }
 </style>
 <script id="mobiusPerfPatch">
 (function(){
@@ -40907,5 +42726,134 @@ window.MobiusPerf = {
 </script>
 <!-- ================= MÖBIUS · 流畅度补丁 v1 结束 ================= -->
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2eadf26ee8486b1',t:'MTc4NzMyODI0Ng=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a30fc59138103f70',t:'MTc4NzcxNTE3Mg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script id="mobiusDrawerNavPatch">
+/* ==================== v107 · 底栏 / 抽屉守卫 ====================
+   与上面那段 CSS 配对，治用户实测（OPPO Reno 7）的两个问题：
+     · 写信 / 备忘录一打字，桌面组件抽屉从底部跳出来，点「收起抽屉」也压不回去，
+       界面滑不上去；
+     · 聊天室里底部 Tab 栏压在输入框上。
+   ① 抽屉跳出来的根因是容器被滚了 520px（见 CSS 注释）。这里管住抽屉的生命周期：
+      不在打开状态时给它 data-idle，让它 display:none —— 那 520px 溢出根本不存在。
+      仍然保留原有的滑入滑出动画（开：先去 idle 逼一次重排，再让 transform 过渡）。
+   ② 底栏不靠 :has() 也能隐藏：同步 data-active-app，取值与 :has() 规则一一对应。
+   ③ 文本输入聚焦期间打 data-editing，给键盘兜底一条不依赖 visualViewport 的路。
+   ④ 焦点进输入框先收抽屉（抽屉内部的 INS 可编辑组件不算），并把容器回正。 */
+(function () {
+  'use strict';
+  const screen = document.getElementById('appScreen');
+  const root = document.documentElement;
+  if (!screen || !root) return;
+
+  /* ---------- ③ 编辑态标记 ---------- */
+  /* 只有会唤起软键盘的输入才算「正在打字」—— range / checkbox / 颜色选择器不算 */
+  const TEXTUAL = /^(text|search|url|tel|email|password|number|date|datetime-local|month|time|week)$/;
+  function isTextEntry(node) {
+    if (!node || node.nodeType !== 1) return false;
+    if (node.isContentEditable === true) return true;
+    if (node.tagName === 'TEXTAREA') return true;
+    return node.tagName === 'INPUT' && TEXTUAL.test(String(node.type || 'text').toLowerCase());
+  }
+  function setEditing(on) { const v = on ? 'true' : 'false'; if (root.dataset.editing !== v) root.dataset.editing = v; }
+
+  /* ---------- ① 抽屉生命周期 ---------- */
+  const DRAWER_IDLE_DELAY = 380;   /* 略大于关闭动画 350ms，动画播完才彻底移出布局 */
+  let drawerIdleTimer = 0;
+  const drawerEl = () => document.getElementById('widgetDrawer');
+  function drawerGoLive() {
+    const drawer = drawerEl();
+    if (!drawer) return;
+    window.clearTimeout(drawerIdleTimer);
+    if (drawer.dataset.idle) {
+      /* 先让元素回到布局里并渲染一帧，否则 display:none → flex 与 transform 变化
+         挤在同一次样式计算里，滑入动画不会播。 */
+      drawer.removeAttribute('data-idle');
+      void drawer.offsetWidth;
+    }
+  }
+  function drawerScheduleIdle() {
+    const drawer = drawerEl();
+    if (!drawer) return;
+    window.clearTimeout(drawerIdleTimer);
+    drawerIdleTimer = window.setTimeout(function () {
+      if (!screen.classList.contains('drawer-open')) drawer.dataset.idle = '1';
+    }, DRAWER_IDLE_DELAY);
+  }
+  const origOpenDrawer = window.openDrawer;
+  const origCloseDrawer = window.closeDrawer;
+  if (typeof origOpenDrawer === 'function') {
+    window.openDrawer = function () {
+      drawerGoLive();
+      const result = origOpenDrawer.apply(this, arguments);
+      /* 被守卫挡回来（CHAT 等页面不允许开抽屉）时，立刻恢复收起状态 */
+      if (!screen.classList.contains('drawer-open')) drawerScheduleIdle();
+      return result;
+    };
+  }
+  if (typeof origCloseDrawer === 'function') {
+    window.closeDrawer = function () {
+      const result = origCloseDrawer.apply(this, arguments);
+      drawerScheduleIdle();
+      return result;
+    };
+  }
+  /* 启动即收起：开局那 520px 溢出不该存在 */
+  if (drawerEl()) drawerEl().dataset.idle = '1';
+
+  /* ---------- ② 当前页面标记 ---------- */
+  const ACTIVE_APPS = [
+    ['chat', ':scope > .chat-app'],
+    ['mail', ':scope > .mail-app'],
+    ['moon', ':scope > .moon-app'],
+    ['invite', ':scope > .desktop-invite-app'],
+    ['box', ':scope > .box-app']
+  ];
+  let syncPending = false;
+  function syncActiveApp() {
+    syncPending = false;
+    let next = 'desktop';
+    for (let i = 0; i < ACTIVE_APPS.length; i += 1) {
+      const node = screen.querySelector(ACTIVE_APPS[i][1]);
+      if (node && node.classList.contains('is-visible')) { next = ACTIVE_APPS[i][0]; break; }
+    }
+    if (screen.dataset.activeApp !== next) screen.dataset.activeApp = next;
+    return next;
+  }
+  function scheduleSync() { if (syncPending) return; syncPending = true; window.requestAnimationFrame(syncActiveApp); }
+  syncActiveApp();
+  try { root.dataset.cssHas = (window.CSS && CSS.supports && CSS.supports('selector(:has(*))')) ? 'yes' : 'no'; } catch (_) { root.dataset.cssHas = 'no'; }
+  try {
+    /* 只盯 class 变化：各页面靠 is-visible 切换，够用，也不会被消息渲染刷屏 */
+    new MutationObserver(scheduleSync).observe(screen, { subtree: true, attributes: true, attributeFilter: ['class'] });
+  } catch (_) {}
+  window.addEventListener('pageshow', scheduleSync);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) scheduleSync(); });
+  document.addEventListener('pointerdown', scheduleSync, { capture: true, passive: true });
+  window.__mobiusActiveAppSync = syncActiveApp;
+
+  /* ---------- ④ 焦点守卫 ---------- */
+  document.addEventListener('focusin', function (event) {
+    const target = event.target;
+    if (!isTextEntry(target)) return;
+    setEditing(true);
+    /* 抽屉里的 INS 组件本身可编辑，编辑它们时不能把抽屉收掉 */
+    if (target.closest && target.closest('#widgetDrawer')) return;
+    if (screen.classList.contains('drawer-open') && typeof window.closeDrawer === 'function') { try { window.closeDrawer(); } catch (_) {} }
+    if (screen.scrollTop) screen.scrollTop = 0;
+  }, true);
+  document.addEventListener('focusout', function (event) {
+    if (!isTextEntry(event.target)) return;
+    window.setTimeout(function () { if (!isTextEntry(document.activeElement)) setEditing(false); }, 120);
+  }, true);
+  window.addEventListener('pagehide', function () { setEditing(false); });
+
+  /* 供测试/排障调用：把状态回正并返回当前页面标记 */
+  window.__mobiusDrawerGuard = function () {
+    const app = syncActiveApp();
+    if (screen.scrollTop) screen.scrollTop = 0;
+    if (app !== 'desktop' && screen.classList.contains('drawer-open') && typeof window.closeDrawer === 'function') { try { window.closeDrawer(); } catch (_) {} }
+    return app;
+  };
+})();
+</script>
+</body>
 </html>
