@@ -11,7 +11,7 @@ const STORE = 'state';
  * 应用自身的 mobius-image-resilience-v1（媒体韧性缓存，最多 64MB 用户媒体）
  * 由页面代码管理，本 SW 绝不可删除或拦截。
  * ------------------------------------------------------------------ */
-const CACHE_VERSION = 'v111z6';
+const CACHE_VERSION = 'v111z8';
 const SHELL_CACHE = `mobius-shell-${CACHE_VERSION}`;
 const SHELL_CACHE_PREFIX = 'mobius-shell-';
 const APP_MEDIA_CACHE = 'mobius-image-resilience-v1'; // 应用私有，永不触碰
@@ -22,8 +22,8 @@ const APP_MEDIA_CACHE = 'mobius-image-resilience-v1'; // 应用私有，永不�
    这里做最后一道闸：不是同源网址就换成随包交付的站点图标。
    v111z3：站点图标换成用户自己的真 logo；URL 统一带 `?v=v111z3` 破缓存
    （手机里可能还留着旧占位图；问号只影响抓取，isPrecachedAsset 只比 pathname，见下）。 */
-const NOTIF_ICON_FALLBACK = './icons/icon-192.png?v=v111z6';
-const NOTIF_BADGE_FALLBACK = './icons/badge-96.png?v=v111z6';
+const NOTIF_ICON_FALLBACK = './icons/icon-192.png?v=v111z8';
+const NOTIF_BADGE_FALLBACK = './icons/badge-96.png?v=v111z8';
 function notifAssetUrl(value, fallback) {
   const s = String(value || '').trim();
   if (!s) return fallback;
@@ -35,13 +35,13 @@ const PRECACHE_URLS = [
   './',
   './index.html',
   './manifest.webmanifest',
-  './icons/icon-192.png?v=v111z6',
-  './icons/icon-512.png?v=v111z6',
-  './icons/icon-maskable-512.png?v=v111z6',
-  './icons/apple-touch-icon-180.png?v=v111z6',
-  './icons/badge-96.png?v=v111z6',
-  './icons/favicon-32.png?v=v111z6',
-  './icons/favicon-64.png?v=v111z6'
+  './icons/icon-192.png?v=v111z8',
+  './icons/icon-512.png?v=v111z8',
+  './icons/icon-maskable-512.png?v=v111z8',
+  './icons/apple-touch-icon-180.png?v=v111z8',
+  './icons/badge-96.png?v=v111z8',
+  './icons/favicon-32.png?v=v111z8',
+  './icons/favicon-64.png?v=v111z8'
 ];
 
 // 运行时缓存的第三方资源（lucide 图标库走 CDN，缓存后离线仍有图标）
@@ -392,14 +392,17 @@ self.addEventListener('message', event => {
           const settings = { ...preferences, ...(saved || {}) };
           if (settings.systemNotificationEnabled === false || isInDnd(settings)) { jobSkipped = true; return; }
           const soundOn = settings.notificationSoundEnabled !== false;
+          const vibrateOn = settings.notificationVibrateEnabled !== false;
+          /* v111z7：用户要求「每一条都要弹」—— tag 带上这个到点的时间戳，
+             不然同一个人连着两个到点会互相覆盖，看着就像「没弹」。 */
           await self.registration.showNotification(job.title, {
             body: job.body,
             icon: notifAssetUrl(job.icon, NOTIF_ICON_FALLBACK),
             badge: notifAssetUrl(job.badge, NOTIF_BADGE_FALLBACK),
             actions: [{ action: 'open', title: '打开' }, { action: 'dismiss', title: '忽略' }],
-            tag: job.tag,
-            renotify: soundOn,
-            silent: !soundOn,
+            tag: job.tag ? `${job.tag}:${job.dueAt}` : undefined,
+            renotify: soundOn || vibrateOn,
+            silent: !(soundOn || vibrateOn),
             timestamp: Date.now(),
             lang: 'zh-CN',
             data: { id: job.tag, route: job.route, routeData: job.routeData, ...job.routeData }
@@ -414,7 +417,7 @@ self.addEventListener('message', event => {
             wakeFiredKeys.set(`${job.tag || job.handle}|${job.dueAt}`, Date.now());
             persistWakeFiredKeys();   /* v111z6：落盘，SW 重启后仍然记得 */
             clients.forEach(client => client.postMessage({
-              type: 'WAKE_FIRED', handle: job.handle || '', tag: job.tag || '',
+              type: 'WAKE_FIRED', handle: job.handle || '', tag: job.tag || '', body: job.body || '',
               dueAt: job.dueAt, firedAt: Date.now(), source: 'sw', delivered: !!jobDelivered
             }));
           } catch (_) {}

@@ -13,9 +13,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Möbius">
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png?v=v111z6">
-  <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon-180.png?v=v111z6">
-  <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png?v=v111z6">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png?v=v111z8">
+  <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon-180.png?v=v111z8">
+  <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png?v=v111z8">
   <!-- 填写后端 Web Push 配置后，页面关闭或系统锁屏时也可由推送服务器唤醒 SW。 -->
   <meta name="dream-push-vapid-public-key" content="">
   <meta name="dream-push-subscribe-endpoint" content="">
@@ -9937,6 +9937,7 @@ html[data-perf-mode="off"] #appScreen[data-widget-skin="glass"]{
             <div class="dashboard-setting-row notif-fold-head"><div><strong>通知与推送</strong><small id="notifFoldSummary">收起中 · 点右侧展开</small></div><div class="notification-control"><button class="small" type="button" id="notifFoldToggleBtn" onclick="toggleNotificationSection()">展开 ▾</button></div></div>
             <div class="dashboard-setting-row notification-row"><div><strong>通知自检</strong><small>逐项检查通知权限、Service Worker、后台推送、仅后台显示和免打扰，哪一环断了会直接标出来。</small></div><div class="notification-control"><button class="small" type="button" onclick="renderNotificationSelfCheck(true)">重新检查</button><button class="small" type="button" onclick="testSystemNotification()">发一条测试通知</button></div></div>
             <div class="global-notif-selfcheck" id="globalNotifSelfCheck"></div>
+            <div class="dashboard-setting-row"><div><strong>版本与更新</strong><small id="mobiusVersionText">正在读取…</small></div><div class="notification-control"><button class="small primary" type="button" onclick="checkMobiusUpdate()">检查更新</button><button class="small" type="button" onclick="forceReinstallShell()">强制更新</button></div></div>
             <div class="notif-fold-body" id="globalNotificationSection" hidden>
             <div class="notif-group-title">① 提醒方式</div>
             <div class="dashboard-setting-row notification-row"><div><strong>系统通知</strong><small>接入 <b>Notification.requestPermission()</b> 与 <b>Service Worker</b>，支持后台系统级推送、点击跳转与通知路由。</small></div><div class="notification-control"><span class="notification-status default" id="notificationPermissionStatus">检查中…</span><label class="setting-toggle"><input id="globalSystemNotificationToggle" type="checkbox"><i></i></label></div></div>
@@ -23313,7 +23314,7 @@ html[data-perf-mode="off"] #appScreen[data-widget-skin="glass"]{
     /* v111j12：页面自己跑的壳该是哪一版（要和 sw.js 的 CACHE_VERSION 一起改）。
        用途见下面的 syncOfflineShellOnBoot —— 手机常年不关页时，靠这个自检发现
        「我还在跑旧壳」，然后趁后台换掉。 */
-    window.MOBIUS_SHELL_EXPECT = 'v111z6';
+    window.MOBIUS_SHELL_EXPECT = 'v111z8';
     function comboDebug(msg) {
       try {
         if (localStorage.getItem('mobius:combo-debug') !== '1') return;
@@ -23881,6 +23882,8 @@ html[data-perf-mode="off"] #appScreen[data-widget-skin="glass"]{
       const lines = [...body.querySelectorAll(':scope > .chat-message-line, :scope > .chat-call-system-message')];
       /* v111r：写存档之前先洗一遍引用块，老文件名不会跟着历史一直传下去 */
       try { sanitizeChatQuoteBlocks(body); } catch (_) {}
+      /* v111z8：老历史里的字卡请求卡还带着「拼不出来」那句提示 —— 写回之前也剥掉 */
+      try { sanitizeGlyphRequestBubbles(body); } catch (_) {}
       lines.forEach(stampChatMessageLine);
       // 不设任何条数/体积上限（用户指令：系统不得自动删除聊天记录）；存储真写满时由 writeDreamJSON 如实提示，删什么由用户决定。
       const serialized = lines.map(line => {
@@ -24183,6 +24186,8 @@ html[data-perf-mode="off"] #appScreen[data-widget-skin="glass"]{
       dedupeChatSpecialCardsInDom(body);
       /* v111r：读出来的老引用里可能还留着导出文件名，这里就地洗掉 */
       try { sanitizeChatQuoteBlocks(body); } catch (_) {}
+      /* v111z8：读到老卡片时把「拼不出来」那句提示剥掉 */
+      try { sanitizeGlyphRequestBubbles(body); } catch (_) {}
       // v109：记录「DOM 已经对上快照的哪个版本」。saveChatHistoryForHandle 成功时也会刷新它，
       // isChatThreadDomBehindSnapshot 靠这个差值判断 DOM 是否落后。
       body.dataset.renderedSnapshotAt = String(Number(snapshot.updatedAt) || 0);
@@ -24245,7 +24250,11 @@ html[data-perf-mode="off"] #appScreen[data-widget-skin="glass"]{
       if(bubble.classList.contains('chat-komo-pay-request')){const total=cleanChatPreviewText(bubble.querySelector('.chat-komo-pay-total')?.textContent,14);return total?`[KOMO 代付请求] ${total}`:'[KOMO 代付请求]';}
       if(bubble.classList.contains('chat-komo-pay-result')){const label=cleanChatPreviewText(bubble.querySelector('.chat-komo-pay-body > small')?.textContent,20);return label?`[KOMO 代付] ${label}`:'[KOMO 代付]';}
       if(bubble.classList.contains('chat-komo-flow-bubble')){const title=cleanChatPreviewText(bubble.querySelector('.chat-komo-flow-head > span')?.textContent,20);const text=cleanChatPreviewText(bubble.querySelector('.chat-komo-flow-line')?.textContent,24);return title?(text?`[KOMO] ${title} · ${text}`:`[KOMO] ${title}`):'[KOMO]';}
-      const clone=bubble.cloneNode(true);clone.querySelectorAll('.chat-quoted-context,.chat-quote-block,.mail-reply-reference').forEach(node=>node.remove());const text=cleanChatPreviewText(clone.textContent,52);return text||'发来一条新消息';
+      const clone=bubble.cloneNode(true);clone.querySelectorAll('.chat-quoted-context,.chat-quote-block,.mail-reply-reference').forEach(node=>node.remove());
+      /* v111z8：类名丢了的老卡片（历史序列化过）也会落到这里 —— 逐字认出来，别再连成一长串 */
+      const rawText=clone.textContent;const guessed=typeof normalizeGlyphRequestPreview==='function'?normalizeGlyphRequestPreview(rawText):rawText;
+      if(guessed===GLYPH_REQUEST_PREVIEW_TEXT)return guessed;
+      const text=cleanChatPreviewText(rawText,52);return text||'发来一条新消息';
     }
     function chatPendingItemPreview(item={}){const type=String(item.kind||item.type||'text');if(type==='voice'||type==='voice-card'){const seconds=Math.max(0,Math.round(Number(item.duration)||0));return seconds?`[语音] ${seconds}秒`:'[语音]';}if(type==='sticker')return '表情包';if(type==='kaomoji')return cleanChatPreviewText(item.text||item.emoji,24)||'颜文字';if(type==='poke')return `[拍一拍] ${cleanChatPreviewText(item.text,30)}`;if(type==='glyphcard')return '对方发来一个添加字卡请求';if(type==='board')return '[画板传讯]';if(type==='image')return '[图片]';return cleanChatPreviewText(item.text,52)||'发来一条消息';}
     function incomingChatNodePreview(line) {
@@ -24615,24 +24624,66 @@ html[data-perf-mode="off"] #appScreen[data-widget-skin="glass"]{
        改后：tag 固定为 chat-{handle}，新消息覆盖同一条并只更新文案；
        25 秒内不再重复响铃（覆盖时 renotify:false + silent），超过窗口的下一条才再响。
        静音的聊天室：不横幅、不响铃、不推系统通知，只静默落进通知中心。 */
-    const NOTIFY_RING_WINDOW_MS = 25000;
-    const chatNotificationRingAt = {};
-    function shouldRingForChatNotification(handle) {
-      const now = Date.now();
-      const last = Number(chatNotificationRingAt[handle]) || 0;
-      if (last && now - last < NOTIFY_RING_WINDOW_MS) return false;
-      chatNotificationRingAt[handle] = now;
-      return true;
+    /* ══ v111z7 · 每一条消息都是一条独立系统通知（用户 2026-09-27 报修）══════════
+       v111t 起是「同一个人只占一条通知、25 秒内不重复响」——落到手机上就是：
+       连着的第二、第三条被系统当成「同一条通知的更新」，不冒头也不出声，
+       用户看到的就是「时不时才弹出一条」。
+       现在：**每条消息 = 一条独立通知（tag 带序号）+ 每次都提醒 + 每次都冒头**；
+       同一个人只留最近 CHAT_NOTIF_KEEP_PER_HANDLE 条（更旧的自动收掉），通知栏不刷爆。
+       「静音这个聊天室」仍然一条都不弹（那是用户自己在聊天室里开的开关）。 */
+    const CHAT_NOTIF_KEEP_PER_HANDLE = 4;
+    function chatNotificationAlert() {
+      try {
+        const s = getSettings();
+        return s.notificationSoundEnabled !== false || s.notificationVibrateEnabled !== false;
+      } catch (_) { return true; }
     }
+    /* 名字保留（自检 / 外部会问）：现在的答案永远是「要提醒」 */
+    function shouldRingForChatNotification() { return chatNotificationAlert(); }
+    window.chatNotificationAlert = chatNotificationAlert;
+    /* 同一个人只留最近几条系统通知：每条都弹，但通知栏不会被刷爆 */
+    async function closeOldChatNotifications(handle, keep = CHAT_NOTIF_KEEP_PER_HANDLE, regOverride = null) {
+      const prefix = `chat:${handle}:`;
+      try {
+        let reg = regOverride;
+        if (!reg) {
+          if (!('serviceWorker' in navigator) || !navigator.serviceWorker.ready) return 0;
+          reg = await navigator.serviceWorker.ready.catch(() => null);
+        }
+        if (!reg || typeof reg.getNotifications !== 'function') return 0;
+        const list = (await reg.getNotifications()).filter(n => String((n && n.tag) || '').startsWith(prefix));
+        if (list.length <= keep) return 0;
+        list.sort((a, b) => Number((b && b.timestamp) || 0) - Number((a && a.timestamp) || 0));
+        let closed = 0;
+        list.slice(keep).forEach(n => { try { n.close(); closed += 1; } catch (_) {} });
+        return closed;
+      } catch (_) { return 0; }
+    }
+    window.closeOldChatNotifications = closeOldChatNotifications;
     function isChatNotificationMuted(handle) {
       try { return getChatSettings(handle).notificationsMuted === true; } catch (_) { return false; }
     }
     window.isChatNotificationMuted = isChatNotificationMuted;
 
+    /* v111z8：一张字卡请求卡的「整卡文字」长这样：
+       我想要这个字卡 / 记得吃药 / 加进字卡 / 这次不用 —— 无论从哪条路漏出来，都换成一句人话。 */
+    const GLYPH_REQUEST_PREVIEW_TEXT = '对方发来一个添加字卡请求';
+    function normalizeGlyphRequestPreview(text) {
+      const raw = String(text || '').replace(/\s+/g, '');
+      if (!raw) return text;
+      const looksLikeCard = (/我想要这个字卡/.test(raw) && /(加进字卡|这次不用)/.test(raw))
+        || /^我想要这个字卡/.test(raw);
+      return looksLikeCard ? GLYPH_REQUEST_PREVIEW_TEXT : text;
+    }
+    window.normalizeGlyphRequestPreview = normalizeGlyphRequestPreview;
+
     function dispatchChatArrivalNotifications(handle, preview = '', batchCount = 1) {
       if (!handle || isChatConversationBeingRead(handle)) return;
       try { window.mobiusWakeLedger && window.mobiusWakeLedger.firedForHandle(String(handle), Date.now(), 'page'); } catch(_) {}
-      const cleanPreview = String(preview || '发来一条新消息').replace(/\s+/g, ' ').trim().slice(0, 120);
+      let cleanPreview = String(preview || '发来一条新消息').replace(/\s+/g, ' ').trim().slice(0, 120);
+      /* v111z8：字卡请求卡整张卡的文字（标题 + 引用 + 两个按钮）不许进通知 ——
+         不管预览是从哪条路来的，一律换成这一句。 */
+      if (typeof normalizeGlyphRequestPreview === 'function') cleanPreview = normalizeGlyphRequestPreview(cleanPreview);
       const count = Math.max(1, normalizeChatUnreadCount(batchCount));
       const identity = getChatBannerIdentity(handle);
       const unreadTotal = Math.max(count, getChatUnreadCount(handle));
@@ -24671,7 +24722,8 @@ html[data-perf-mode="off"] #appScreen[data-widget-skin="glass"]{
         // 页面开着（在别的界面也算）：除了横幅再给一声提示音，"收到"要看得见也听得见
         try { playGlobalSound('message'); } catch (_) {}
       }
-      // v111t：ring=false 时只静默覆盖上一条（同 tag），不再响铃震动
+      /* v111z7：每条消息一个独立 tag —— 条条都冒头，不会互相覆盖 */
+      const notifTag = `${group}:${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
       const ring = shouldRingForChatNotification(handle);
       // 页面仍存活时通过 registration.showNotification 交给 SW；后台、切换应用和锁屏界面均使用系统通知通道。
       /* v111z6：这条到点如果是 SW 刚刚报出来的（同上一条 tag），系统通知就不再推第二遍 ——
@@ -24679,7 +24731,12 @@ html[data-perf-mode="off"] #appScreen[data-widget-skin="glass"]{
       let swJustNotified = false;
       try {
         const n = window.__swWakeNotified;
-        swJustNotified = !!(n && n.handle === String(handle) && (Date.now() - Number(n.at || 0)) < 15000);
+        if (n && n.handle === String(handle) && (Date.now() - Number(n.at || 0)) < 10000) {
+          /* v111z7：只有**同一句话**才算「刚报过」—— 后台刚报过 A，紧接着来的 B 照弹；
+             标记用掉就清，免得把后面真正该弹的那条也压掉。 */
+          swJustNotified = !n.body || String(n.body).trim() === String(cleanPreview).trim();
+          if (swJustNotified) window.__swWakeNotified = null;
+        }
       } catch (_) {}
       if (!swJustNotified && typeof window.showSystemNotification === 'function') {
         Promise.resolve().then(() => window.showSystemNotification({
@@ -24688,13 +24745,13 @@ html[data-perf-mode="off"] #appScreen[data-widget-skin="glass"]{
           body: systemBody,
           route: group,
           routeData: { handle, name: identity.name, initials: identity.initials, visual: identity.visual, count: unreadTotal },
-          tag: group,
+          tag: notifTag,
           group,
           kind: 'message',
           count,
           renotify: ring,
           silent: !ring
-        })).catch(() => {});
+        })).then(() => { try { closeOldChatNotifications(handle); } catch (_) {} }).catch(() => {});
       }
     }
 
@@ -26251,6 +26308,18 @@ html[data-perf-mode="off"] #appScreen[data-widget-skin="glass"]{
       return out;
     }
     /* 把已经躺在存档里的老引用洗干净：只改文字，不动缩略图与结构 */
+    /* v111z8：字卡请求卡上的老提示（v111z5 之前版本生成的卡片，历史里还存着）
+       —— 读存档 / 写存档各洗一遍，用户看到的永远是洗过的那张卡。 */
+    function sanitizeGlyphRequestBubbles(root) {
+      if (!root || typeof root.querySelectorAll !== 'function') return 0;
+      let cleaned = 0;
+      root.querySelectorAll('.chat-glyphreq-bubble').forEach(bubble => {
+        bubble.querySelectorAll('.chat-glyphreq-hint').forEach(node => { try { node.remove(); cleaned += 1; } catch (_) {} });
+      });
+      return cleaned;
+    }
+    window.sanitizeGlyphRequestBubbles = sanitizeGlyphRequestBubbles;
+
     function sanitizeChatQuoteBlocks(root) {
       const scope = root || document;
       let touched = 0;
@@ -33767,8 +33836,8 @@ html[data-perf-mode="off"] #appScreen[data-widget-skin="glass"]{
      所以不会再出现「指过去是 404 → 系统给一枚默认黑图标」。
      v111z3：这七个文件换成**用户自己的真 logo**（浅蓝灰底 + 深墨「∞」，由用户提供，原样交付）；
      并统一加 `?v=v111z3` —— 手机上可能还留着上一版占位图的 HTTP 缓存，换个 URL 才保证抓到新图。 */
-  const NOTIF_ICON_FALLBACK_URL = new URL('./icons/icon-192.png?v=v111z6', location.href).href;
-  const NOTIF_BADGE_URL = new URL('./icons/badge-96.png?v=v111z6', location.href).href;
+  const NOTIF_ICON_FALLBACK_URL = new URL('./icons/icon-192.png?v=v111z8', location.href).href;
+  const NOTIF_BADGE_URL = new URL('./icons/badge-96.png?v=v111z8', location.href).href;
   async function resolveNotificationAvatarIcon(routeData, opts) {
 
 
@@ -33838,7 +33907,9 @@ html[data-perf-mode="off"] #appScreen[data-widget-skin="glass"]{
        25 秒内同一个人再发也不会重复响铃震动；声音 / 震动各有开关。 */
     const soundOn = s.notificationSoundEnabled !== false;
     const vibrateOn = s.notificationVibrateEnabled !== false;
-    const ring = opts.renotify !== false && soundOn && opts.silent !== true;
+    /* v111z7：只要「声音或震动」有一个开着就提醒 —— 以前只看声音开关，
+       声音关掉时连震动也一起静默了。 */
+    const ring = opts.renotify !== false && (soundOn || vibrateOn) && opts.silent !== true;
     /* v111z：data: URL 转成 blob:（系统才肯显示），没有头像就退回站点图标；
        badge 用单色图（Android 会把这一格压成剪影，彩色 logo 会变成一圈黑）。 */
     const notifIconUrl = await notificationIconUrl(opts.icon || avatarIcon);
@@ -33973,6 +34044,7 @@ html[data-perf-mode="off"] #appScreen[data-widget-skin="glass"]{
     keepAliveState.mode = keepAliveMode();
     try { applyBackgroundKeepAlive(); } catch(_){}
     renderWakeLedgerSummary();
+    try { window.refreshMobiusVersionText && window.refreshMobiusVersionText(); } catch(_){}
     Promise.resolve(renderNotificationSelfCheck()).catch(()=>{});
     updatePermissionUI();
     updateCenterCount();
@@ -34298,6 +34370,52 @@ html[data-perf-mode="off"] #appScreen[data-widget-skin="glass"]{
         armShellSwap(why);
       } catch (_) {}
     };
+    /* v111z8：手机上常年挂着 App 时，「一直跑旧壳」是最难发现的一类问题 ——
+       用户报的现象（旧提示还在、通知样式是老样子）往往就是壳没换。
+       这里给两个明面上的出口：轻的检查更新（差异就换壳），重的强制更新（清掉离线壳重下）。 */
+    async function refreshMobiusVersionText(){
+      const el = document.getElementById('mobiusVersionText');
+      if (!el) return;
+      let cached = '';
+      try {
+        const st = await Promise.race([
+          postToMobiusServiceWorker({ type: 'SHELL_SYNC' }, 5000),
+          new Promise(resolve => window.setTimeout(() => resolve(null), 6000))
+        ]);
+        if (st && st.ok) cached = String(st.version || '');
+      } catch (_) {}
+      const same = !cached || cached === String(window.MOBIUS_SHELL_EXPECT);
+      el.textContent = same
+        ? `当前 ${window.MOBIUS_SHELL_EXPECT} · 离线壳已是最新`
+        : `当前 ${window.MOBIUS_SHELL_EXPECT} · 离线壳还是 ${cached}（点「检查更新」换壳）`;
+    }
+    window.refreshMobiusVersionText = refreshMobiusVersionText;
+    window.checkMobiusUpdate = async function(){
+      try { showGlobalSettingsToast('正在检查更新…'); } catch (_) {}
+      try { const reg = await navigator.serviceWorker.getRegistration(); if (reg) await reg.update(); } catch (_) {}
+      try { await postToMobiusServiceWorker({ type: 'REFRESH_SHELL' }, 15000); } catch (_) {}
+      let st = null;
+      try {
+        st = await Promise.race([
+          postToMobiusServiceWorker({ type: 'SHELL_SYNC' }, 8000),
+          new Promise(resolve => window.setTimeout(() => resolve(null), 9000))
+        ]);
+      } catch (_) {}
+      const cached = st && st.ok ? String(st.version || '') : '';
+      const needs = !cached || cached !== String(window.MOBIUS_SHELL_EXPECT) || st.stale === true || st.different === true;
+      if (!needs) { await refreshMobiusVersionText(); try { showGlobalSettingsToast(`已经是最新版（${window.MOBIUS_SHELL_EXPECT}）`); } catch (_) {} return; }
+      try { showGlobalSettingsToast('发现新版本，马上换壳…'); } catch (_) {}
+      try { sessionStorage.setItem(SHELL_SWAP_GUARD_KEY, '0'); } catch (_) {}   /* 手动检查 = 允许再换一次 */
+      swapOfflineShell(`手动检查更新：离线壳 ${cached || '未知'} ≠ 页面 ${window.MOBIUS_SHELL_EXPECT}`);
+    };
+    window.forceReinstallShell = async function(){
+      try { showGlobalSettingsToast('正在重装离线壳（清掉本机缓存重下）…'); } catch (_) {}
+      try {
+        if ('caches' in window) { const keys = await caches.keys(); await Promise.all(keys.map(k => caches.delete(k))); }
+      } catch (_) {}
+      try { const reg = await navigator.serviceWorker.getRegistration(); if (reg) await reg.update(); } catch (_) {}
+      window.setTimeout(() => { try { location.reload(); } catch (_) {} }, 800);
+    };
     window.__armShellSwap = armShellSwap;
     window.__syncOfflineShellOnBoot = syncOfflineShellOnBoot;
     window.setTimeout(() => { try { syncOfflineShellOnBoot(); } catch (_) {} }, 4000);
@@ -34325,7 +34443,7 @@ html[data-perf-mode="off"] #appScreen[data-widget-skin="glass"]{
         } else if(msg.type==='WAKE_FIRED'){
           /* v111z6：SW 说「这个到点我发过通知了」——页面还活着就立刻把这条消息生成出来，
              否则通知里那句和 App 里看到的会差一个心跳（最长 1 分钟），看着就像「通知乱报」。 */
-          try { window.__swWakeNotified = { handle: String(msg.handle || ''), tag: String(msg.tag || ''), at: Date.now() }; } catch(_){}
+          try { window.__swWakeNotified = { handle: String(msg.handle || ''), tag: String(msg.tag || ''), body: String(msg.body || ''), at: Date.now() }; } catch(_){}
           try { if (typeof processProactiveEvents === 'function') processProactiveEvents(); } catch(_){}
           try {
             window.mobiusWakeLedger && window.mobiusWakeLedger.fired({ handle: msg.handle || '', dueAt: Number(msg.dueAt) || 0, firedAt: Number(msg.firedAt) || Date.now(), source: msg.source || 'sw' });
@@ -46990,6 +47108,36 @@ window.MobiusPerf = {
   display: -webkit-box !important; -webkit-box-orient: vertical !important;
   -webkit-line-clamp: 2 !important; line-clamp: 2 !important;
 }
+</style>
+<style id="v111z8FixStyles">
+/* ═══ v111z8 · 报修批第六轮（用户 2026-09-27）═══════════════════════════════
+   ① 引用回复：短引用不许被挤到第二行。
+      实测每条短引用都正好多出 8px 的第二个行盒 —— 差的那 2px 来自引用块自己的
+      负左右边距（margin: -2px -2px 7px）：它让引用块的外框比父容器为它算出的
+      宽度少 4px，于是最后一个字被挤下去。去掉负边距（视觉几乎无差）后，短引用
+      全部回到一行；真正的长引用仍然按原规则两行封顶。 */
+#chatApp .chat-quoted-context { margin: 0 0 7px !important; }
+#chatApp .chat-quoted-context.has-thumb { margin: 0 0 7px !important; }
+
+/* ② 「我想要这个字卡」卡片：两个按钮不许画到气泡外。
+      原来气泡是 block + max-width，内容比它宽时不会把气泡撑开（实测多出 12px），
+      大字号下更明显（1.7× 时按钮右侧超出 20px）。
+      现在气泡按内容宽自适应（上限仍在），并且给它一个「够两个按钮并排」的最小宽度
+      —— 按钮仍然一行排开（跟以前一样），只是不会再顶出气泡；字号特别大、一行真的
+      放不下时才折到第二行，反正都在气泡里面。 */
+#chatApp .chat-glyphreq-bubble {
+  box-sizing: border-box !important;
+  width: max-content !important;
+  min-width: 140px !important;   /* 够两个按钮并排；窄屏上也远比可用宽度小 */
+  max-width: min(86%, 260px) !important;
+}
+#chatApp .chat-glyphreq-actions { flex-wrap: wrap !important; }
+#chatApp .chat-glyphreq-btn { flex: 1 1 auto !important; min-width: 0 !important; }
+#chatApp .chat-glyphreq-head,
+#chatApp .chat-glyphreq-quote { overflow-wrap: anywhere !important; }
+
+/* ③ 老历史里的「拼不出来」提示（v111z5 之前的卡片）：DOM 洗不掉时也不许显示 */
+#chatApp .chat-glyphreq-hint { display: none !important; }
 </style>
 <!-- ==================== v111q · 特殊卡片皮肤开关 ====================
      只做一件事：把 CARD_SKIN 写到 #chatApp 的 data-card-skin 上，CSS 侧整段生效。
