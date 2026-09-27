@@ -11,33 +11,80 @@ const STORE = 'state';
  * 应用自身的 mobius-image-resilience-v1（媒体韧性缓存，最多 64MB 用户媒体）
  * 由页面代码管理，本 SW 绝不可删除或拦截。
  * ------------------------------------------------------------------ */
-const CACHE_VERSION = 'v111j10';
+const CACHE_VERSION = 'v111z6';
 const SHELL_CACHE = `mobius-shell-${CACHE_VERSION}`;
 const SHELL_CACHE_PREFIX = 'mobius-shell-';
 const APP_MEDIA_CACHE = 'mobius-image-resilience-v1'; // 应用私有，永不触碰
+
+/* v111z2：通知里的 icon / badge 只能喂「同源网址」。
+   data: 在系统那侧表现不稳、blob: 更是页面进程里的临时地址（浏览器进程取不到）——
+   两者都可能让 showNotification 直接失败，表现就是「一条通知都不弹」。
+   这里做最后一道闸：不是同源网址就换成随包交付的站点图标。
+   v111z3：站点图标换成用户自己的真 logo；URL 统一带 `?v=v111z3` 破缓存
+   （手机里可能还留着旧占位图；问号只影响抓取，isPrecachedAsset 只比 pathname，见下）。 */
+const NOTIF_ICON_FALLBACK = './icons/icon-192.png?v=v111z6';
+const NOTIF_BADGE_FALLBACK = './icons/badge-96.png?v=v111z6';
+function notifAssetUrl(value, fallback) {
+  const s = String(value || '').trim();
+  if (!s) return fallback;
+  if (/^(data|blob):/i.test(s)) return fallback;
+  return s;
+}
 
 const PRECACHE_URLS = [
   './',
   './index.html',
   './manifest.webmanifest',
-  './icons/icon-192.png',
-  './icons/icon-512.png',
-  './icons/icon-maskable-512.png',
-  './icons/apple-touch-icon-180.png',
-  './icons/badge-96.png',
-  './icons/favicon-32.png',
-  './icons/favicon-64.png'
+  './icons/icon-192.png?v=v111z6',
+  './icons/icon-512.png?v=v111z6',
+  './icons/icon-maskable-512.png?v=v111z6',
+  './icons/apple-touch-icon-180.png?v=v111z6',
+  './icons/badge-96.png?v=v111z6',
+  './icons/favicon-32.png?v=v111z6',
+  './icons/favicon-64.png?v=v111z6'
 ];
 
 // 运行时缓存的第三方资源（lucide 图标库走 CDN，缓存后离线仍有图标）
 const RUNTIME_ALLOW_HOSTS = ['unpkg.com', 'cdn.jsdelivr.net'];
+
+/* v111u：页面交接过来的「最近到点」唤醒任务（只为观测与去重，真正靠上面的定时器） */
+let wakeJobs = [];
+const wakeFiredKeys = new Map();   // v111v：key → 发出时间，避免接力交接时同一条重复发
+/* v111z6：这张表以前只活在内存里 —— Chrome 空闲就会把 SW 杀掉，表跟着丢，
+   于是「同一条到点」在页面下一分钟接力时又发一遍（用户报的「通知一直重复」）。
+   现在落进 IndexedDB（与 preferences 同一个 state 仓），并保留 24 小时。 */
+const WAKE_FIRED_STATE_KEY = 'wakeFired';
+const WAKE_FIRED_KEEP_MS = 24 * 60 * 60 * 1000;
+let wakeFiredLoaded = false;
+async function loadWakeFiredKeys(){
+  if (wakeFiredLoaded) return wakeFiredKeys;
+  wakeFiredLoaded = true;
+  try {
+    const saved = await getState(WAKE_FIRED_STATE_KEY, {});
+    const now = Date.now();
+    Object.entries(saved && typeof saved === 'object' ? saved : {}).forEach(([key, at]) => {
+      if (now - Number(at) < WAKE_FIRED_KEEP_MS) wakeFiredKeys.set(String(key), Number(at));
+    });
+  } catch (_) {}
+  return wakeFiredKeys;
+}
+function persistWakeFiredKeys(){
+  try {
+    const now = Date.now();
+    const out = {};
+    wakeFiredKeys.forEach((at, key) => { if (now - Number(at) < WAKE_FIRED_KEEP_MS) out[key] = Number(at); });
+    setState(WAKE_FIRED_STATE_KEY, out);
+  } catch (_) {}
+}
 
 let preferences = {
   systemNotificationEnabled: true,
   notificationOnlyBackground: false,
   notificationDndEnabled: false,
   notificationDndStart: '22:00',
-  notificationDndEnd: '08:00'
+  notificationDndEnd: '08:00',
+  notificationSoundEnabled: true,
+  notificationVibrateEnabled: true
 };
 
 /* ========================== 状态存储（原样保留） ========================== */
@@ -162,6 +209,14 @@ self.addEventListener('activate', event => {
       }));
     } catch (_) {}
     await self.clients.claim();
+    /* v111j12：装好新壳后主动告诉所有已开的页面「缓存版本已经变了」。
+       旧写法只在导航请求里比对新旧 index.html 再发消息 —— 那一刻页面正在被替换，
+       消息发给了正在卸载的旧页面，等于永远收不到；手机上常年挂着不关的 App
+       就这样一直停在旧版本上（用户看到的连连成句气泡还是旧样式、节奏还是老规则）。 */
+    try {
+      const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      clients.forEach(client => client.postMessage({ type: 'SHELL_VERSION', version: CACHE_VERSION }));
+    } catch (_) {}
   })());
 });
 
@@ -170,7 +225,7 @@ self.addEventListener('activate', event => {
 function isPrecachedAsset(url) {
   const path = url.pathname.replace(/\/+$/, '/');
   return PRECACHE_URLS.some(entry => {
-    const clean = entry.replace('./', '');
+    const clean = entry.replace('./', '').split('?')[0];   /* v111z3：预缓存里带了 ?v= 破缓存串，比 pathname 时要剥掉 */
     return clean && (path.endsWith(`/${clean}`) || path === `/${clean}`);
   });
 }
@@ -210,10 +265,25 @@ self.addEventListener('fetch', event => {
   if (url.pathname.startsWith('/cdn-cgi/')) return;
 
   // 4) 页面导航：先给缓存（秒开），后台静默更新，有新版本再通知页面。
+  /* ⚠ v111j13：这一段以前对所有导航一视同仁，把「任何页面的响应」都写进 ./index.html 的缓存位。
+     于是只要你打开过随包附带的 persona-check.html 或诊断页，App 的缓存就被换成了那个页面 ——
+     下次打开 App 可能直接给你测试页，版本自检也跟着乱（缓存长度永远对不上 → 反复换壳）。
+     现在只有「打开 App 本身」（路径是 / 或 /index.html）走这套；其它页面直接走网络。 */
+  const isShellNavigation = request.mode === 'navigate'
+    && (url.pathname === '/' || url.pathname === '' || url.pathname.endsWith('/index.html'));
+  if (request.mode === 'navigate' && !isShellNavigation) {
+    return;                    // 其它页面（persona-check / 诊断页）走网络，绝不碰壳缓存位
+  }
   if (request.mode === 'navigate') {
     event.respondWith((async () => {
       const cache = await caches.open(SHELL_CACHE);
       const cached = await cache.match('./index.html') || await cache.match('./');
+      if (cached) {
+        /* 记下「这次导航实际发给页面的那份壳有多长」——页面启动自检时拿它跟线上最新比，
+           两边不一样就说明页面跑的已经是旧壳（哪怕 sw 自己的版本号没变）。
+           没有这一步的话，「内容变了但版本号没动」的上传会让 App 永远停在旧版本。 */
+        try { cached.clone().text().then(text => setState('lastServed', { length: text.length, at: Date.now() })).catch(() => {}); } catch (_) {}
+      }
       const network = fetch(request).then(async response => {
         if (response && response.ok) {
           await cache.put('./index.html', response.clone()).catch(() => {});
@@ -272,11 +342,126 @@ self.addEventListener('message', event => {
     }).then(ok => reply({ ok })));
     return;
   }
+  /* ══════════════════════════════════════════════════════════════
+     v111u：后台定时唤醒
+     --------------------------------------------------------------
+     页面被切到后台 / 锁屏时，页内计时器会被系统节流（最小 1 分钟起），
+     到点的消息通知就会迟到。页面每次交接把「最近 8 分钟内该发的几条」
+     （最多 5 条）送进来，SW 用 waitUntil 把定时器吊住（浏览器最多允许约 5 分钟），
+     到点直接发系统通知 —— 准点率比页内计时器高。v111v 起：页面每分钟接力
+     续一次（覆盖更远），SW 发完会回报页面（页面用它记「到点准不准」的账）。
+     页面被完全冻结或关掉时这条链会断：那种情况只有推送服务能叫醒。
+     ══════════════════════════════════════════════════════════════ */
+  if (message.type === 'SCHEDULE_WAKE') {
+    /* v111z6：整段包进异步 —— 先把持久化的去重表读回来，再决定哪几条要吊 */
+    event.waitUntil((async () => {
+    const MAX_HOLD_MS = 5 * 60 * 1000;      // 单次吊住的上限（平台限制，约 5 分钟）
+    const HORIZON_MS = 8 * 60 * 1000;       // v111v：接 8 分钟内的到点，靠页面每分钟接力续上
+    const now = Date.now();
+    await loadWakeFiredKeys();
+    const jobs = (Array.isArray(message.items) ? message.items : [])
+      .map(item => ({
+        dueAt: Number(item && item.dueAt) || 0,
+        title: String((item && item.title) || '新消息').slice(0, 80),
+        body: String((item && item.body) || '').slice(0, 160),
+        route: String((item && item.route) || 'home'),
+        routeData: (item && item.routeData && typeof item.routeData === 'object') ? item.routeData : {},
+        handle: String((item && item.handle) || (item && item.routeData && item.routeData.handle) || ''),
+        tag: String((item && item.tag) || '') || undefined
+      }))
+      .filter(item => item.dueAt > now - 1000 && item.dueAt - now <= HORIZON_MS)
+      .filter(item => {
+        const key = `${item.tag || item.handle}|${item.dueAt}`;
+        const firedAt = wakeFiredKeys.get(key);
+        return !(firedAt && Date.now() - firedAt < 15 * 60 * 1000);
+      })
+      .slice(0, 5);
+    if (!jobs.length) {
+      /* v111v：页面每分钟接力一次，常常「这一分钟没有要到点的」——此时不能清掉
+         已经挂好的定时器，否则接力反而把定时器打断了。空手来就空手走。 */
+      reply({ ok: true, armed: 0, kept: wakeJobs.length });
+      return;
+    }
+    wakeJobs.length = 0;
+    jobs.forEach(job => wakeJobs.push(job));
+    const hold = new Promise(resolve => {
+      const timers = jobs.map(job => setTimeout(async () => {
+        let jobDelivered = false, jobSkipped = false;
+        try {
+          const saved = await getState('preferences', preferences);
+          const settings = { ...preferences, ...(saved || {}) };
+          if (settings.systemNotificationEnabled === false || isInDnd(settings)) { jobSkipped = true; return; }
+          const soundOn = settings.notificationSoundEnabled !== false;
+          await self.registration.showNotification(job.title, {
+            body: job.body,
+            icon: notifAssetUrl(job.icon, NOTIF_ICON_FALLBACK),
+            badge: notifAssetUrl(job.badge, NOTIF_BADGE_FALLBACK),
+            actions: [{ action: 'open', title: '打开' }, { action: 'dismiss', title: '忽略' }],
+            tag: job.tag,
+            renotify: soundOn,
+            silent: !soundOn,
+            timestamp: Date.now(),
+            lang: 'zh-CN',
+            data: { id: job.tag, route: job.route, routeData: job.routeData, ...job.routeData }
+          });
+          jobDelivered = true;
+        } catch (_) { /* 发不出去就算了，页面回来还有补发 */ }
+        finally {
+          if (jobSkipped) return;
+          /* v111v：不管刚才那条通知有没有真发出去，都记下「这个到点处理过了」并回报页面：
+             ① 防止页面每分钟接力时把同一条重复排上；② 页面用它记「准点不准点」的账。 */
+          try {
+            wakeFiredKeys.set(`${job.tag || job.handle}|${job.dueAt}`, Date.now());
+            persistWakeFiredKeys();   /* v111z6：落盘，SW 重启后仍然记得 */
+            clients.forEach(client => client.postMessage({
+              type: 'WAKE_FIRED', handle: job.handle || '', tag: job.tag || '',
+              dueAt: job.dueAt, firedAt: Date.now(), source: 'sw', delivered: !!jobDelivered
+            }));
+          } catch (_) {}
+        }
+      }, Math.max(0, Math.min(MAX_HOLD_MS, job.dueAt - Date.now()))));
+      setTimeout(() => { timers.forEach(clearTimeout); resolve(); }, MAX_HOLD_MS);
+    });
+    reply({ ok: true, armed: jobs.length, firstDueAt: jobs[0] ? jobs[0].dueAt : 0, horizonMs: HORIZON_MS, maxHoldMs: MAX_HOLD_MS });
+    await hold;
+    })());
+    return;
+  }
+  if (message.type === 'GET_WAKE_STATE') {
+    reply({ ok: true, jobs: wakeJobs.map(job => ({ tag: job.tag, dueAt: job.dueAt })) });
+    return;
+  }
   if (message.type === 'DRAIN_PUSH_INBOX') {
     event.waitUntil((async () => {
       const items = await getState('pushInbox', []);
       await setState('pushInbox', []);
       reply({ ok: true, items: Array.isArray(items) ? items : [] });
+    })());
+    return;
+  }
+  /* v111j12：页面启动时自检 —— 缓存里的壳和线上文件长度一致吗？
+     不一致就说明这台机器跑的是旧版本，页面据此在后台时机换壳。 */
+  if (message.type === 'SHELL_SYNC') {
+    event.waitUntil((async () => {
+      try {
+        const cache = await caches.open(SHELL_CACHE);
+        const cached = await cache.match('./index.html') || await cache.match('./');
+        const cachedText = cached ? await cached.clone().text() : '';
+        let networkLength = 0;
+        try {
+          const fresh = await fetch(new Request('./index.html', { cache: 'reload' }));
+          if (fresh && fresh.ok) { networkLength = (await fresh.clone().text()).length; await cache.put('./index.html', fresh.clone()).catch(() => {}); }
+        } catch (_) {}
+        /* 上次导航实际交付给页面的那份壳：页面拿它判断「我手上这份是不是已经过时」 */
+        let servedLength = 0;
+        try { servedLength = Number((await getState('lastServed', {})).length) || 0; } catch (_) {}
+        reply({
+          ok: true, version: CACHE_VERSION,
+          cachedLength: cachedText.length, networkLength, servedLength,
+          different: networkLength > 0 && networkLength !== cachedText.length,
+          stale: servedLength > 0 && networkLength > 0 && servedLength !== networkLength
+        });
+      } catch (_) { reply({ ok: false }); }
     })());
     return;
   }
@@ -331,14 +516,16 @@ self.addEventListener('push', event => {
     if (settings.systemNotificationEnabled !== false && !isInDnd(settings) && !(settings.notificationOnlyBackground && hasVisibleClient)) {
       const options = {
         body: payload.body,
-        icon: payload.icon || './icons/icon-192.png',
-        badge: payload.badge || './icons/badge-96.png',
+        icon: notifAssetUrl(payload.icon, NOTIF_ICON_FALLBACK),
+        badge: notifAssetUrl(payload.badge, NOTIF_BADGE_FALLBACK),
         tag: payload.tag,
         renotify: payload.renotify !== false,
         requireInteraction: Boolean(payload.requireInteraction),
         timestamp: payload.createdAt,
         data: { id: payload.id, route: payload.route, routeData: payload.routeData, ...payload.routeData }
       };
+      /* v111t：声音开关接进 SW —— 关掉声音时静默覆盖，不再响铃震动 */
+      if (settings.notificationSoundEnabled === false) { options.silent = true; options.renotify = false; }
       notificationPromise = self.registration.showNotification(payload.title, options);
     }
     await Promise.allSettled([inboxPromise, clientDelivery, notificationPromise]);
