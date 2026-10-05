@@ -11,7 +11,7 @@ const STORE = 'state';
  * 应用自身的 mobius-image-resilience-v1（媒体韧性缓存，最多 64MB 用户媒体）
  * 由页面代码管理，本 SW 绝不可删除或拦截。
  * ------------------------------------------------------------------ */
-const CACHE_VERSION = 'v111z8';
+const CACHE_VERSION = 'v111z67';
 const SHELL_CACHE = `mobius-shell-${CACHE_VERSION}`;
 const SHELL_CACHE_PREFIX = 'mobius-shell-';
 const APP_MEDIA_CACHE = 'mobius-image-resilience-v1'; // 应用私有，永不触碰
@@ -22,8 +22,8 @@ const APP_MEDIA_CACHE = 'mobius-image-resilience-v1'; // 应用私有，永不�
    这里做最后一道闸：不是同源网址就换成随包交付的站点图标。
    v111z3：站点图标换成用户自己的真 logo；URL 统一带 `?v=v111z3` 破缓存
    （手机里可能还留着旧占位图；问号只影响抓取，isPrecachedAsset 只比 pathname，见下）。 */
-const NOTIF_ICON_FALLBACK = './icons/icon-192.png?v=v111z8';
-const NOTIF_BADGE_FALLBACK = './icons/badge-96.png?v=v111z8';
+const NOTIF_ICON_FALLBACK = './icons/icon-192.png?v=v111z62';
+const NOTIF_BADGE_FALLBACK = './icons/badge-96.png?v=v111z62';
 function notifAssetUrl(value, fallback) {
   const s = String(value || '').trim();
   if (!s) return fallback;
@@ -35,13 +35,13 @@ const PRECACHE_URLS = [
   './',
   './index.html',
   './manifest.webmanifest',
-  './icons/icon-192.png?v=v111z8',
-  './icons/icon-512.png?v=v111z8',
-  './icons/icon-maskable-512.png?v=v111z8',
-  './icons/apple-touch-icon-180.png?v=v111z8',
-  './icons/badge-96.png?v=v111z8',
-  './icons/favicon-32.png?v=v111z8',
-  './icons/favicon-64.png?v=v111z8'
+  './icons/icon-192.png?v=v111z62',
+  './icons/icon-512.png?v=v111z62',
+  './icons/icon-maskable-512.png?v=v111z62',
+  './icons/apple-touch-icon-180.png?v=v111z62',
+  './icons/badge-96.png?v=v111z62',
+  './icons/favicon-32.png?v=v111z62',
+  './icons/favicon-64.png?v=v111z62'
 ];
 
 // 运行时缓存的第三方资源（lucide 图标库走 CDN，缓存后离线仍有图标）
@@ -50,6 +50,8 @@ const RUNTIME_ALLOW_HOSTS = ['unpkg.com', 'cdn.jsdelivr.net'];
 /* v111u：页面交接过来的「最近到点」唤醒任务（只为观测与去重，真正靠上面的定时器） */
 let wakeJobs = [];
 const wakeFiredKeys = new Map();   // v111v：key → 发出时间，避免接力交接时同一条重复发
+/* v111z13：并发交接先占坑，避免同一到点任务被多个 SCHEDULE_WAKE 同时发送。 */
+const v111z13WakeClaimedKeys = new Set();
 /* v111z6：这张表以前只活在内存里 —— Chrome 空闲就会把 SW 杀掉，表跟着丢，
    于是「同一条到点」在页面下一分钟接力时又发一遍（用户报的「通知一直重复」）。
    现在落进 IndexedDB（与 preferences 同一个 state 仓），并保留 24 小时。 */
@@ -330,6 +332,20 @@ self.addEventListener('message', event => {
     event.waitUntil(Promise.resolve(self.skipWaiting()).then(() => reply({ ok: true })));
     return;
   }
+  if (message.type === 'CACHE_NOTIFICATION_AVATAR') {
+    event.waitUntil((async () => {
+      try {
+        const raw=String(message.dataUrl||''); const match=raw.match(/^data:([^;,]+)?;base64,(.*)$/i);
+        if (!match || !message.url) return reply({ok:false});
+        const binary=atob(match[2]); const bytes=new Uint8Array(binary.length);
+        for(let i=0;i<binary.length;i+=1) bytes[i]=binary.charCodeAt(i);
+        const cache=await caches.open(SHELL_CACHE);
+        await cache.put(String(message.url), new Response(bytes,{headers:{'content-type':match[1]||'image/png','cache-control':'max-age=86400'}}));
+        reply({ok:true});
+      } catch (_) { reply({ok:false}); }
+    })());
+    return;
+  }
   if (message.type === 'CONFIGURE_NOTIFICATIONS') {
     preferences = { ...preferences, ...(message.preferences || {}) };
     event.waitUntil(setState('preferences', preferences).then(ok => reply({ ok })));
@@ -373,9 +389,11 @@ self.addEventListener('message', event => {
       .filter(item => {
         const key = `${item.tag || item.handle}|${item.dueAt}`;
         const firedAt = wakeFiredKeys.get(key);
+        if (v111z13WakeClaimedKeys.has(key)) return false;
         return !(firedAt && Date.now() - firedAt < 15 * 60 * 1000);
       })
       .slice(0, 5);
+    jobs.forEach(job => v111z13WakeClaimedKeys.add(`${job.tag || job.handle}|${job.dueAt}`));
     if (!jobs.length) {
       /* v111v：页面每分钟接力一次，常常「这一分钟没有要到点的」——此时不能清掉
          已经挂好的定时器，否则接力反而把定时器打断了。空手来就空手走。 */
@@ -397,6 +415,7 @@ self.addEventListener('message', event => {
              不然同一个人连着两个到点会互相覆盖，看着就像「没弹」。 */
           await self.registration.showNotification(job.title, {
             body: job.body,
+            /* v111z27RestoreNotificationIcons：恢复原有后台通知 icon / badge 回退。 */
             icon: notifAssetUrl(job.icon, NOTIF_ICON_FALLBACK),
             badge: notifAssetUrl(job.badge, NOTIF_BADGE_FALLBACK),
             actions: [{ action: 'open', title: '打开' }, { action: 'dismiss', title: '忽略' }],
@@ -410,6 +429,8 @@ self.addEventListener('message', event => {
           jobDelivered = true;
         } catch (_) { /* 发不出去就算了，页面回来还有补发 */ }
         finally {
+          const claimKey = `${job.tag || job.handle}|${job.dueAt}`;
+          v111z13WakeClaimedKeys.delete(claimKey);
           if (jobSkipped) return;
           /* v111v：不管刚才那条通知有没有真发出去，都记下「这个到点处理过了」并回报页面：
              ① 防止页面每分钟接力时把同一条重复排上；② 页面用它记「准点不准点」的账。 */
