@@ -13,9 +13,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Möbius">
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png?v=v111z72">
-  <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon-180.png?v=v111z72">
-  <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png?v=v111z72">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png?v=v111z75">
+  <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon-180.png?v=v111z75">
+  <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png?v=v111z75">
   <!-- 填写后端 Web Push 配置后，页面关闭或系统锁屏时也可由推送服务器唤醒 SW。 -->
   <meta name="dream-push-vapid-public-key" content="">
   <meta name="dream-push-subscribe-endpoint" content="">
@@ -5888,7 +5888,7 @@ html[data-keyboard-open="true"] .chat-feature-modal { padding-bottom: calc(14px 
       transition: opacity .18s ease, transform .18s ease;
     }
     .site-toast.show { opacity: 1; transform: translate(-50%,0); }
-    /* v111z72：只有「可撤销」的朋友圈提示条才接收点击，其余提示条继续穿透、不挡操作。 */
+    /* v111z75：只有「可撤销」的朋友圈提示条才接收点击，其余提示条继续穿透、不挡操作。 */
     #circleAppToast.tappable { pointer-events: auto; cursor: pointer; }
     .circle-app .site-toast,
     .global-settings-app .site-toast { bottom: 64px; }
@@ -10517,7 +10517,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
             <div class="dashboard-setting-row"><div><strong>主动事件</strong><small>默认开启，仅按照概率与时间随机触发。</small></div><b class="setting-value-note">默认开启</b></div>
             <div class="dashboard-setting-row"><div><strong>主动发送消息</strong><small id="proactiveMessageRangeHint">最快 / 最慢（分）</small></div><span class="global-scheduler-pair"><input id="proactiveMessageMinSecondsInput" type="number" min="1" max="60" step="1"><i>分</i><input id="proactiveMessageMaxMinutesInput" type="number" min="1" max="1440"><i>分</i></span></div>
             <div class="dashboard-setting-row"><div><strong>节奏口径</strong><small>「最快 / 最慢」是算全部梦角合起来，还是每位梦角各算一条。</small></div><div class="global-theme-options"><button class="global-theme-option" data-proactive-rhythm="combined" type="button">所有梦角合计</button><button class="global-theme-option" data-proactive-rhythm="perRole" type="button">每位梦角各自</button></div></div>
-            <div class="dashboard-setting-row"><div><strong>一轮说几句</strong><small>对方一次到点说 1 句，还是连发 1~N 句（连发时句与句之间用「回复节奏」的最短 / 最长延迟）。</small></div><div class="global-theme-options"><button class="global-theme-option" data-proactive-burst="off" type="button">只发 1 句</button><button class="global-theme-option" data-proactive-burst="on" type="button">连发 1~N 句</button></div></div>
+            <div class="dashboard-setting-row"><div><strong>一轮说几句</strong><small>对方一次到点说 1 句，还是连发 1~N 句（连发时句与句之间是主动消息自己的小停顿，与「全局回复节奏」无关）。</small></div><div class="global-theme-options"><button class="global-theme-option" data-proactive-burst="off" type="button">只发 1 句</button><button class="global-theme-option" data-proactive-burst="on" type="button">连发 1~N 句</button></div></div>
             <div class="dashboard-setting-row"><div><strong>主动来电</strong><small>最快 / 最慢（分）· 每次到期只有 1/4 概率真的打来</small></div><span class="global-scheduler-pair"><input id="proactiveContactMinMinutesInput" type="number" min="1" max="180"><i>分</i><input id="proactiveContactMaxMinutesInput" type="number" min="1" max="360"><i>分</i></span></div>
             <div class="dashboard-setting-row"><div><strong>主动写信</strong><small>最短分钟 / 最长小时</small></div><span class="global-scheduler-pair"><input id="proactiveLetterMinMinutesInput" type="number" min="1" max="180"><i>分</i><input id="proactiveLetterMaxHoursInput" type="number" min=".5" max="72" step=".5"><i>时</i></span></div>
             <div class="dashboard-setting-row"><div><strong>对方回信</strong><small>默认开启，只调节收到邮件后的等待时间</small></div><span class="global-scheduler-pair"><input id="letterReplyMinMinutesInput" type="number" min=".1" max="180" step=".1"><i>分</i><input id="letterReplyMaxHoursInput" type="number" min=".1" max="24" step=".1"><i>时</i></span></div>
@@ -11653,7 +11653,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
     let moonDraft = { pain: null, flow: null, color: '' };
     const CIRCLE_POSTS_STORAGE_KEY = 'dream-messenger:circle-posts:v1';
     const CIRCLE_COMMENT_TASKS_KEY = 'dream-messenger:circle-comment-reply-tasks:v1';
-    /* v111z72：朋友圈「已删除动态」墓碑。多标签页/多窗口下，旧内存快照会把删掉的动态
+    /* v111z75：朋友圈「已删除动态」墓碑。多标签页/多窗口下，旧内存快照会把删掉的动态
        整条写回来；墓碑让「删」这件事跨实例生效（只在写入合并时使用，不参与界面）。 */
     const CIRCLE_DELETED_KEY = 'dream-messenger:circle-deleted:v1';
     const CIRCLE_COMMENT_LOCK_PREFIX = 'dream-messenger:circle-comment-lock:';
@@ -12135,7 +12135,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
 
       // 朋友圈中带 roleId 的作者、评论和访客都跟随当前昵称；回复正文不改动。
       try {
-        loadCirclePosts(true);   /* v111z72：改名同步前重读最新一份，别用旧快照覆盖别人的新评论 */
+        loadCirclePosts(true);   /* v111z75：改名同步前重读最新一份，别用旧快照覆盖别人的新评论 */
         let changed = false;
         circlePosts.forEach(post => {
           let touched = false;
@@ -12584,9 +12584,17 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       const state = loadProactiveEventState();
       state[roleId] = state[roleId] || {};
       state[roleId].lastUserActivityAt = Date.now();
+      /* v111z75：我发了消息 ⇒ 这一局不再"欠着回复"，主动消息先闭嘴（对方该走回复通道回我）。 */
+      state[roleId].awaitingUserReply = false;
+      state[roleId].awaitingSince = 0;
+      /* v111z75：我说话了 ⇒ 「自续计数」清零、冷静期解除（合计口径：整个人群共用这一份），
+         节奏回到面板上的「最快~最慢」。 */
+      const gate = state.__gate && typeof state.__gate === 'object' ? state.__gate : (state.__gate = {});
+      gate.selfStreak = 0;
+      gate.selfColdUntil = 0;
       // 主动消息从我方最后一次 CHAT 活动重新开始计算，避免刚聊完又立刻主动打扰。
       scheduleProactiveEvent(roleId, 'message', true);
-      /* v111z72：口径＝所有梦角合计时，我方一说话就把全局闸门一起推到现在 ——
+      /* v111z75：口径＝所有梦角合计时，我方一说话就把全局闸门一起推到现在 ——
          「最快 X 分钟」从这句话重新开始算（以前只有排期那一瞬间读它，之后就不再管了，
          所以刚聊完不到一分钟，另一个梦角（或本梦角迟到的补话）就又能开口）。 */
       try { if (proactiveMessageRhythmCombined()) markProactiveMessageSent(Date.now()); } catch (_) {}
@@ -12626,7 +12634,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       try { return getGlobalAppSettings().proactiveMessageBurst === true ? pickRoleReplyCount() : 1; } catch (_) { return 1; }
     }
 
-    /* v111z72：我方「安静线」—— 我方最后一次在聊天里说话 + 主动消息的「最快」值。
+    /* v111z75：我方「安静线」—— 我方最后一次在聊天里说话 + 主动消息的「最快」值。
        在这条线之前，任何梦角都不许主动开口（包括迟到补话）。
        这是用户口径的直接翻译：主动消息是「我没说话的时候，到点了 TA 才来找我」。 */
     function proactiveUserQuietUntil() {
@@ -12653,7 +12661,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       } catch (_) { return 0; }
     }
 
-    /* v111z72 · 「合计」口径的下一拍
+    /* v111z75 · 「合计」口径的下一拍
        ---------------------------------------------------------------
        用户实测（audit/repro-z66-longrun2.js）：两格都拉到面板最长（最快 60 分 / 最慢 1440 分）、
        自己一句话都没说，5 位梦角 7 天还是送来 41 条（≈ 每 2.5 小时一条）。
@@ -12666,7 +12674,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       const base = Number(fromAt) || Date.now();
       return base + range.minMs + Math.floor(Math.random() * Math.max(1, range.maxMs - range.minMs));
     }
-    /* v111z72：其余通道（来电 / 写信 / 朋友圈 / 访客）也各有一条「人群节拍」。
+    /* v111z75：其余通道（来电 / 写信 / 朋友圈 / 访客）也各有一条「人群节拍」。
        实测（audit/repro-z66-channels.js）：「主动发送消息」修好后，5 位梦角 7 天仍送来
        59 封信 + 100 次访客 + 14 通来电 —— 因为这些排期以前也是每位梦角各算一条，
        人一多就是几倍。表格里那行「节奏口径」说的就是「合起来算」，这里把它落到底。
@@ -12747,7 +12755,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         if (!state.__gate || typeof state.__gate !== 'object') state.__gate = {};
         const stamp = Number(at) || Date.now();
         state.__gate.messageAt = stamp;
-        /* v111z72：合计口径下，说出口的这一刻就把「下一拍」定下来（整个人群共用） */
+        /* v111z75：合计口径下，说出口的这一刻就把「下一拍」定下来（整个人群共用） */
         if (proactiveMessageRhythmCombined()) state.__gate.nextMessageAt = drawProactiveBeat(stamp);
         persistProactiveEventState();
       } catch (_) { /* 调度不该因为记账失败而中断 */ }
@@ -12761,7 +12769,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       const range = proactiveEventRange(type);
       const activityAt = type === 'message' && Number(state[roleId].lastUserActivityAt) > 0 ? Number(state[roleId].lastUserActivityAt) : 0;
       let baseAt = force || !activityAt ? Date.now() : activityAt;
-      /* v111z72：口径＝所有梦角合计时，「最快~最慢」是整个人群的节拍 ——
+      /* v111z75：口径＝所有梦角合计时，「最快~最慢」是整个人群的节拍 ——
          每位梦角不再各抽一个完整间隔（那是「各自」口径的行为），
          而是一起排在「下一拍」上，谁先说由小抖动决定。 */
       if (proactiveMessageRhythmCombined() && type !== 'glyphcard') {
@@ -12806,7 +12814,12 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         return true;
       }
       const settings = getChatSettings(role.id);
-      settings.pendingProactiveMessages = [...(settings.pendingProactiveMessages || []), { id: `proactive-${Date.now()}-${Math.random().toString(16).slice(2)}`, text, createdAt: arrivalAt }].slice(-20);
+      /* v111z75：待收条目带来源标记。回复（我发消息之后对方回的）与主动消息是两条通道，
+         迟到回来的处理也不同：回复按策略 C 重排，主动消息到点就算收到、立刻显示。 */
+      settings.pendingProactiveMessages = [...(settings.pendingProactiveMessages || []), { id: `proactive-${Date.now()}-${Math.random().toString(16).slice(2)}`, text, createdAt: arrivalAt, channel: String(arguments[2] || 'proactive') }].slice(-20);
+      /* v111z75：对方把话放进了待收队列 —— 这一局同样是"欠着回复"。
+         （回复通道的落地会另外调 armProactiveClockFromPeerMoment，两条路都覆盖。） */
+      try { const st = loadProactiveEventState(); st[role.id] = st[role.id] || {}; st[role.id].awaitingUserReply = true; st[role.id].awaitingSince = arrivalAt; } catch (_) {}
       return saveChatSettings(settings, role.id) === true;
     }
 
@@ -12935,6 +12948,61 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       return String(best.item.text || '');
     };
 
+    /* ═══ v111z75 · 「全局回复」与「主动发送消息」的分工（用户口径） ═══
+       回复：只有「我发消息」之后，对方才回 —— 用面板上的「全局回复节奏」（最短/最长延迟）。
+       主动发送消息：① 我发消息后、对方已读不回；② 对方发消息后、我没回 —— 用「主动发送消息」那两格。
+       这两件事以前有三处交叉（主动连发的句间隔、待收队列的重排、已读不回那一刻没有起算），
+       本补丁把它们拆开。 */
+    const PROACTIVE_BURST_GAP_MIN_MS = 1200;      // 「同一次说话」里的连发间隔（主动通道自己的）
+    const PROACTIVE_BURST_GAP_MAX_MS = 5400;
+
+    /* v111z75 · 自续上限与冷静期
+       ---------------------------------------------------------------
+       用户报「对方一直在发消息」的根子：主动消息说过一次之后会按面板节奏永远自续，
+       我一句话都没接（默认档＝每 19 分钟一条、一天 77 条、整夜不停）。
+       现在按「回合」办，并且按面板那行「节奏口径＝合计」的意思**整个人群一起数**：
+       对方（所有梦角加在一起）主动开口连续 2 次（首次 + 追 1 次）都没等到我说话，
+       就转入冷静期 —— 每 12~24 小时才准再开一次口，直到我说话为止。
+       为什么是「一起数」：不合起来数的话，5 位梦角每人 2 次就是 10 条，等于没修。 */
+    const PROACTIVE_SELF_STREAK_MAX = 2;               // 连说上限（首次 + 追 1 次）
+    const PROACTIVE_COLD_MIN_MS = 12 * 3600 * 1000;    // 冷静期下限（12 小时）
+    const PROACTIVE_COLD_MAX_MS = 24 * 3600 * 1000;    // 冷静期上限（24 小时）
+
+    /* 把「主动发送消息」的计时从此刻重新起算。
+       fromPeer=true 表示这是「对方刚说了一句」（用户口径的案例二）；reason 只用于验收/排查留痕。 */
+    function armProactiveClockFromPeerMoment(roleId, reason = '') {
+      try {
+        const handle = String(roleId || '').trim();
+        if (!handle) return 0;
+        const state = loadProactiveEventState();
+        state[handle] = state[handle] || {};
+        const now = Date.now();
+        /* v111z75：对方说了话（或已读不回）⇒ 这一局"欠着回复"，主动消息可以按节奏来。 */
+        state[handle].awaitingUserReply = true;
+        state[handle].awaitingSince = now;
+        state[handle].messageAt = drawProactiveBeat(now);          // 该梦角：从现在起算一个「最快~最慢」
+        if (reason) state[handle].proactiveClockReason = reason;
+        if (proactiveMessageRhythmCombined()) {
+          const gate = state.__gate && typeof state.__gate === 'object' ? state.__gate : (state.__gate = {});
+          const floor = now + proactiveEventRange('message').minMs;   // 人群节拍不早于「现在 + 最快」
+          gate.nextMessageAt = Math.max(Number(gate.nextMessageAt) || 0, floor);
+        }
+        persistProactiveEventState();
+        return state[handle].messageAt;
+      } catch (_) { return 0; }
+    }
+
+    /* 这批回复真的结束了（没有排队中的后续回复）才起算 —— 否则会和排队回复打架。 */
+    function armProactiveClockIfBatchEnded(pending, reason) {
+      try {
+        if (!pending || !pending.roleId) return 0;
+        const latest = getChatSettings(pending.roleId);
+        const queued = Math.max(Number(pending.queuedUserMessages) || 0, Number(latest.pendingReply?.queuedUserMessages) || 0);
+        if (queued > 0) return 0;
+        return armProactiveClockFromPeerMoment(pending.roleId, reason);
+      } catch (_) { return 0; }
+    }
+
     function triggerProactiveTextBatch(role, total = 1, forcedText = '') {
       /* v111z6：forcedText = 预排话（交接给 SW 的那句），到了就原样说，不再重新挑。 */
       const cleanForced = String(forcedText || '').replace(/[\u200B\u2063]/g, '').trim();
@@ -12949,9 +13017,10 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         used.push(text);
       }
       if (!texts.length) return false;
-      /* v111j3：多条之间的间隔跟回复用同一条规则（面板上的「最短 / 最长延迟」）——
-         v111g 已经把回复连发改成这样，主动消息不该还留着写死的 1.5~5.6 秒。 */
-      const nextGap = () => (typeof roleReplyDelay === 'function' ? roleReplyDelay() : 1500 + Math.random() * 3600);
+      /* v111z75：主动消息「同一次说话」里的连发间隔 = 主动通道自己的小停顿。
+         以前这里借的是「全局回复节奏」的最短/最长延迟 —— 那正是把两条通道混在一起的其中一处：
+         面板把回复设成 40~60 秒时，主动连发也会变成 40~60 秒一句。用户口径下两者必须分开。 */
+      const nextGap = () => PROACTIVE_BURST_GAP_MIN_MS + Math.floor(Math.random() * (PROACTIVE_BURST_GAP_MAX_MS - PROACTIVE_BURST_GAP_MIN_MS));
       const isOpen = isChatConversationLoaded(role.id);
       if (!isOpen) {
         const settings = getChatSettings(role.id);
@@ -14280,7 +14349,16 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       /* v111z5：进站补话的名额只有一个人、一条 —— 先算出来，再进角色循环
          （循环是按联系人顺序走的，不预先挑，就永远是最上面那个梦角，反而更模式化）。 */
       const catchupRoleIds = new Set(pickProactiveCatchupTargets(now, state).map(item => String(item.roleId)));
-      getProactiveContactRoles().forEach(role => {
+      /* v111z75：谁先说 —— 同一拍到点的往往不止一位，而循环以前固定按联系人顺序走，
+         于是联系人列表里的第一位永远抢到那一拍（实测 7 天 15 条全部出自同一位梦角，
+         其余人 0~1 条）。这里每次扫描都随机起点，让到点的人轮流开口
+         —— 这也是代码原注释「免得永远是联系人列表里的第一位」想做而没做到的事。 */
+      const proactiveRoles = getProactiveContactRoles();
+      if (proactiveRoles.length > 1) {
+        const offset = Math.floor(Math.random() * proactiveRoles.length);
+        proactiveRoles.push(...proactiveRoles.splice(0, offset));
+      }
+      proactiveRoles.forEach(role => {
         const roleState = state[role.id] || (state[role.id] = {});
         processRoleMoodStatusRotation(role, now);
         processRoleNicknameRotation(role, roleState, now);
@@ -14302,7 +14380,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
             /* v111z59：口径＝所有梦角合计时，「最快」是全局地板 ——
                上一条主动消息之后还没到最快间隔，这一条只重排、不说。 */
             if (type === 'message' && proactiveMessageRhythmCombined()) {
-              /* v111z72：合计口径 = 整个人群一条节拍。还没到「下一拍」的，只重排、不说。
+              /* v111z75：合计口径 = 整个人群一条节拍。还没到「下一拍」的，只重排、不说。
                  这一拍刚被上一条说出口的消息推走，所以同一轮心跳里也只会有一位开口。 */
               const nextBeat = ensureProactiveBeat();
               if (nextBeat > 0 && now < nextBeat) {
@@ -14311,7 +14389,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
                 return;
               }
             }
-            /* v111z72：合计口径下，其余通道（来电 / 写信 / 朋友圈 / 访客）也一起走「整个人群一条节拍」。
+            /* v111z75：合计口径下，其余通道（来电 / 写信 / 朋友圈 / 访客）也一起走「整个人群一条节拍」。
                没到下一拍就只重排、不打扰。字卡请求不在此列（自带四道闸）。 */
             if (type !== 'message' && type !== 'glyphcard' && proactiveMessageRhythmCombined()) {
               const nextBeat = ensureProactiveBeatForType(type);
@@ -14321,14 +14399,37 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
                 return;
               }
             }
-            /* v111z72：无论「合计」还是「每位梦角各自」，都加一道「我方安静线」——
+            /* v111z75：无论「合计」还是「每位梦角各自」，都加一道「我方安静线」——
                距我最后一次说话没满「最快」值，谁也不许开口（做梦角也一样）。
                这一道是对着用户的现场来的：关站/挂后台期间错过的到点（due 已是过去时刻）、
                以及刚和我聊完的那位，都会在闸门记账缺一环时当场把消息吐出来。 */
+            /* v111z75：自续上限（合计口径 —— 所有梦角一起数）——
+               对方已经连说了 2 次、我一直没接话 ⇒ 转冷静期：到点在冷静期里就只重排，不开口。
+               这条不是「禁止她再找你」，而是把「按面板节奏无限刷」改成「一天最多一两次」。 */
+            if (type === 'message') {
+              const gateState = state.__gate && typeof state.__gate === 'object' ? state.__gate : (state.__gate = {});
+              if ((Number(gateState.selfStreak) || 0) >= PROACTIVE_SELF_STREAK_MAX) {
+                const coldUntil = Number(gateState.selfColdUntil) || 0;
+                if (now < coldUntil) {
+                  roleState[key] = coldUntil + Math.floor(Math.random() * proactiveBeatJitterMs());
+                  stateChanged = true;
+                  return;
+                }
+              }
+            }
+            /* v111z75：回合制闸门 —— 只有「对话欠着回复」时才允许主动开口。
+               我发了消息以后、对方还没回（回执还没到/还没读）的那段时间里，主动消息一律不开口：
+               那看起来就是「我在跟你说话，你却在自顾自发消息」（用户报的就是这个手感）。
+               没有判定过（新数据 / 老数据）时放行，保持"冷启动对方也会来找你"。 */
+            if (type === 'message' && roleState.awaitingUserReply === false) {
+              roleState[key] = now + proactiveEventRange('message').minMs;
+              stateChanged = true;
+              return;
+            }
             if (type === 'message') {
               const quietUntil = proactiveUserQuietUntil();
               if (quietUntil > now) {
-                /* v111z72：被安静线拦下的人排到 max(安静线, 下一拍) —— 原先「安静线 + 一整个随机间隔」
+                /* v111z75：被安静线拦下的人排到 max(安静线, 下一拍) —— 原先「安静线 + 一整个随机间隔」
                    最长能把这条推到 20 多小时以后，用户会以为「她再也不理我了」。 */
                 const anchor = Math.max(quietUntil, proactiveMessageRhythmCombined() ? ensureProactiveBeat() : 0);
                 roleState[key] = anchor + Math.floor(Math.random() * proactiveBeatJitterMs());
@@ -14361,6 +14462,16 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
               noteGlyphRequestFired();
             }
             if (type === 'message') {
+              /* v111z75：这一位真的开口了 ⇒ 「自续」记一次（全体共用），并把下一次冷静期重新抽好。
+                 我一旦说话就清零 + 解除冷静期（见 recordUserChatActivity），
+                 所以这里数的是「我没接话期间，对方一共连说了几次」。 */
+              {
+                const gateState = state.__gate && typeof state.__gate === 'object' ? state.__gate : (state.__gate = {});
+                gateState.selfStreak = (Number(gateState.selfStreak) || 0) + 1;
+                const coldMin = Math.max(proactiveEventRange('message').minMs, PROACTIVE_COLD_MIN_MS);
+                const coldMax = Math.max(coldMin + 3600000, Math.min(proactiveEventRange('message').maxMs, PROACTIVE_COLD_MAX_MS));
+                gateState.selfColdUntil = now + coldMin + Math.floor(Math.random() * (coldMax - coldMin));
+              }
               /* v111j5：网页没在跑的那段时间（关掉 / 被浏览器冻住），对方本该说的话要补出来 ——
                  按面板节奏把错过的时刻一个个补上，各带自己的时间点；
                  只在最后弹一次汇总横幅，而不是逐条炸一串通知。 */
@@ -14382,7 +14493,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
               /* v111z59：真的说出口了才动全局闸门 —— 被规则拦下（没补、没发）的不占位 */
               if (delivered) markProactiveMessageSent(Date.now());
             } else {
-              /* v111z72：关站 / 挂后台期间错过的「来信 / 朋友圈动态 / 访客」，不再在打开 App 的那一下补发。
+              /* v111z75：关站 / 挂后台期间错过的「来信 / 朋友圈动态 / 访客」，不再在打开 App 的那一下补发。
                  判据与主动来电（v111z36）一致：到点却已经过期很久 = 那会儿 App 根本没在跑，
                  只重新排期，不打扰。（前台正常心跳最多晚一两秒，够不着 90 秒，不会误伤准时到点的。）
                  实测：关站 9 小时后打开 App，原先每条通道各砸一条（消息 + 信 + 朋友圈 + 访客 + 来电）；
@@ -14693,7 +14804,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         .map((item, index) => ({ item, index, at: Number(item?.createdAt) || 0 }))
         .sort((a, b) => (a.at - b.at) || (a.index - b.index))
         .map(entry => entry.item);
-      /* v111z72（用户选项 C）：补放时把「迟到超过 90 秒」的重新排到「回来之后 40~60 秒」，
+      /* v111z75（用户选项 C）：补放时把「迟到超过 90 秒」的重新排到「回来之后 40~60 秒」，
          不再一进房间就让 TA 立刻把好久以前就该到的话倒出来（那看起来就是「秒回」）。
          迟到 ≤90 秒的照旧立刻显示 —— 那种「你刚切走一下回来」的，本来就该看到。 */
       const STALE_REVEAL_MS = 90 * 1000;
@@ -14702,7 +14813,11 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       const freshQueue = queueItems.filter(item => {
         if (alreadyRestored(item.id)) return false;
         const at = Number(item?.createdAt) || 0;
-        if (at && (nowReveal - at) > STALE_REVEAL_MS) {
+        /* v111z75：只有「回复」通道的迟到条目才按策略 C 重排（那是你设 40~60 秒要管的东西）；
+           「主动消息」通道的迟到条目照 v111j5 的口径 —— 到点就算收到，进房间立刻显示。
+           历史条目没有 channel（旧数据）时按回复处理，保持 v111z72 的行为不变。 */
+        const isReplyChannel = item?.channel !== 'proactive';
+        if (isReplyChannel && at && (nowReveal - at) > STALE_REVEAL_MS) {
           item.createdAt = nowReveal + (typeof roleReplyDelay === 'function' ? roleReplyDelay() : 45000);
           item.reTimedFrom = at;
           reTimedItems.push(item);
@@ -15725,7 +15840,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       return MAIL_GREETINGS[Math.floor(Math.random() * MAIL_GREETINGS.length)];
     }
 
-    /* v111z72：时间口径改成 Gmail 的写法 —— 今天只显示时刻，昨天显示「昨天」，更早显示 月/日。 */
+    /* v111z75：时间口径改成 Gmail 的写法 —— 今天只显示时刻，昨天显示「昨天」，更早显示 月/日。 */
     function formatMailTime(createdAt) {
       const time = Number(createdAt) || Date.now();
       const now = new Date(Date.now());
@@ -15934,8 +16049,8 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
           remove.dataset.mailDelete = letter.id;
           remove.setAttribute('aria-label', '删除邮件');
           remove.textContent = '×';
-          /* v111z72：setChatAvatarVisual 写的是内联样式（还带 important），这里补一刀，把列表头像压成 Gmail 的圆形。 */
-          avatar.style.setProperty('border-radius', '50%', 'important');
+          /* v111z75：用户要求「方圆型」——30% 圆角（不是正圆、也不是方角）。 */
+          avatar.style.setProperty('border-radius', '30%', 'important');
           item.append(avatar, copy, meta, remove);
           item.addEventListener('click', event => {
             if (event.target.closest('[data-mail-delete]')) {
@@ -15960,7 +16075,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       const elUnread = document.getElementById('mailCountUnread'); if(elUnread) elUnread.textContent = String(unreadCount);
     }
 
-    /* v111z72：头部只剩一个 ← —— 有阅读/写信面板时返回上一层，否则关闭 MAIL。
+    /* v111z75：头部只剩一个 ← —— 有阅读/写信面板时返回上一层，否则关闭 MAIL。
        另有一个 ✕（.mail-app-exit）在阅读/写信时才出现，用来直接退出 MAIL。 */
     function mailHeaderBack() {
       const app = document.getElementById('mailApp');
@@ -15990,6 +16105,39 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       const actions = document.getElementById('mailReaderActions');
       if (actions) actions.hidden = true;
       if (paper) paper.hidden = true;
+    }
+
+    /* ===== v111z75：MAIL 一套字号，阅读＝撰写＝转发 =====
+       为什么要用内联 !important：手机端有全局规则
+         html[data-ios] input,html[data-ios] textarea,html[data-ios] select{font-size:16px!important}
+         html[data-android] input,html[data-android] textarea,html[data-android] select{font-size:16px!important}
+       那是为了防 iOS 聚焦自动缩放加的。皮肤里的字号（8.5px）在部分内核上会被它顶掉，
+       于是「转发页字体和正常邮件界面不一致」（用户截图：阅读 8.5px、转发 ~16px）。
+       内联 !important 在层叠里排在最前（作者样式里最高优先级），任何样式表都抢不走，
+       这样三个页面在什么浏览器、什么内核上都长一样。 */
+    const MAIL_TYPE_SCALE = { body: 12.5, meta: 11.5 };
+    function buildMailTypographyBridge(list) {
+      list.forEach(item => {
+        const node = document.getElementById(item.id);
+        if (!node) return;
+        try {
+          node.style.setProperty('font-size', item.size + 'px', 'important');
+          if (item.lineHeight) node.style.setProperty('line-height', String(item.lineHeight), 'important');
+          if (item.family) node.style.setProperty('font-family', item.family, 'important');
+        } catch (_) {}
+      });
+    }
+    function pinMailTypography() {
+      const family = 'system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
+      buildMailTypographyBridge([
+        { id: 'mailReaderContent', size: MAIL_TYPE_SCALE.body, lineHeight: 1.8, family },
+        { id: 'mailReaderTitle', size: 16, lineHeight: 1.35, family },
+        { id: 'mailReaderSender', size: MAIL_TYPE_SCALE.meta, lineHeight: 1.3, family },
+        { id: 'mailReaderSignature', size: MAIL_TYPE_SCALE.meta, lineHeight: 1.4, family },
+        { id: 'mailComposeBody', size: MAIL_TYPE_SCALE.body, lineHeight: 1.8, family },
+        { id: 'mailComposeRecipientInput', size: MAIL_TYPE_SCALE.body, lineHeight: 1.4, family },
+        { id: 'mailComposeSignature', size: MAIL_TYPE_SCALE.body, lineHeight: 1.4, family }
+      ]);
     }
 
     function openMailLetter(id) {
@@ -16029,7 +16177,8 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         const av2 = getMailAvatarVisual(letter);
         if(typeof setChatAvatarVisual==='function'){
           setChatAvatarVisual(avatar, av2.initials, av2.visual);
-          avatar.style.setProperty('border-radius', '50%', 'important');
+          /* v111z75：方圆型（30%）。顺带修「浅底白字看不见」——有头像图时不写字，没图时用角色渐变＋白字。 */
+          avatar.style.setProperty('border-radius', '30%', 'important');
         } else {
           avatar.textContent = av2.initials;
           avatar.style.background = typeof av2.visual==='string' ? av2.visual : `linear-gradient(145deg,${letter.colors[0]},${letter.colors[1]})`;
@@ -16050,6 +16199,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         content.replaceChildren(greeting, ...paragraphs);
       }
       if (signature) signature.textContent = letter.signature || letter.sender;
+      pinMailTypography();
       renderMailList();
       lucide.createIcons();
     }
@@ -16103,6 +16253,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       if (app) app.classList.add('composing');
       syncMailHeaderChrome();
       if (panel) panel.hidden = false;
+      pinMailTypography();
       if(canAutoFocusInput())window.setTimeout(() => (original ? body : recipient)?.focus(), 40);
       lucide.createIcons();
     }
@@ -16234,7 +16385,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       document.querySelectorAll('#mailFilterRow button').forEach(button => button.classList.toggle('active', button.dataset.mailFilter === 'sent'));
       renderMailList();
       openMailLetter(id);
-      /* v111z72：写入失败时这条提示不能被「已发送」盖掉，合并成一句。 */
+      /* v111z75：写入失败时这条提示不能被「已发送」盖掉，合并成一句。 */
       showMailToast(savedOk === false ? '内容太长，本地存储写不下：这封可能没保存完整' : '已发送');
     }
 
@@ -17080,7 +17231,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       };
     }
 
-    /* v111z72：force=true 时**真的**重新读存储 —— 旧写法只判断一次 circleLoaded，
+    /* v111z75：force=true 时**真的**重新读存储 —— 旧写法只判断一次 circleLoaded，
        之后所有「重读持久数据」的调用其实都是空操作，改数据前拿的还是旧快照。 */
     function loadCirclePosts(force) {
       if (circleLoaded && !force) return circlePosts;
@@ -17090,13 +17241,13 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       return circlePosts;
     }
 
-    /* v111z72：动态的「新旧」用什么判断 —— 有 updatedAt 用它，老数据退到 createdAt。
+    /* v111z75：动态的「新旧」用什么判断 —— 有 updatedAt 用它，老数据退到 createdAt。
        同一条动态两边都没有 updatedAt 时，仍然按老规矩让内存这份生效（不改变老行为）。 */
     function circlePostStamp(post) {
       return Number(post?.updatedAt) || Number(post?.createdAt) || 0;
     }
 
-    /* v111z72：已删除动态的墓碑（30 天、300 条封顶） */
+    /* v111z75：已删除动态的墓碑（30 天、300 条封顶） */
     function loadCircleTombstones() {
       const stored = readDreamJSON(CIRCLE_DELETED_KEY, null);
       const source = stored && typeof stored === 'object' ? stored : {};
@@ -17121,7 +17272,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       return at > 0 && at >= circlePostStamp(post);
     }
 
-    /* v111z72：改一条动态之前，先把存储里最新的一份拿回来再改。
+    /* v111z75：改一条动态之前，先把存储里最新的一份拿回来再改。
        以前是「拿内存旧快照改完整份覆盖」，别人的新评论会被一起回退（已复现，永久丢失）。 */
     function withFreshCirclePost(postId, mutate) {
       loadCirclePosts(true);
@@ -17133,7 +17284,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       return result === undefined ? post : result;
     }
 
-    /* v111z72：条数上限 300 —— 但裁剪不再「谁最老先裁谁」。
+    /* v111z75：条数上限 300 —— 但裁剪不再「谁最老先裁谁」。
        实测（audit/verify-z65-circle-edges.js）：>300 条时给一条老动态评论，
        那条动态会连同刚写的评论一起被裁掉 —— 用户看到的就是「评论莫名其妙没了」。
        现在先裁「一条评论都没有」的最老动态；只有裁完还得继续裁，才动有评论的。 */
@@ -17156,7 +17307,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
 
     function persistCirclePosts() {
       if (window.__dreamDataImportInProgress) return true;
-      /* v111z72：写入前与存储里最新一份**逐条合并** ——
+      /* v111z75：写入前与存储里最新一份**逐条合并** ——
          每条动态按「谁更新」取胜，旧快照回退不掉别人的评论/点赞；
          本页没有的新动态（别的标签页刚发的）也会保留，除非它已被墓碑标记删除。 */
       let stored = [];
@@ -17187,9 +17338,9 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         const normalized = normalizeCirclePost(item);
         if (normalized) { seen.add(id); merged.push(normalized); }
       });
-      circlePosts = trimCirclePosts(merged);   /* v111z72：裁剪优先裁「没有评论」的老动态 */
+      circlePosts = trimCirclePosts(merged);   /* v111z75：裁剪优先裁「没有评论」的老动态 */
       const ok = writeDreamJSON(CIRCLE_POSTS_STORAGE_KEY, circlePosts);
-      /* v111z72：存不进本机必须说出来。以前写失败只有控制台一行 warn，
+      /* v111z75：存不进本机必须说出来。以前写失败只有控制台一行 warn，
          用户看到评论发出去了，重开却没了 —— 那才是「莫名其妙」。 */
       if (ok === false) showCircleToast('这次改动没能存到本机（浏览器存储空间可能已满），请到「存储中心」清理后再试', 3600);
       renderDesktopPhotoWidgets();
@@ -17272,7 +17423,9 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       // 对方头像始终优先读取对应聊天室角色的最新头像。
       if(letter.direction === 'in'){
         const role = findRoleForSharedContent(letter.senderHandle, letter.sender, letter.colors);
-        const imageSource = String(role?.avatarImage || role?.avatar || letter.avatarImage || '');
+        /* v111z75：顺序反过来了 —— 以前只认「角色档案现在那张」，档案里没有就空着。
+           现在先看信件自己带的那张（收到时快照下来的），再看角色档案，兼容更多字段名。 */
+        const imageSource = String(letter.avatarImage || role?.avatarImage || role?.avatar || role?.avatarSrc || role?.avatarUrl || '');
         const initials = role?.initials || Array.from(role?.name || letter.sender || '梦').slice(0, 2).join('') || '梦';
         const visual = imageSource
           ? { type: 'image', src: imageSource }
@@ -17448,7 +17601,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
     function addCircleStickerComment(postId, item) {
       if (!item) return;
       const selfComment = { id: `comment-${Date.now()}-${Math.random().toString(16).slice(2)}`, owner: 'self', author: getCircleProfile().nickname, text: '', replyTo: '', stickerUrl: item.src || '', emoji: item.src ? '' : item.emoji || '✨', createdAt: Date.now() };
-      /* v111z72：在最新数据上追加评论 */
+      /* v111z75：在最新数据上追加评论 */
       const post = withFreshCirclePost(postId, live => { live.comments = [...(live.comments || []), selfComment]; });
       if (!post) return;
       renderCirclePosts();
@@ -17456,13 +17609,13 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       showCircleToast('表情包评论已发送');
     }
 
-    /* v111z72：删评论留一份「后悔药」—— 自己评论右侧那个 22×22 的 × 点一下就立即删除、
+    /* v111z75：删评论留一份「后悔药」—— 自己评论右侧那个 22×22 的 × 点一下就立即删除、
        没有确认，手机上手滑/划动误触就会「评论莫名其妙没了」。这里把它变成可撤销的。 */
     let circleDeletedCommentUndo = null;
 
     function deleteCircleComment(postId, commentId) {
       const target = String(commentId || '');
-      /* v111z72：在最新数据上删这一条 —— 用旧快照删，既可能删不掉，也会顺手回退别人的新评论。 */
+      /* v111z75：在最新数据上删这一条 —— 用旧快照删，既可能删不掉，也会顺手回退别人的新评论。 */
       loadCirclePosts(true);
       const source = circlePosts.find(candidate => String(candidate.id) === String(postId));
       const list = Array.isArray(source?.comments) ? source.comments : [];
@@ -17621,7 +17774,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
           if (!lock) continue;
           try {
             // 取得跨页面锁后重新读取持久数据，绝不消费锁前的陈旧内存快照。
-            loadCirclePosts(true);   /* v111z72：以前这行是空操作（circleLoaded 已为真），旧快照会被写回 */
+            loadCirclePosts(true);   /* v111z75：以前这行是空操作（circleLoaded 已为真），旧快照会被写回 */
             const freshTasks = loadCircleCommentTasks();
             const task = freshTasks.find(item => String(item.roleId) === roleId);
             if (!task || Number(task.dueAt) > Date.now()) continue;
@@ -17870,7 +18023,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         const action = event.target.closest?.('[data-circle-action]')?.dataset.circleAction;
         if (!action) return;
         if (action === 'like') {
-          /* v111z72：在最新数据上取这条动态再改 —— 旧快照会把别人的新评论一起回退（已复现）。 */
+          /* v111z75：在最新数据上取这条动态再改 —— 旧快照会把别人的新评论一起回退（已复现）。 */
           withFreshCirclePost(post.id, live => { live.liked = !live.liked; });
           renderCirclePosts();
         } else if (action === 'comment') {
@@ -17925,7 +18078,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
           deleteCircleComment(event.target.closest('[data-circle-action]')?.dataset.circlePostId, event.target.closest('[data-circle-action]')?.dataset.circleCommentId);
         } else if (action === 'delete') {
           clearProactiveCircleReactions(post.id);
-          /* v111z72：删除写墓碑 —— 否则别的标签页/窗口的旧快照下次写入会把它整条写回来。 */
+          /* v111z75：删除写墓碑 —— 否则别的标签页/窗口的旧快照下次写入会把它整条写回来。 */
           markCirclePostDeleted(post.id, Date.now());
           loadCirclePosts(true);
           circlePosts = circlePosts.filter(item => String(item.id) !== String(post.id));
@@ -18099,7 +18252,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       toast.textContent = message;
       toast.classList.add('show');
       window.clearTimeout(window.circleToastTimer);
-      /* v111z72：可传停留时长 —— 长句说明 1.6 秒读不完（默认仍是 1.6 秒，老调用不受影响）；
+      /* v111z75：可传停留时长 —— 长句说明 1.6 秒读不完（默认仍是 1.6 秒，老调用不受影响）；
          还能挂一个「点一下就能撤销」的动作（删评论时用）。 */
       const tappable = typeof onTap === 'function';
       toast.classList.toggle('tappable', tappable);
@@ -19325,7 +19478,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
             if (roleCount > 1) turnInfo = `，${roleCount} 位轮着开口：平均每人约 ${avgPerRoleMin} 分钟轮到一次`;
           }
         } catch (_) {}
-        /* v111z72：把两套节奏的区别、以及「你一发消息就重新计时」写在明面上。 */
+        /* v111z75：把两套节奏的区别、以及「你一发消息就重新计时」写在明面上。 */
         const quietNote = combinedMode ? '；你一发消息，倒计时就重新开始' : '';
         rangeHint.textContent = (combinedMode
           ? `最快 / 最慢（分）· 所有梦角合起来：每 ${human(mins / 60)} ~ ${human(maxM / 60)} 才会有一条主动消息${turnInfo}`
@@ -19785,7 +19938,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
     }
 
     function downloadDreamBackup(data) {
-      /* v111z72：这里原本混进了一行 `if (!shouldDownload) return payload;`
+      /* v111z75：这里原本混进了一行 `if (!shouldDownload) return payload;`
          （shouldDownload / payload 都不是本作用域的标识符）—— 点「导出所选数据」必抛 ReferenceError。
          删掉即可：本函数只负责把 archive 写成一个 JSON 文件下载。 */
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8' });
@@ -20127,7 +20280,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
           let changed = false;
           getProactiveContactRoles().forEach(role => {
             const roleState = state[role.id] || (state[role.id] = {});
-            /* v111z72：改设置时先替整个人群重抽「下一拍」，再让每位梦角排到那一拍上 ——
+            /* v111z75：改设置时先替整个人群重抽「下一拍」，再让每位梦角排到那一拍上 ——
                否则调慢之后各位仍按旧节奏各说各的（用户看到的就是「设了没用」）。 */
             if (wanted.includes('message') && proactiveMessageRhythmCombined()) rebaseProactiveBeat(now);
             if (proactiveMessageRhythmCombined()) wanted.forEach(type => { if (type !== 'message' && type !== 'glyphcard') rebaseProactiveBeatOf(type, now); });
@@ -22505,7 +22658,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       listenAudio.addEventListener('error', () => {
         listenIsPlaying = false;
         document.getElementById('listenVinylDisc')?.classList.remove('playing');
-        /* v111z72：远端链接这次取不到 → 记一笔，用户下次点播放时给这次请求加时间戳重新取。
+        /* v111z75：远端链接这次取不到 → 记一笔，用户下次点播放时给这次请求加时间戳重新取。
            并且**不再**给远端链接永久打「这条放不出来」（它可能只是这次被限流/令牌过期）。 */
         const failedReference = String(listenAudio.dataset.sourceReference || '');
         if (failedReference && !failedReference.startsWith('dream-media://') && !failedReference.startsWith('blob:')) {
@@ -22541,7 +22694,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       const sourceReference = String(track.audioUrl || '');
       const playableUrl = isDreamMediaReference(sourceReference) ? await resolveDreamMediaSource(sourceReference) : sourceReference;
       if (!playableUrl) {
-        /* v111z72：解析不出音频源（本地文件被清理过等）——必须把上一首的声音一起停掉并清源，
+        /* v111z75：解析不出音频源（本地文件被清理过等）——必须把上一首的声音一起停掉并清源，
            否则界面显示「没在播」、耳朵里还在放别的歌（实测进度条也还在走）。 */
         if (listenAudio) {
           listenAudio.pause();
@@ -22553,7 +22706,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         return null;
       }
       const audio = ensureListenAudio();
-      /* v111z72：这条链接刚才取不到过（1 分钟内）→ 这次请求带上时间戳：
+      /* v111z75：这条链接刚才取不到过（1 分钟内）→ 这次请求带上时间戳：
          既绕开浏览器对上一次失败结果的复用，也让「一次性 / 限流」的领取链接重新领一次。 */
       let elementUrl = playableUrl;
       if (!isDreamMediaReference(sourceReference) && Number(listenRetryMarks.get(sourceReference) || 0) > Date.now() - 60000) {
@@ -22592,7 +22745,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       });
     }
 
-    /* v111z72：这句话＝「这条音频没能加载成功」。按 MediaError.code 给出能照着做的原因，
+    /* v111z75：这句话＝「这条音频没能加载成功」。按 MediaError.code 给出能照着做的原因，
        不再笼统一句「请检查链接」—— 用户看到那句话不知道该改什么。 */
     function listenSourceProblem(code) {
       const n = Number(code) || 0;
@@ -22603,26 +22756,26 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       return '没能加载成功（很可能不是 .mp3 / .m4a 直链；http 链接在 https 页面下也会被浏览器拦住）';
     }
 
-    /* v111z72：链接「长得像不像音频文件」。像的那种（.mp3 结尾）不需要预检 ——
+    /* v111z75：链接「长得像不像音频文件」。像的那种（.mp3 结尾）不需要预检 ——
        预检要真发一次 GET，而音乐站的领取链接常常只让取一次或短时间重复取会被拦。 */
     const LISTEN_AUDIO_FILE_PATTERN = /\.(mp3|m4a|aac|wav|ogg|oga|opus|flac|weba|mp4|m4b)(?:[?#]|$)/i;
     function looksLikeAudioFileUrl(value) {
       return LISTEN_AUDIO_FILE_PATTERN.test(String(value || ''));
     }
 
-    /* v111z72：远端链接取不到时的说法 —— 不说成「它不是直链」（用户贴的就是 .mp3 直链），
+    /* v111z75：远端链接取不到时的说法 —— 不说成「它不是直链」（用户贴的就是 .mp3 直链），
        而是说清「这次没取到」，并给出下一步（再点一次 / 删掉重贴）。 */
     function listenFetchProblem() {
       return '这次没取到音频（链接可能已过期、被限流，或站点做了防盗链）';
     }
 
-    /* v111z72：预检结果缓存（同一条链接 10 分钟内只探一次）。 */
+    /* v111z75：预检结果缓存（同一条链接 10 分钟内只探一次）。 */
     const listenUrlProbeCache = new Map();
-    /* v111z72：哪些链接刚才失败过（下次点播放时给这次请求加一个时间戳，避开浏览器缓存的失败结果，
+    /* v111z75：哪些链接刚才失败过（下次点播放时给这次请求加一个时间戳，避开浏览器缓存的失败结果，
        也顺便让「一次性领取链接」重新领一次）。 */
     const listenRetryMarks = new Map();
 
-    /* v111z72：把「放不出来」的原因说准。
+    /* v111z75：把「放不出来」的原因说准。
        本地媒体库里的文件丢了（换设备、清过网站数据、系统回收过存储），
        不能说成「链接不是直链」—— 用户明明选的是本机 MP3。 */
     function listenLocalLossReason() {
@@ -22642,13 +22795,13 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       return listenSourceProblem(code);
     }
 
-    /* v111z72：完整一句「这条为什么放不出来 + 怎么办」——手动点按、错误事件共用。 */
+    /* v111z75：完整一句「这条为什么放不出来 + 怎么办」——手动点按、错误事件共用。 */
     function listenPlayFailMessage(code, reference, track) {
       const ref = String(reference || '');
       const looksLocal = ref.startsWith('blob:') || ref.startsWith('dream-media://')
         || Boolean(track && track.audioSource === 'local-mp3');
       if (looksLocal) return `这条放不出来：${listenLocalLossReason()}。歌会留在队列里，重新选一次本地 MP3 就能恢复`;
-      /* v111z72：.mp3/.m4a 这类直链取不到，多半是过期/限流/防盗链（不是「不是直链」）——
+      /* v111z75：.mp3/.m4a 这类直链取不到，多半是过期/限流/防盗链（不是「不是直链」）——
          并且再点一次播放会重新请求一次，这是能救回来的。 */
       if (looksLikeAudioFileUrl(ref)) return `这条放不出来：${listenFetchProblem()}。歌会留在队列里 —— 再点一次播放会重新取一次链接`;
       return `这条放不出来：${listenSourceProblem(code)}。歌会留在队列里，想稳就用「上传本地 MP3」`;
@@ -22658,7 +22811,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       try { const state = getListenState(); return state.queue[state.index] || null; } catch (_) { return null; }
     }
 
-    /* v111z72：进面板/渲染时顺手把当前曲目的本地源在后台预解析好。
+    /* v111z75：进面板/渲染时顺手把当前曲目的本地源在后台预解析好。
        只预热 objectURL 缓存（resolveDreamMediaSource 会把结果放进 dreamMediaObjectUrls），
        **不碰音频元素** —— 正在播的歌一个字都不能动。这样用户点播放时解析是缓存命中、
        play() 不用等索引库，iOS Safari 才认得出这是「同一个用户手势」。 */
@@ -22677,11 +22830,11 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       }, 400);
     }
 
-    /* v111z72：一起听唯一的「播起来」入口。
+    /* v111z75：一起听唯一的「播起来」入口。
        play() 必须在拿到音频对象后的**同一个 tick** 里调用，前面绝不排 await ——
        iOS Safari 会把「手势之后又等过一轮 I/O」的 play() 判成自动播放并拒掉
        （实测 v111z60 就是被推到 1600 ms 后才调，报出来的正是「无法自动播放」）。 */
-    /* v111z72：播起来了就是能放 —— 把这条曲目身上的「放不出来」标记和重试记录一起清掉。 */
+    /* v111z75：播起来了就是能放 —— 把这条曲目身上的「放不出来」标记和重试记录一起清掉。 */
     function noteListenPlaybackStarted() {
       try {
         const st = getListenState();
@@ -22701,14 +22854,14 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         listenIsPlaying = true;
         listenSessionHandle = currentPartnerHandle;
         document.getElementById('listenVinylDisc')?.classList.add('playing');
-        noteListenPlaybackStarted();   /* v111z72 */
+        noteListenPlaybackStarted();   /* v111z75 */
         try { schedulePartnerListenAct(); } catch (_) {}
         renderListenTogether();
         return true;
       }).catch(err => { listenHandlePlayFailure(audio, err); return false; });
     }
 
-    /* v111z72：同一句话 4 秒内只弹一次 —— 错误事件与 play() 失败会各报一句，
+    /* v111z75：同一句话 4 秒内只弹一次 —— 错误事件与 play() 失败会各报一句，
        句子本来就一样，叠在一起反而看不清。（按**文案**去重，不按来源，才拦得住重复。） */
     function listenToastOnce(key, message, windowMs) {
       const map = listenToastOnce._map || (listenToastOnce._map = {});
@@ -22716,11 +22869,11 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       const dedupeKey = String(message);
       if (map[dedupeKey] && now - map[dedupeKey] < (Number(windowMs) || 4000)) return false;
       map[dedupeKey] = now;
-      showChatToast(message, 3600);   /* v111z72：这类说明比普通提示长，多留一会儿 */
+      showChatToast(message, 3600);   /* v111z75：这类说明比普通提示长，多留一会儿 */
       return true;
     }
 
-    /* v111z72：加歌前先探一下这条链接到底能不能当音频播。
+    /* v111z75：加歌前先探一下这条链接到底能不能当音频播。
        探不通也照样让用户加进队列（老行为：保留为队列歌曲），但要**当场**说清原因。 */
     function probeListenAudioUrl(url, timeoutMs) {
       return new Promise(resolve => {
@@ -22745,7 +22898,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       });
     }
 
-    /* v111z72：播不出来时兜一层 —— 若只是数据还没就绪（没有媒体错误），等它就绪再试一次；
+    /* v111z75：播不出来时兜一层 —— 若只是数据还没就绪（没有媒体错误），等它就绪再试一次；
        其余情况给准确原因。 */
     async function listenHandlePlayFailure(audio, err, options) {
       const name = err && err.name;
@@ -22773,10 +22926,10 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         listenToastOnce('listen-abort', '播放被打断了，请再点一下播放');
       } else {
         const message = listenPlayFailMessage(code, ref, currentListenTrack());
-        /* v111z72：用户自己按的播放键 → 每次点都必须有回音。
+        /* v111z75：用户自己按的播放键 → 每次点都必须有回音。
            （以前按**文案**去重，同一条坏歌第二次点播放完全静默 —— 实测 toast 为空。） */
         if (options && options.manual) {
-          /* v111z72：用户自己按的播放键，每次点都要有回音；但同一句话
+          /* v111z75：用户自己按的播放键，每次点都要有回音；但同一句话
              （error 事件与 play() 失败报的是同一句）在屏幕上还没散就不再叠一遍。 */
           const map = listenToastOnce._map || (listenToastOnce._map = {});
           const key = String(message);
@@ -22795,13 +22948,13 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       const state = getListenState();
       const track = state.queue[state.index];
       const reference = String(track?.audioUrl || '');
-      /* v111z72 快路径：元素上已经是这首歌、而且没坏 —— 同一个 tick 就播，一次 await 都不欠。 */
+      /* v111z75 快路径：元素上已经是这首歌、而且没坏 —— 同一个 tick 就播，一次 await 都不欠。 */
       if (listenAudio && reference && String(listenAudio.dataset.sourceReference || '') === reference
         && listenAudio.src && !listenAudio.error) {
         startListenPlayback(listenAudio);
         return;
       }
-      /* v111z72：以前这里先 await waitListenAudioReady() 再 play()（实测把 play() 推到 1.6~2 秒后），
+      /* v111z75：以前这里先 await waitListenAudioReady() 再 play()（实测把 play() 推到 1.6~2 秒后），
          而且源解析不出来时**一声不响** —— 用户看到的就是「点了（这首歌）没动静」。
          现在：解析完立刻播；解析不出来就明说，并把状态摆正。 */
       syncListenAudioSource(track).then(audio => {
@@ -22834,7 +22987,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         && !listenAudio.paused
         && !listenAudio.ended
         && String(listenAudio.dataset.sourceReference || '') === String(track?.audioUrl || ''));
-      /* v111z72 快路径：元素上已经是这首歌的源 → 不再等索引库解析，play()/pause() 当场执行。
+      /* v111z75 快路径：元素上已经是这首歌的源 → 不再等索引库解析，play()/pause() 当场执行。
          只有源还没上元素时才走 await —— 那种情况 warmListenAudioSource 已把缓存预热过。 */
       const readyReference = String(track?.audioUrl || '');
       const readyAudio = (listenAudio && readyReference
@@ -22847,23 +23000,23 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
           audio.pause();
           listenIsPlaying = false;
         } else {
-          /* v111z72：play() 就在点击当刻直接调用 —— 中间夹 await 之后，
+          /* v111z75：play() 就在点击当刻直接调用 —— 中间夹 await 之后，
              iOS Safari 可能不再把这个播放当「用户手势」，于是报「无法自动播放」。
              数据没就绪时 play() 自己会等，不需要我们先等。 */
           audio.play().then(() => {
             listenIsPlaying = true;
             listenSessionHandle = currentPartnerHandle;
             document.getElementById('listenVinylDisc')?.classList.add('playing');
-            noteListenPlaybackStarted();   /* v111z72 */
+            noteListenPlaybackStarted();   /* v111z75 */
             renderListenTogether();
           }).catch(err => listenHandlePlayFailure(audio, err, { manual: true }));
         }
       } else if (track?.audioUrl) {
-        /* v111z72：曲目有音频源、却建不出音频（例如媒体仓里的本地文件已被清理）——
+        /* v111z75：曲目有音频源、却建不出音频（例如媒体仓里的本地文件已被清理）——
            不能假装在播（以前会空走进度条，看着像放出来了）。 */
         listenIsPlaying = false;
         document.getElementById('listenVinylDisc')?.classList.remove('playing');
-        /* v111z72：用户自己按的播放键 —— 每次点都要有回音。
+        /* v111z75：用户自己按的播放键 —— 每次点都要有回音。
            （实测：这句话刚在上一步弹过一次，按文案去重就把这次点击整个吞了，看起来「点了没反应」。） */
         showChatToast(listenSourceGoneMessage(), 3600);
       } else {
@@ -23209,10 +23362,10 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       }
       const audioUrl = currentListenAudioData || normalizeListenAudioUrl(url?.value || '');
       if (!currentListenAudioData && url?.value.trim() && !audioUrl) return showChatToast('请粘贴有效的音频直链');
-      /* v111z72：先探一下这条链接能不能当音频播 —— 分享链接/网页地址/需登录的地址，
+      /* v111z75：先探一下这条链接能不能当音频播 —— 分享链接/网页地址/需登录的地址，
          在浏览器里就是一个「格式错误」，等到用户点播放才报太晚，也说不清。 */
       let linkProbe = null;
-      /* v111z72：像音频文件的链接**不预检**。实测：同一条「302 换令牌」的音乐站链接，
+      /* v111z75：像音频文件的链接**不预检**。实测：同一条「302 换令牌」的音乐站链接，
          预检会先把这次请求额度花掉 —— z49 能放、z61 起放不了（见 out-listen-remote-matrix.json）。
          播放本身会给出准确原因，不该为了提前一句提示把链接花掉。
          其余链接（分享页那种）继续预检，而且同一条只探一次。 */
@@ -23246,7 +23399,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         audioUrl,
         audioName: currentListenAudioData ? currentListenAudioName : '',
         audioSource: currentListenAudioData ? 'local-mp3' : audioUrl ? 'remote-url' : 'simulation',
-        /* v111z72：探到放不出来的链接就记住 —— 队列行会标出来，免得下次又踩 */
+        /* v111z75：探到放不出来的链接就记住 —— 队列行会标出来，免得下次又踩 */
         unplayable: Boolean(linkProbe && !linkProbe.ok),
         createdAt: Date.now()
       };
@@ -25472,7 +25625,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
     /* v111z36：本版实际包含 —— 引用只在所属房间取（不再串房）/ 房间切换不再抛
        insertBefore / 回到前台不再补发到点的主动来电 / 表情包上传压图·失败说清·失效占位。
        换壳时用同一个版本号比对离线壳，改完记得和 sw.js 的 CACHE_VERSION 一起动。 */
-    window.MOBIUS_SHELL_EXPECT = 'v111z72';
+    window.MOBIUS_SHELL_EXPECT = 'v111z75';
     function comboDebug(msg) {
       try {
         if (localStorage.getItem('mobius:combo-debug') !== '1') return;
@@ -26033,7 +26186,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       }
     }
 
-    /* ═══ v111z72 · 聊天记录写盘一律「并集」，不再「覆盖」 ═══
+    /* ═══ v111z75 · 聊天记录写盘一律「并集」，不再「覆盖」 ═══
        用户实测（audit/repro-z66-twotab.js）：同一台设备开两个实例（PWA + 浏览器标签 /
        两个标签页）时，各实例的内存里只有自己渲染过的那几行；A 先说话、B 后写盘，
        写盘那一方拿自己的 DOM 覆盖整段历史 —— A 说的那几句就永久没了
@@ -26165,7 +26318,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         return true;
       }
       const partialStart = explicitlyDeleted ? 0 : Math.max(0, Number(body.dataset.historyLoadedStart) || 0);
-      /* v111z72：存储里那一份（可能含另一个实例刚写下的消息）与眼前 DOM 求并集，只增不删。
+      /* v111z75：存储里那一份（可能含另一个实例刚写下的消息）与眼前 DOM 求并集，只增不删。
          用户明确清空（historyDeleted）时才不并 —— 那是他本人要求的删除。 */
       const storedLines = Array.isArray(previous?.lines) ? previous.lines : [];
       const deletedKeys = new Set((getChatSettings(key).deletedChatLineKeys || []).map(String));
@@ -26387,7 +26540,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       bindCollageIntroObserver();
     }
 
-    /* ═══ v111z72 · 房间窗口记忆 ═══
+    /* ═══ v111z75 · 房间窗口记忆 ═══
        用户实测：反复点进聊天室，之前翻到的老记录就「不见了」。
        存储侧没丢（写盘并集，见 audit/fuzz-z66-loss.js 三个种子的随机进出复核），
        丢的是「看得见的那一段」——每次进房都从最新 100 行重新渲染。
@@ -26435,7 +26588,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       restoringChatHistory = true;
       const holder = document.createElement('div');
       const pageSize = 100;
-      /* v111z72：进房窗口 = max(最新 100 行, 上次看过的那一段)；options.all 仍表示「全都要」 */
+      /* v111z75：进房窗口 = max(最新 100 行, 上次看过的那一段)；options.all 仍表示「全都要」 */
       const rememberedRows = chatViewWindowSize(key);
       const loadedStart = options.all === true ? 0 : Math.max(0, normalizedLines.length - Math.max(pageSize, rememberedRows));
       body.dataset.historyLoadedStart = String(loadedStart);
@@ -28867,7 +29020,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
           if (settings.transferRecords.length !== before) changed = true;
         }
       }
-      /* v111z72：普通文字消息被删掉时也留一条身份 —— 写盘改成「并集」后，
+      /* v111z75：普通文字消息被删掉时也留一条身份 —— 写盘改成「并集」后，
          不留身份的话下一句保存就会把它从旧副本里复活。 */
       const lineKeys = chatLineDeleteKeys(line.outerHTML || '');
       if (lineKeys.length) {
@@ -29891,7 +30044,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         // 只追加下一轮请求；当前 remaining、kind 和 typing 状态保持原样。
         const addedRequests = 1 + Math.max(0, Number(options.queuedUserMessages) || 0);
         existing.queuedUserMessages = Math.max(0, Number(existing.queuedUserMessages) || 0) + addedRequests;
-        /* v111z72：面板承诺是「你发一条后 40~60 秒回你」。所以还没落地的回复要按**最新一条**重新抽等待，
+        /* v111z75：面板承诺是「你发一条后 40~60 秒回你」。所以还没落地的回复要按**最新一条**重新抽等待，
            否则会出现「我 40 秒前发的第一条已经快到点、我又补了一句，TA 立刻就在我眼前回了」的错觉。
            （实测：第一条排 59 秒、第 40 秒发第二条 → 原行为 18.7 秒后就落。） */
         try {
@@ -29913,7 +30066,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       }
       if (!resume) clearReplyEngine(replyHandle);
       let pending = resume && settings.pendingReply && settings.pendingReply.roleId === replyHandle ? { ...settings.pendingReply, used: Array.isArray(settings.pendingReply.used) ? [...settings.pendingReply.used] : [], replyPassed: settings.pendingReply.replyPassed === true } : null;
-      /* v111z72：兜底 —— 存档里没有计划时间（老数据形状）或计划时间已经过期超过 90 秒时，
+      /* v111z75：兜底 —— 存档里没有计划时间（老数据形状）或计划时间已经过期超过 90 秒时，
          不再「立刻把话放出来」（实测 0.2 秒落地），而是按现在这一档节奏重新抽一次等待。 */
       if (pending) {
         try {
@@ -30005,6 +30158,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
             pending.hesitationChecked = true;
             if (getGlobalAppSettings().autonomyHesitationEnabled && Math.random() < .005) {
               markOutgoingBatchReceipt(pending.batchId, 'readNoReply', pending.roleId);
+              armProactiveClockIfBatchEnded(pending, 'read-no-reply-hesitation');
               finishPendingReply();
               showChatToast(`${getRoleDisplayNameForApp(role)} 正在输入后又停下了`);
               return;
@@ -30035,14 +30189,16 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
           const text = pickRoleReplyText(role, pending.used);
           if (!text) {
             // 已经发出过至少一条回复时只是自然结束本批次，不能倒改成“已读不回”。
-            markOutgoingBatchReceipt(pending.batchId, (pending.used || []).length ? 'read' : 'readNoReply', pending.roleId);
+            const ignoredEntirely = !(pending.used || []).length;
+            markOutgoingBatchReceipt(pending.batchId, ignoredEntirely ? 'readNoReply' : 'read', pending.roleId);
+            if (ignoredEntirely) armProactiveClockIfBatchEnded(pending, 'read-no-reply-empty-pool');
             finishPendingReply();
             return;
           }
           // 线程不可见时也视为真正的后台：消息到点即进入持久化待收队列，并当场累计未读、横幅和系统通知。
           const isBackground = !isChatConversationLoaded(pending.roleId);
           if (isBackground) {
-            const queuedIncoming = appendProactiveIncomingMessage(role, text);
+            const queuedIncoming = appendProactiveIncomingMessage(role, text, 'reply');
             if (!queuedIncoming) {
               // 存储失败时不发送横幅、不消耗回复；稍后重试，避免通知与真实聊天记录脱节。
               pending.plannedAt = Date.now() + 5000;
@@ -30055,6 +30211,9 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
             }
             pending.used = [...(pending.used || []), text].slice(-8);
             pending.remaining = Math.max(0, Number(pending.remaining) - 1);
+            /* v111z75：用户口径 ②——「对方发送消息后、我没回」才轮到主动发送消息。
+               所以对方每说一句，主动计时就从**这一句**重新起算（而不是从我上一条消息）。 */
+            try { armProactiveClockFromPeerMoment(pending.roleId, 'peer-message'); } catch (_) {}
             if (pending.remaining > 0) {
               const nextMax = Math.min(5600, 1900 + 135 * text.length);
               pending.plannedAt = Date.now() + (typeof roleReplyDelay === 'function' ? roleReplyDelay() : 1500 + Math.random() * 3600);   /* v111g：连发也听「最少/最长延迟」 */
@@ -30086,6 +30245,8 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
           setChatAvatarVisual(reply.querySelector('.partner-avatar'), currentPartnerInitials, currentPartnerVisual);
           body.insertBefore(reply, typing && typing.parentNode === body ? typing : null);
           markOutgoingBatchReceipt(pending.batchId, 'read', pending.roleId);
+          /* v111z75：同上 —— 对方这句话在眼前落地，主动计时也从它起算。 */
+          try { armProactiveClockFromPeerMoment(pending.roleId, 'peer-message'); } catch (_) {}
           body.scrollTop = body.scrollHeight;
           playGlobalSound('message');
           if (getGlobalAppSettings().autonomyHesitationEnabled && Math.random() < .01) {
@@ -30127,6 +30288,8 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
           // 关闭「已读不回」后跳过概率判定，梦角必定回复（不改各自 replyChance，重新开启即恢复原设定）。
           if (getGlobalAppSettings().readNoReplyEnabled !== false && Math.random() * 100 >= Number(role?.replyChance ?? 99)) {
             markOutgoingBatchReceipt(pending.batchId, 'readNoReply', pending.roleId);
+            /* v111z75：用户口径 ①——「已读不回」这一刻就是「主动发送消息」计时的起点。 */
+            armProactiveClockIfBatchEnded(pending, 'read-no-reply');
             finishPendingReply();
             return;
           }
@@ -30153,7 +30316,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         // 发送新消息只排队，不新建、不覆盖当前发送序列。
         pending.queuedUserMessages = Math.max(0, Number(pending.queuedUserMessages) || 0) + 1;
         if (options.batchId && !pending.batchId) pending.batchId = options.batchId;
-        /* v111z72：面板承诺是「你发一条后 40~60 秒回你」。所以还没落地的那句要按**最新一条**重新抽等待，
+        /* v111z75：面板承诺是「你发一条后 40~60 秒回你」。所以还没落地的那句要按**最新一条**重新抽等待，
            否则会出现「我 40 秒前发的已经快到点、我又补一句，TA 立刻在眼前回了」的错觉。
            （实测：第一条排 59 秒、第 40 秒补发第二条 → 原行为 18.7 秒后就落。） */
         try {
@@ -30259,7 +30422,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       toast.textContent = message;
       toast.classList.add('show');
       window.clearTimeout(window.chatToastTimer);
-      /* v111z72：可传停留时长 —— 一句较长的说明 1.6 秒读不完（默认仍是 1.6 秒，老调用不受影响） */
+      /* v111z75：可传停留时长 —— 一句较长的说明 1.6 秒读不完（默认仍是 1.6 秒，老调用不受影响） */
       const hold = Number(durationMs) > 0 ? Number(durationMs) : 1600;
       window.chatToastTimer = window.setTimeout(() => toast.classList.remove('show'), hold);
     }
@@ -33488,7 +33651,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
     window.addEventListener('storage', event => {
       if (!event.key || event.key.startsWith(DREAM_STORAGE_SAFETY_PREFIX)) return;
       if (!dreamPendingStorageWrites.has(event.key)) dreamJSONParseCache.delete(event.key);
-      /* v111z72：另一个实例（PWA + 浏览器标签 / 两个标签页）动了数据时，本实例的内存副本必须作废 ——
+      /* v111z75：另一个实例（PWA + 浏览器标签 / 两个标签页）动了数据时，本实例的内存副本必须作废 ——
          否则本实例还拿旧快照渲染、再写回去，就把对方刚说的话盖掉（用户实测的「记录丢失」）。 */
       if (event.key === CHAT_HISTORY_STORAGE_KEY || event.key === CHAT_HISTORY_SHARD_INDEX_KEY || event.key.startsWith(CHAT_HISTORY_SHARD_PREFIX)) {
         chatHistoryState = null;
@@ -36579,8 +36742,8 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
      所以不会再出现「指过去是 404 → 系统给一枚默认黑图标」。
      v111z3：这七个文件换成**用户自己的真 logo**（浅蓝灰底 + 深墨「∞」，由用户提供，原样交付）；
      并统一加 `?v=v111z3` —— 手机上可能还留着上一版占位图的 HTTP 缓存，换个 URL 才保证抓到新图。 */
-  const NOTIF_ICON_FALLBACK_URL = new URL('./icons/icon-192.png?v=v111z72', location.href).href;
-  const NOTIF_BADGE_URL = new URL('./icons/badge-96.png?v=v111z72', location.href).href;
+  const NOTIF_ICON_FALLBACK_URL = new URL('./icons/icon-192.png?v=v111z75', location.href).href;
+  const NOTIF_BADGE_URL = new URL('./icons/badge-96.png?v=v111z75', location.href).href;
   async function resolveNotificationAvatarIcon(routeData, opts) {
 
 
@@ -51152,7 +51315,7 @@ body #chatApp[data-card-skin] .chat-decision-bubble.is-answered .chat-decision-s
 }
 </style>
   <style id="mailGmailSkin">
-/* ===== v111z72：MAIL 换成 Gmail（最新版 · Material 3 / Material You）观感 =====
+/* ===== v111z75：MAIL 换成 Gmail（最新版 · Material 3 / Material You）观感 =====
    纯皮肤层，可整块回退（删掉 <style id="mailGmailSkin"> 这一块就回到上一版观感）。
    决定：手机版 Gmail / 深色跟随系统（prefers-color-scheme）/ 文案 100% Gmail 化；
         入口名保留 MAIL；Aurora 主题下也永远用 Gmail 配色（不套极光渐变）。
@@ -51285,8 +51448,8 @@ body #chatApp[data-card-skin] .chat-decision-bubble.is-answered .chat-decision-s
 #appScreen .mail-app .mail-inbox-panel { padding: 0 6px 74px !important; }
 #appScreen .mail-app .mail-letter-list { gap: 4px !important; }
 #appScreen .mail-app .mail-letter-item {
-  grid-template-columns: 34px minmax(0, 1fr) auto 16px !important;
-  gap: 8px !important; padding: 9px 10px !important;
+  grid-template-columns: 38px minmax(0, 1fr) auto 18px !important;
+  gap: 9px !important; padding: 11px 12px !important;
   border: 0 !important; border-radius: 12px !important;
   background: var(--m3-card) !important;
   box-shadow: none !important; transform: none !important;
@@ -51298,8 +51461,8 @@ body #chatApp[data-card-skin] .chat-decision-bubble.is-answered .chat-decision-s
 }
 #appScreen .mail-app .mail-letter-item.active { box-shadow: inset 0 0 0 1.5px var(--m3-primary), 0 1px 3px rgba(31,31,31,.16) !important; }
 #appScreen .mail-app .mail-sender-avatar {
-  width: 34px !important; height: 34px !important; min-width: 34px !important; min-height: 34px !important;
-  flex: 0 0 34px !important; border-radius: 50% !important; font-size: 9px !important;
+  width: 38px !important; height: 38px !important; min-width: 38px !important; min-height: 38px !important;
+  flex: 0 0 38px !important; border-radius: 30% !important; font-size: 10px !important;
 }
 /* Gmail 的层次：发件人为主（未读＝黑色加粗），主题次之，摘要最淡 */
 #appScreen .mail-app .mail-item-from { font-size: 8.5px !important; font-weight: 600 !important; color: var(--m3-on2) !important; }
@@ -51342,8 +51505,12 @@ body #chatApp[data-card-skin] .chat-decision-bubble.is-answered .chat-decision-s
 #appScreen .mail-app .mail-reader-paper::before { display: none !important; }
 #appScreen .mail-app .mail-reader-sender { gap: 9px !important; }
 #appScreen .mail-app .mail-reader-avatar {
-  width: 34px !important; height: 34px !important; border-radius: 50% !important;
-  font-size: 9px !important; background: var(--m3-search) !important;
+  width: 38px !important; height: 38px !important; border-radius: 30% !important;
+  font-size: 10px !important;
+  /* v111z75：这里原来写的是 `background: var(--m3-search) !important` —— 简写带 !important
+     会把 JS 内联的头像图（background-image）一并抹掉，于是「对方的头像显示不出来」，
+     只剩一个浅蓝圆圈、白字还看不见。改成只给底色，图片/角色渐变得以显示。 */
+  background-color: var(--m3-search) !important;
 }
 #appScreen .mail-app .mail-reader-sender div span { color: var(--m3-on2) !important; font-family: inherit !important; font-size: 6.5px !important; letter-spacing: 0 !important; }
 #appScreen .mail-app .mail-reader-sender div strong { margin-top: 1px !important; color: var(--m3-on) !important; font-size: 9.5px !important; font-weight: 800 !important; }
@@ -51437,7 +51604,7 @@ body #chatApp[data-card-skin] .chat-decision-bubble.is-answered .chat-decision-s
   </style>
   <style id="mailGmailSkin70">
 
-/* ===== v111z72：长正文不再被剪（用户报「查看详情内容被省略」）=====
+/* ===== v111z75：长正文不再被剪（用户报「查看详情内容被省略」）=====
    复现：内容存的是完整的，但 .mail-reader-paper 里 clientHeight 761 / scrollHeight 1322，
    且 overflow:hidden + flex-shrink:1 —— 超出部分被剪掉而且滚不到。
    修法：信纸按内容长高，滚动交给 .mail-reader-panel。 */
@@ -51446,7 +51613,7 @@ body #chatApp[data-card-skin] .chat-decision-bubble.is-answered .chat-decision-s
 #appScreen .mail-app .mail-reader-panel { overscroll-behavior: contain; }
 /* 引用区给多一点：2 行 → 4 行（配合 JS 里 180 → 600 字） */
 #appScreen .mail-app .mail-reply-reference p { -webkit-line-clamp: 4 !important; clamp: 4 !important; }
-/* ===== v111z72：只留一个返回箭头 =====
+/* ===== v111z75：只留一个返回箭头 =====
    头部 ← 按模式返回（关阅读 / 关写信）；头部 ✕ 退出 MAIL；阅读页自带的 ← 与写信页自带的 ✕ 隐藏。 */
 #appScreen .mail-app .mail-reader-back { display: none !important; }
 #appScreen .mail-app .mail-compose-head > button:not(.mail-send-letter) { display: none !important; }
@@ -51457,5 +51624,57 @@ body #chatApp[data-card-skin] .chat-decision-bubble.is-answered .chat-decision-s
 }
 #appScreen .mail-app .mail-app-exit svg { width: 18px !important; height: 18px !important; fill: none !important; stroke: currentColor !important; stroke-width: 1.9 !important; }
   </style>
+
+  <style id="mailGmailSkin73">
+/* ===== v111z75：MAIL 字号统一并放大（用户：转发页字体与正常邮件界面不一致 / 列表与信件字号小）=====
+   口径：阅读页正文 ＝ 撰写页正文 ＝ 12.5px / 1.8（跟内联钉死的一致，见 pinMailTypography）；
+        列表整行放大；头像改成方圆型（30%）。配色与布局仍是 Material 3。 */
+#appScreen .mail-app {
+  --mail-type-body: 12.5px;
+  --mail-type-meta: 11.5px;
+  --mail-type-small: 8.5px;
+}
+
+/* ---------- 阅读页 ---------- */
+#appScreen .mail-app .mail-reader-content {
+  font-size: var(--mail-type-body) !important;
+  line-height: 1.8 !important;
+}
+#appScreen .mail-app .mail-reader-content p { margin: 0 0 11px !important; }
+#appScreen .mail-app .mail-reader-content .mail-reader-greeting { font-size: var(--mail-type-meta) !important; }
+#appScreen .mail-app .mail-reader-title { font-size: 16px !important; line-height: 1.35 !important; }
+#appScreen .mail-app .mail-reader-sender div strong { font-size: var(--mail-type-meta) !important; }
+#appScreen .mail-app .mail-reader-sender div span { font-size: var(--mail-type-small) !important; }
+#appScreen .mail-app .mail-reader-signature strong { font-size: var(--mail-type-meta) !important; }
+#appScreen .mail-app .mail-reply-reference > span { font-size: var(--mail-type-small) !important; }
+#appScreen .mail-app .mail-reply-reference p { font-size: 9px !important; line-height: 1.7 !important; }
+#appScreen .mail-app .mail-reader-actions button { font-size: 9px !important; }
+
+/* ---------- 撰写 / 转发 / 回复页（与阅读页同号） ---------- */
+#appScreen .mail-app .mail-compose-head > div strong { font-size: 15px !important; }
+#appScreen .mail-app .mail-compose-recipient > span { font-size: var(--mail-type-small) !important; }
+#appScreen .mail-app .mail-compose-recipient input {
+  font-size: var(--mail-type-body) !important; height: 30px !important;
+}
+#appScreen .mail-app .mail-compose-paper textarea {
+  font-size: var(--mail-type-body) !important; line-height: 1.8 !important;
+}
+#appScreen .mail-app .mail-compose-signature input { font-size: var(--mail-type-body) !important; height: 28px !important; }
+#appScreen .mail-app .mail-compose-reference strong { font-size: var(--mail-type-small) !important; }
+#appScreen .mail-app .mail-compose-reference p { font-size: 9px !important; line-height: 1.7 !important; }
+
+/* ---------- 列表：整行放大（发件人 / 主题 / 摘要 / 时间） ---------- */
+#appScreen .mail-app .mail-item-from { font-size: 11px !important; }
+#appScreen .mail-app .mail-item-copy strong { font-size: 10.5px !important; }
+#appScreen .mail-app .mail-item-copy small { font-size: 9px !important; line-height: 1.5 !important; }
+#appScreen .mail-app .mail-item-meta,
+#appScreen .mail-app .mail-item-meta time { font-size: 8px !important; }
+#appScreen .mail-app .mail-sender-avatar { font-size: 10px !important; }
+#appScreen .mail-app .mail-letter-delete { font-size: 13px !important; }
+
+/* ---------- 头像：方圆型（有图显示图、无图显示角色渐变＋首字母） ---------- */
+#appScreen .mail-app .mail-reader-avatar,
+#appScreen .mail-app .mail-sender-avatar { background-repeat: no-repeat !important; background-position: center !important; background-size: cover !important; }
+</style>
 </body>
 </html>
