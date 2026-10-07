@@ -13,9 +13,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Möbius">
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png?v=v111z76">
-  <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon-180.png?v=v111z76">
-  <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png?v=v111z76">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png?v=v111z83">
+  <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon-180.png?v=v111z83">
+  <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png?v=v111z83">
   <!-- 填写后端 Web Push 配置后，页面关闭或系统锁屏时也可由推送服务器唤醒 SW。 -->
   <meta name="dream-push-vapid-public-key" content="">
   <meta name="dream-push-subscribe-endpoint" content="">
@@ -5888,7 +5888,7 @@ html[data-keyboard-open="true"] .chat-feature-modal { padding-bottom: calc(14px 
       transition: opacity .18s ease, transform .18s ease;
     }
     .site-toast.show { opacity: 1; transform: translate(-50%,0); }
-    /* v111z75：只有「可撤销」的朋友圈提示条才接收点击，其余提示条继续穿透、不挡操作。 */
+    /* v111z83：只有「可撤销」的朋友圈提示条才接收点击，其余提示条继续穿透、不挡操作。 */
     #circleAppToast.tappable { pointer-events: auto; cursor: pointer; }
     .circle-app .site-toast,
     .global-settings-app .site-toast { bottom: 64px; }
@@ -10269,12 +10269,13 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         </header>
         <div class="mail-app-body" id="mailAppBody">
           <section class="mail-inbox-panel">
-            <label class="mail-search-wrap"><i data-lucide="search" size="14"></i><input id="mailSearchInput" type="search" placeholder="搜索邮件" autocomplete="off" oninput="updateMailSearch(this.value)"></label>
+            <label class="mail-search-wrap"><i data-lucide="search" size="14"></i><input id="mailSearchInput" type="search" placeholder="搜索邮件" autocomplete="off" oninput="updateMailSearch(this.value)"><button class="mail-search-clear" type="button" onclick="clearMailSearch()" aria-label="清除搜索" hidden>✕</button></label>
             <div class="mail-filter-row" id="mailFilterRow">
               <button type="button" data-mail-filter="inbox" onclick="setMailFilter('inbox')">收件箱 <em id="mailCountInbox">0</em></button>
               <button type="button" data-mail-filter="sent" onclick="setMailFilter('sent')">已发送 <em id="mailCountSent">0</em></button>
               <button type="button" data-mail-filter="unread" onclick="setMailFilter('unread')">未读 <em id="mailCountUnread">0</em></button>
               <button type="button" data-mail-filter="all" onclick="setMailFilter('all')">全部 <em id="mailCountAll">0</em></button>
+              <button type="button" data-mail-filter="trash" onclick="setMailFilter('trash')">已删除 <em id="mailCountTrash">0</em></button>
             </div>
             <div class="mail-letter-list" id="mailLetterList"><div class="mail-list-empty">没有邮件</div></div>
           </section>
@@ -10304,9 +10305,16 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
           <div class="mail-compose-desk">
             <div class="mail-compose-paper">
               <label class="mail-compose-recipient"><span>收件人</span><input id="mailComposeRecipientInput" type="text" list="mailRecipientOptions" maxlength="40" placeholder="选择角色或输入收件人" autocomplete="off"><datalist id="mailRecipientOptions"></datalist></label>
+            <label class="mail-compose-subject"><span>主题</span><input id="mailComposeSubject" type="text" maxlength="60" placeholder="主题" autocomplete="off"></label>
               <div class="mail-compose-reference" id="mailComposeReference" hidden><span>引用</span><strong id="mailComposeReferenceTitle"></strong><p id="mailComposeReferenceContent"></p></div>
               <textarea id="mailComposeBody" placeholder="写下内容...."></textarea>
               <label class="mail-compose-signature"><span>署名</span><input id="mailComposeSignature" type="text" maxlength="40" placeholder="输入署名"></label>
+              <div class="mail-compose-tools">
+                <button class="mail-tool-btn" type="button" data-mail-tool="attach" aria-label="添加附件">附件</button>
+                <button class="mail-tool-btn" type="button" data-mail-tool="format" aria-label="格式">Aa</button>
+                <button class="mail-tool-btn mail-draft-discard" type="button" onclick="__mail82DiscardDraft()" hidden>丢弃草稿</button>
+              </div>
+              <p class="mail-draft-hint" hidden>已恢复上次没写完的草稿。</p>
             </div>
           </div>
         </section>
@@ -10630,7 +10638,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
               <label class="global-backup-category"><input type="checkbox" data-backup-category="chatSettings" checked><span><strong>CHAT 设置</strong><small>壁纸、气泡、磨砂、资料</small></span></label>
               <label class="global-backup-category"><input type="checkbox" data-backup-category="chatSpecial" checked><span><strong>CHAT 收藏和特殊功能</strong><small>收藏、红包、查岗、邀请、一起听</small></span></label>
               <label class="global-backup-category"><input type="checkbox" data-backup-category="box" checked><span><strong>BOX</strong><small>聊天快照、日记、标签和关联图片</small></span></label>
-              <label class="global-backup-category"><input type="checkbox" data-backup-category="mail" checked><span><strong>MAIL</strong><small>梦笺、签名、收发状态</small></span></label>
+              <label class="global-backup-category"><input type="checkbox" data-backup-category="mail" checked><span><strong>MAIL</strong><small>邮件、签名、收发状态</small></span></label>
               <label class="global-backup-category"><input type="checkbox" data-backup-category="circle" checked><span><strong>朋友圈</strong><small>动态、封面、访客和资料</small></span></label>
               <label class="global-backup-category"><input type="checkbox" data-backup-category="moon" checked><span><strong>MOON</strong><small>周期和每日记录</small></span></label>
               <label class="global-backup-category"><input type="checkbox" data-backup-category="history" checked><span><strong>聊天记录</strong><small>各梦角的文字和媒体消息</small></span></label>
@@ -11653,7 +11661,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
     let moonDraft = { pain: null, flow: null, color: '' };
     const CIRCLE_POSTS_STORAGE_KEY = 'dream-messenger:circle-posts:v1';
     const CIRCLE_COMMENT_TASKS_KEY = 'dream-messenger:circle-comment-reply-tasks:v1';
-    /* v111z75：朋友圈「已删除动态」墓碑。多标签页/多窗口下，旧内存快照会把删掉的动态
+    /* v111z83：朋友圈「已删除动态」墓碑。多标签页/多窗口下，旧内存快照会把删掉的动态
        整条写回来；墓碑让「删」这件事跨实例生效（只在写入合并时使用，不参与界面）。 */
     const CIRCLE_DELETED_KEY = 'dream-messenger:circle-deleted:v1';
     const CIRCLE_COMMENT_LOCK_PREFIX = 'dream-messenger:circle-comment-lock:';
@@ -12135,7 +12143,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
 
       // 朋友圈中带 roleId 的作者、评论和访客都跟随当前昵称；回复正文不改动。
       try {
-        loadCirclePosts(true);   /* v111z75：改名同步前重读最新一份，别用旧快照覆盖别人的新评论 */
+        loadCirclePosts(true);   /* v111z83：改名同步前重读最新一份，别用旧快照覆盖别人的新评论 */
         let changed = false;
         circlePosts.forEach(post => {
           let touched = false;
@@ -12584,17 +12592,17 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       const state = loadProactiveEventState();
       state[roleId] = state[roleId] || {};
       state[roleId].lastUserActivityAt = Date.now();
-      /* v111z75：我发了消息 ⇒ 这一局不再"欠着回复"，主动消息先闭嘴（对方该走回复通道回我）。 */
+      /* v111z83：我发了消息 ⇒ 这一局不再"欠着回复"，主动消息先闭嘴（对方该走回复通道回我）。 */
       state[roleId].awaitingUserReply = false;
       state[roleId].awaitingSince = 0;
-      /* v111z75：我说话了 ⇒ 「自续计数」清零、冷静期解除（合计口径：整个人群共用这一份），
+      /* v111z83：我说话了 ⇒ 「自续计数」清零、冷静期解除（合计口径：整个人群共用这一份），
          节奏回到面板上的「最快~最慢」。 */
       const gate = state.__gate && typeof state.__gate === 'object' ? state.__gate : (state.__gate = {});
       gate.selfStreak = 0;
       gate.selfColdUntil = 0;
       // 主动消息从我方最后一次 CHAT 活动重新开始计算，避免刚聊完又立刻主动打扰。
       scheduleProactiveEvent(roleId, 'message', true);
-      /* v111z75：口径＝所有梦角合计时，我方一说话就把全局闸门一起推到现在 ——
+      /* v111z83：口径＝所有梦角合计时，我方一说话就把全局闸门一起推到现在 ——
          「最快 X 分钟」从这句话重新开始算（以前只有排期那一瞬间读它，之后就不再管了，
          所以刚聊完不到一分钟，另一个梦角（或本梦角迟到的补话）就又能开口）。 */
       try { if (proactiveMessageRhythmCombined()) markProactiveMessageSent(Date.now()); } catch (_) {}
@@ -12634,7 +12642,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       try { return getGlobalAppSettings().proactiveMessageBurst === true ? pickRoleReplyCount() : 1; } catch (_) { return 1; }
     }
 
-    /* v111z75：我方「安静线」—— 我方最后一次在聊天里说话 + 主动消息的「最快」值。
+    /* v111z83：我方「安静线」—— 我方最后一次在聊天里说话 + 主动消息的「最快」值。
        在这条线之前，任何梦角都不许主动开口（包括迟到补话）。
        这是用户口径的直接翻译：主动消息是「我没说话的时候，到点了 TA 才来找我」。 */
     function proactiveUserQuietUntil() {
@@ -12661,7 +12669,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       } catch (_) { return 0; }
     }
 
-    /* v111z75 · 「合计」口径的下一拍
+    /* v111z83 · 「合计」口径的下一拍
        ---------------------------------------------------------------
        用户实测（audit/repro-z66-longrun2.js）：两格都拉到面板最长（最快 60 分 / 最慢 1440 分）、
        自己一句话都没说，5 位梦角 7 天还是送来 41 条（≈ 每 2.5 小时一条）。
@@ -12674,7 +12682,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       const base = Number(fromAt) || Date.now();
       return base + range.minMs + Math.floor(Math.random() * Math.max(1, range.maxMs - range.minMs));
     }
-    /* v111z75：其余通道（来电 / 写信 / 朋友圈 / 访客）也各有一条「人群节拍」。
+    /* v111z83：其余通道（来电 / 写信 / 朋友圈 / 访客）也各有一条「人群节拍」。
        实测（audit/repro-z66-channels.js）：「主动发送消息」修好后，5 位梦角 7 天仍送来
        59 封信 + 100 次访客 + 14 通来电 —— 因为这些排期以前也是每位梦角各算一条，
        人一多就是几倍。表格里那行「节奏口径」说的就是「合起来算」，这里把它落到底。
@@ -12755,7 +12763,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         if (!state.__gate || typeof state.__gate !== 'object') state.__gate = {};
         const stamp = Number(at) || Date.now();
         state.__gate.messageAt = stamp;
-        /* v111z75：合计口径下，说出口的这一刻就把「下一拍」定下来（整个人群共用） */
+        /* v111z83：合计口径下，说出口的这一刻就把「下一拍」定下来（整个人群共用） */
         if (proactiveMessageRhythmCombined()) state.__gate.nextMessageAt = drawProactiveBeat(stamp);
         persistProactiveEventState();
       } catch (_) { /* 调度不该因为记账失败而中断 */ }
@@ -12769,7 +12777,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       const range = proactiveEventRange(type);
       const activityAt = type === 'message' && Number(state[roleId].lastUserActivityAt) > 0 ? Number(state[roleId].lastUserActivityAt) : 0;
       let baseAt = force || !activityAt ? Date.now() : activityAt;
-      /* v111z75：口径＝所有梦角合计时，「最快~最慢」是整个人群的节拍 ——
+      /* v111z83：口径＝所有梦角合计时，「最快~最慢」是整个人群的节拍 ——
          每位梦角不再各抽一个完整间隔（那是「各自」口径的行为），
          而是一起排在「下一拍」上，谁先说由小抖动决定。 */
       if (proactiveMessageRhythmCombined() && type !== 'glyphcard') {
@@ -12814,10 +12822,10 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         return true;
       }
       const settings = getChatSettings(role.id);
-      /* v111z75：待收条目带来源标记。回复（我发消息之后对方回的）与主动消息是两条通道，
+      /* v111z83：待收条目带来源标记。回复（我发消息之后对方回的）与主动消息是两条通道，
          迟到回来的处理也不同：回复按策略 C 重排，主动消息到点就算收到、立刻显示。 */
       settings.pendingProactiveMessages = [...(settings.pendingProactiveMessages || []), { id: `proactive-${Date.now()}-${Math.random().toString(16).slice(2)}`, text, createdAt: arrivalAt, channel: String(arguments[2] || 'proactive') }].slice(-20);
-      /* v111z75：对方把话放进了待收队列 —— 这一局同样是"欠着回复"。
+      /* v111z83：对方把话放进了待收队列 —— 这一局同样是"欠着回复"。
          （回复通道的落地会另外调 armProactiveClockFromPeerMoment，两条路都覆盖。） */
       try { const st = loadProactiveEventState(); st[role.id] = st[role.id] || {}; st[role.id].awaitingUserReply = true; st[role.id].awaitingSince = arrivalAt; } catch (_) {}
       return saveChatSettings(settings, role.id) === true;
@@ -12948,7 +12956,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       return String(best.item.text || '');
     };
 
-    /* ═══ v111z75 · 「全局回复」与「主动发送消息」的分工（用户口径） ═══
+    /* ═══ v111z83 · 「全局回复」与「主动发送消息」的分工（用户口径） ═══
        回复：只有「我发消息」之后，对方才回 —— 用面板上的「全局回复节奏」（最短/最长延迟）。
        主动发送消息：① 我发消息后、对方已读不回；② 对方发消息后、我没回 —— 用「主动发送消息」那两格。
        这两件事以前有三处交叉（主动连发的句间隔、待收队列的重排、已读不回那一刻没有起算），
@@ -12956,7 +12964,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
     const PROACTIVE_BURST_GAP_MIN_MS = 1200;      // 「同一次说话」里的连发间隔（主动通道自己的）
     const PROACTIVE_BURST_GAP_MAX_MS = 5400;
 
-    /* v111z75 · 自续上限与冷静期
+    /* v111z83 · 自续上限与冷静期
        ---------------------------------------------------------------
        用户报「对方一直在发消息」的根子：主动消息说过一次之后会按面板节奏永远自续，
        我一句话都没接（默认档＝每 19 分钟一条、一天 77 条、整夜不停）。
@@ -12977,7 +12985,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         const state = loadProactiveEventState();
         state[handle] = state[handle] || {};
         const now = Date.now();
-        /* v111z75：对方说了话（或已读不回）⇒ 这一局"欠着回复"，主动消息可以按节奏来。 */
+        /* v111z83：对方说了话（或已读不回）⇒ 这一局"欠着回复"，主动消息可以按节奏来。 */
         state[handle].awaitingUserReply = true;
         state[handle].awaitingSince = now;
         state[handle].messageAt = drawProactiveBeat(now);          // 该梦角：从现在起算一个「最快~最慢」
@@ -13017,7 +13025,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         used.push(text);
       }
       if (!texts.length) return false;
-      /* v111z75：主动消息「同一次说话」里的连发间隔 = 主动通道自己的小停顿。
+      /* v111z83：主动消息「同一次说话」里的连发间隔 = 主动通道自己的小停顿。
          以前这里借的是「全局回复节奏」的最短/最长延迟 —— 那正是把两条通道混在一起的其中一处：
          面板把回复设成 40~60 秒时，主动连发也会变成 40~60 秒一句。用户口径下两者必须分开。 */
       const nextGap = () => PROACTIVE_BURST_GAP_MIN_MS + Math.floor(Math.random() * (PROACTIVE_BURST_GAP_MAX_MS - PROACTIVE_BURST_GAP_MIN_MS));
@@ -14349,7 +14357,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       /* v111z5：进站补话的名额只有一个人、一条 —— 先算出来，再进角色循环
          （循环是按联系人顺序走的，不预先挑，就永远是最上面那个梦角，反而更模式化）。 */
       const catchupRoleIds = new Set(pickProactiveCatchupTargets(now, state).map(item => String(item.roleId)));
-      /* v111z75：谁先说 —— 同一拍到点的往往不止一位，而循环以前固定按联系人顺序走，
+      /* v111z83：谁先说 —— 同一拍到点的往往不止一位，而循环以前固定按联系人顺序走，
          于是联系人列表里的第一位永远抢到那一拍（实测 7 天 15 条全部出自同一位梦角，
          其余人 0~1 条）。这里每次扫描都随机起点，让到点的人轮流开口
          —— 这也是代码原注释「免得永远是联系人列表里的第一位」想做而没做到的事。 */
@@ -14380,7 +14388,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
             /* v111z59：口径＝所有梦角合计时，「最快」是全局地板 ——
                上一条主动消息之后还没到最快间隔，这一条只重排、不说。 */
             if (type === 'message' && proactiveMessageRhythmCombined()) {
-              /* v111z75：合计口径 = 整个人群一条节拍。还没到「下一拍」的，只重排、不说。
+              /* v111z83：合计口径 = 整个人群一条节拍。还没到「下一拍」的，只重排、不说。
                  这一拍刚被上一条说出口的消息推走，所以同一轮心跳里也只会有一位开口。 */
               const nextBeat = ensureProactiveBeat();
               if (nextBeat > 0 && now < nextBeat) {
@@ -14389,7 +14397,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
                 return;
               }
             }
-            /* v111z75：合计口径下，其余通道（来电 / 写信 / 朋友圈 / 访客）也一起走「整个人群一条节拍」。
+            /* v111z83：合计口径下，其余通道（来电 / 写信 / 朋友圈 / 访客）也一起走「整个人群一条节拍」。
                没到下一拍就只重排、不打扰。字卡请求不在此列（自带四道闸）。 */
             if (type !== 'message' && type !== 'glyphcard' && proactiveMessageRhythmCombined()) {
               const nextBeat = ensureProactiveBeatForType(type);
@@ -14399,11 +14407,11 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
                 return;
               }
             }
-            /* v111z75：无论「合计」还是「每位梦角各自」，都加一道「我方安静线」——
+            /* v111z83：无论「合计」还是「每位梦角各自」，都加一道「我方安静线」——
                距我最后一次说话没满「最快」值，谁也不许开口（做梦角也一样）。
                这一道是对着用户的现场来的：关站/挂后台期间错过的到点（due 已是过去时刻）、
                以及刚和我聊完的那位，都会在闸门记账缺一环时当场把消息吐出来。 */
-            /* v111z75：自续上限（合计口径 —— 所有梦角一起数）——
+            /* v111z83：自续上限（合计口径 —— 所有梦角一起数）——
                对方已经连说了 2 次、我一直没接话 ⇒ 转冷静期：到点在冷静期里就只重排，不开口。
                这条不是「禁止她再找你」，而是把「按面板节奏无限刷」改成「一天最多一两次」。 */
             if (type === 'message') {
@@ -14417,7 +14425,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
                 }
               }
             }
-            /* v111z75：回合制闸门 —— 只有「对话欠着回复」时才允许主动开口。
+            /* v111z83：回合制闸门 —— 只有「对话欠着回复」时才允许主动开口。
                我发了消息以后、对方还没回（回执还没到/还没读）的那段时间里，主动消息一律不开口：
                那看起来就是「我在跟你说话，你却在自顾自发消息」（用户报的就是这个手感）。
                没有判定过（新数据 / 老数据）时放行，保持"冷启动对方也会来找你"。 */
@@ -14429,7 +14437,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
             if (type === 'message') {
               const quietUntil = proactiveUserQuietUntil();
               if (quietUntil > now) {
-                /* v111z75：被安静线拦下的人排到 max(安静线, 下一拍) —— 原先「安静线 + 一整个随机间隔」
+                /* v111z83：被安静线拦下的人排到 max(安静线, 下一拍) —— 原先「安静线 + 一整个随机间隔」
                    最长能把这条推到 20 多小时以后，用户会以为「她再也不理我了」。 */
                 const anchor = Math.max(quietUntil, proactiveMessageRhythmCombined() ? ensureProactiveBeat() : 0);
                 roleState[key] = anchor + Math.floor(Math.random() * proactiveBeatJitterMs());
@@ -14462,7 +14470,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
               noteGlyphRequestFired();
             }
             if (type === 'message') {
-              /* v111z75：这一位真的开口了 ⇒ 「自续」记一次（全体共用），并把下一次冷静期重新抽好。
+              /* v111z83：这一位真的开口了 ⇒ 「自续」记一次（全体共用），并把下一次冷静期重新抽好。
                  我一旦说话就清零 + 解除冷静期（见 recordUserChatActivity），
                  所以这里数的是「我没接话期间，对方一共连说了几次」。 */
               {
@@ -14493,7 +14501,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
               /* v111z59：真的说出口了才动全局闸门 —— 被规则拦下（没补、没发）的不占位 */
               if (delivered) markProactiveMessageSent(Date.now());
             } else {
-              /* v111z75：关站 / 挂后台期间错过的「来信 / 朋友圈动态 / 访客」，不再在打开 App 的那一下补发。
+              /* v111z83：关站 / 挂后台期间错过的「来信 / 朋友圈动态 / 访客」，不再在打开 App 的那一下补发。
                  判据与主动来电（v111z36）一致：到点却已经过期很久 = 那会儿 App 根本没在跑，
                  只重新排期，不打扰。（前台正常心跳最多晚一两秒，够不着 90 秒，不会误伤准时到点的。）
                  实测：关站 9 小时后打开 App，原先每条通道各砸一条（消息 + 信 + 朋友圈 + 访客 + 来电）；
@@ -14804,7 +14812,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         .map((item, index) => ({ item, index, at: Number(item?.createdAt) || 0 }))
         .sort((a, b) => (a.at - b.at) || (a.index - b.index))
         .map(entry => entry.item);
-      /* v111z75（用户选项 C）：补放时把「迟到超过 90 秒」的重新排到「回来之后 40~60 秒」，
+      /* v111z83（用户选项 C）：补放时把「迟到超过 90 秒」的重新排到「回来之后 40~60 秒」，
          不再一进房间就让 TA 立刻把好久以前就该到的话倒出来（那看起来就是「秒回」）。
          迟到 ≤90 秒的照旧立刻显示 —— 那种「你刚切走一下回来」的，本来就该看到。 */
       const STALE_REVEAL_MS = 90 * 1000;
@@ -14813,7 +14821,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       const freshQueue = queueItems.filter(item => {
         if (alreadyRestored(item.id)) return false;
         const at = Number(item?.createdAt) || 0;
-        /* v111z75：只有「回复」通道的迟到条目才按策略 C 重排（那是你设 40~60 秒要管的东西）；
+        /* v111z83：只有「回复」通道的迟到条目才按策略 C 重排（那是你设 40~60 秒要管的东西）；
            「主动消息」通道的迟到条目照 v111j5 的口径 —— 到点就算收到，进房间立刻显示。
            历史条目没有 channel（旧数据）时按回复处理，保持 v111z72 的行为不变。 */
         const isReplyChannel = item?.channel !== 'proactive';
@@ -15644,7 +15652,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
     ]);
     const TIPS_GUIDES = Object.freeze([
       { id:'desktop', category:'start', icon:'layout-grid', title:'桌面与组件', summary:'移动图标、添加页面和管理组件', keywords:['桌面','组件','长按','布局','左右滑动','日历'], steps:['长按桌面空白处进入编辑模式，可以拖动图标和组件。','点击“＋ 新增页”创建桌面页面；退出编辑模式后，在桌面任意空白处或图标区域左右滑动即可切换页面，也可以点击底部分页圆点。','点击“＋ 组件库”挑选喜欢的组件，也可以把暂时不用的组件收回。','日历圆环中央会随内容变化：MOON 当前阶段显示周期进度或天数，待办显示完成率，纪念日显示相应天数。','编辑时可以使用自动整理、撤销与重做，让桌面保持顺手的布局。'] },
-      { id:'roles', category:'start', icon:'contact-round', title:'联系人与梦角', summary:'建立角色资料并进入专属聊天室', keywords:['联系人','梦角','头像','昵称'], steps:['在 CHAT 联系人页创建梦角，并设置名称、头像、配色和角色资料。','点击联系人即可进入专属聊天室，每位梦角都拥有自己的聊天空间和个性设置。','在角色个人主页点击昵称，可以添加、删除或选择昵称；每位角色最多保存 4 个。','无论由你还是由 TA 切换当前昵称，新昵称都会同步显示在联系人、聊天、群聊、朋友圈、梦笺、邀请和其他相关位置。'] },
+      { id:'roles', category:'start', icon:'contact-round', title:'联系人与梦角', summary:'建立角色资料并进入专属聊天室', keywords:['联系人','梦角','头像','昵称'], steps:['在 CHAT 联系人页创建梦角，并设置名称、头像、配色和角色资料。','点击联系人即可进入专属聊天室，每位梦角都拥有自己的聊天空间和个性设置。','在角色个人主页点击昵称，可以添加、删除或选择昵称；每位角色最多保存 4 个。','无论由你还是由 TA 切换当前昵称，新昵称都会同步显示在联系人、聊天、群聊、朋友圈、邮件、邀请和其他相关位置。'] },
       { id:'direct-chat', category:'chat', icon:'message-square-heart', title:'私聊与连续回复', summary:'文字、引用、批量发送和主动消息', keywords:['私聊','文字','引用','回复','主动消息'], steps:['在输入栏填写内容后发送，连续发送的文字可以自然组成一轮对话。','长按消息可打开更多操作；开启引用回复后，可以针对指定内容继续交流。','双击聊天室顶栏的标题、状态或空白区域，可以平滑回到聊天记录顶部；返回键、头像和通话等按钮不会触发。','梦角主动联系时，联系人列表会显示未读数量；进入聊天室后会自动标记已读。','长按联系人可开启“暂时离开”；开启后该角色不会发送聊天、主动联系、来电或其他新信息，关闭后恢复。','每位梦角的聊天内容和个性化设置彼此独立，切换联系人时互不混淆。'] },
       { id:'voice', category:'chat', icon:'mic', title:'拟态语音', summary:'长按语音按钮发送，双击展开文字', keywords:['语音','长按','双击','录音'], steps:['长按输入框右侧的语音按钮开始拟态录制，松开后发送。','语音气泡的长度会随按住时长变化。','双击对方的语音气泡可以展开文字，再次双击即可收起。','如果不希望收到对方拟态语音，可在当前聊天室“更多 → 对方拟态语音”中关闭；已有语音和我方发送不受影响。','录制时可以根据屏幕提示完成或取消本次发送。'] },
       { id:'media', category:'chat', icon:'paperclip', title:'附件、表情与画板', summary:'发送图片、表情包及画板传讯', keywords:['附件','图片','表情包','画板'], steps:['展开附件面板，可以发送图片、画板传讯和其他互动内容。','我方与对方拥有各自的表情包列表，可在当前聊天室设置中管理。','点击聊天中的图片或画板可以全屏查看、缩放与下载。','长按消息可打开操作菜单；是否启用消息操作可在全局设置中选择。'] },
@@ -15840,7 +15848,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       return MAIL_GREETINGS[Math.floor(Math.random() * MAIL_GREETINGS.length)];
     }
 
-    /* v111z75：时间口径改成 Gmail 的写法 —— 今天只显示时刻，昨天显示「昨天」，更早显示 月/日。 */
+    /* v111z83：时间口径改成 Gmail 的写法 —— 今天只显示时刻，昨天显示「昨天」，更早显示 月/日。 */
     function formatMailTime(createdAt) {
       const time = Number(createdAt) || Date.now();
       const now = new Date(Date.now());
@@ -16049,7 +16057,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
           remove.dataset.mailDelete = letter.id;
           remove.setAttribute('aria-label', '删除邮件');
           remove.textContent = '×';
-          /* v111z75：用户要求「方圆型」——30% 圆角（不是正圆、也不是方角）。 */
+          /* v111z83：用户要求「方圆型」——30% 圆角（不是正圆、也不是方角）。 */
           avatar.style.setProperty('border-radius', '30%', 'important');
           item.append(avatar, copy, meta, remove);
           item.addEventListener('click', event => {
@@ -16075,7 +16083,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       const elUnread = document.getElementById('mailCountUnread'); if(elUnread) elUnread.textContent = String(unreadCount);
     }
 
-    /* v111z75：头部只剩一个 ← —— 有阅读/写信面板时返回上一层，否则关闭 MAIL。
+    /* v111z83：头部只剩一个 ← —— 有阅读/写信面板时返回上一层，否则关闭 MAIL。
        另有一个 ✕（.mail-app-exit）在阅读/写信时才出现，用来直接退出 MAIL。 */
     function mailHeaderBack() {
       const app = document.getElementById('mailApp');
@@ -16107,7 +16115,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       if (paper) paper.hidden = true;
     }
 
-    /* ===== v111z75：MAIL 一套字号，阅读＝撰写＝转发 =====
+    /* ===== v111z83：MAIL 一套字号，阅读＝撰写＝转发 =====
        为什么要用内联 !important：手机端有全局规则
          html[data-ios] input,html[data-ios] textarea,html[data-ios] select{font-size:16px!important}
          html[data-android] input,html[data-android] textarea,html[data-android] select{font-size:16px!important}
@@ -16131,8 +16139,8 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       const family = 'system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
       buildMailTypographyBridge([
         { id: 'mailReaderContent', size: MAIL_TYPE_SCALE.body, lineHeight: 1.8, family },
-        { id: 'mailReaderTitle', size: 16, lineHeight: 1.35, family },
-        { id: 'mailReaderSender', size: MAIL_TYPE_SCALE.meta, lineHeight: 1.3, family },
+        { id: 'mailReaderTitle', size: 20, lineHeight: 1.35, family },
+        { id: 'mailReaderSender', size: 13, lineHeight: 1.3, family },
         { id: 'mailReaderSignature', size: MAIL_TYPE_SCALE.meta, lineHeight: 1.4, family },
         { id: 'mailComposeBody', size: MAIL_TYPE_SCALE.body, lineHeight: 1.8, family },
         { id: 'mailComposeRecipientInput', size: MAIL_TYPE_SCALE.body, lineHeight: 1.4, family },
@@ -16177,7 +16185,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         const av2 = getMailAvatarVisual(letter);
         if(typeof setChatAvatarVisual==='function'){
           setChatAvatarVisual(avatar, av2.initials, av2.visual);
-          /* v111z75：方圆型（30%）。顺带修「浅底白字看不见」——有头像图时不写字，没图时用角色渐变＋白字。 */
+          /* v111z83：方圆型（30%）。顺带修「浅底白字看不见」——有头像图时不写字，没图时用角色渐变＋白字。 */
           avatar.style.setProperty('border-radius', '30%', 'important');
         } else {
           avatar.textContent = av2.initials;
@@ -16372,7 +16380,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       const mailRole = findRoleForSharedContent(original?.senderHandle || '', recipient, original?.colors || []);
       const replyBaseTitle = original ? getMailBaseTitle(original.title) : '';
       mailLetters[id] = normalizeMailLetter(id, {
-        sender: getDefaultChatSelfName(), recipient, recipientHandle: mailRole?.id || '', direction: 'out', title: original && replyBaseTitle !== '无主题' ? `回复：${replyBaseTitle}` : '',
+        sender: getDefaultChatSelfName(), recipient, recipientHandle: mailRole?.id || '', direction: 'out', title: original && replyBaseTitle !== '无主题' ? `回复：${replyBaseTitle}` : ((document.getElementById('mailComposeSubject') && document.getElementById('mailComposeSubject').value || '').trim().slice(0, 60)),
         paragraphs: body.split(/\n+/), signature, greeting: mailPickGreeting(), replyTo: activeMailReplyId || null, unread: false, createdAt: now, colors: ['#9aa9b8', '#607386']
       });
       if (original) original.replyResolved = true;
@@ -16385,7 +16393,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       document.querySelectorAll('#mailFilterRow button').forEach(button => button.classList.toggle('active', button.dataset.mailFilter === 'sent'));
       renderMailList();
       openMailLetter(id);
-      /* v111z75：写入失败时这条提示不能被「已发送」盖掉，合并成一句。 */
+      /* v111z83：写入失败时这条提示不能被「已发送」盖掉，合并成一句。 */
       showMailToast(savedOk === false ? '内容太长，本地存储写不下：这封可能没保存完整' : '已发送');
     }
 
@@ -17231,7 +17239,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       };
     }
 
-    /* v111z75：force=true 时**真的**重新读存储 —— 旧写法只判断一次 circleLoaded，
+    /* v111z83：force=true 时**真的**重新读存储 —— 旧写法只判断一次 circleLoaded，
        之后所有「重读持久数据」的调用其实都是空操作，改数据前拿的还是旧快照。 */
     function loadCirclePosts(force) {
       if (circleLoaded && !force) return circlePosts;
@@ -17241,13 +17249,13 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       return circlePosts;
     }
 
-    /* v111z75：动态的「新旧」用什么判断 —— 有 updatedAt 用它，老数据退到 createdAt。
+    /* v111z83：动态的「新旧」用什么判断 —— 有 updatedAt 用它，老数据退到 createdAt。
        同一条动态两边都没有 updatedAt 时，仍然按老规矩让内存这份生效（不改变老行为）。 */
     function circlePostStamp(post) {
       return Number(post?.updatedAt) || Number(post?.createdAt) || 0;
     }
 
-    /* v111z75：已删除动态的墓碑（30 天、300 条封顶） */
+    /* v111z83：已删除动态的墓碑（30 天、300 条封顶） */
     function loadCircleTombstones() {
       const stored = readDreamJSON(CIRCLE_DELETED_KEY, null);
       const source = stored && typeof stored === 'object' ? stored : {};
@@ -17272,7 +17280,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       return at > 0 && at >= circlePostStamp(post);
     }
 
-    /* v111z75：改一条动态之前，先把存储里最新的一份拿回来再改。
+    /* v111z83：改一条动态之前，先把存储里最新的一份拿回来再改。
        以前是「拿内存旧快照改完整份覆盖」，别人的新评论会被一起回退（已复现，永久丢失）。 */
     function withFreshCirclePost(postId, mutate) {
       loadCirclePosts(true);
@@ -17284,7 +17292,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       return result === undefined ? post : result;
     }
 
-    /* v111z75：条数上限 300 —— 但裁剪不再「谁最老先裁谁」。
+    /* v111z83：条数上限 300 —— 但裁剪不再「谁最老先裁谁」。
        实测（audit/verify-z65-circle-edges.js）：>300 条时给一条老动态评论，
        那条动态会连同刚写的评论一起被裁掉 —— 用户看到的就是「评论莫名其妙没了」。
        现在先裁「一条评论都没有」的最老动态；只有裁完还得继续裁，才动有评论的。 */
@@ -17307,7 +17315,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
 
     function persistCirclePosts() {
       if (window.__dreamDataImportInProgress) return true;
-      /* v111z75：写入前与存储里最新一份**逐条合并** ——
+      /* v111z83：写入前与存储里最新一份**逐条合并** ——
          每条动态按「谁更新」取胜，旧快照回退不掉别人的评论/点赞；
          本页没有的新动态（别的标签页刚发的）也会保留，除非它已被墓碑标记删除。 */
       let stored = [];
@@ -17338,9 +17346,9 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         const normalized = normalizeCirclePost(item);
         if (normalized) { seen.add(id); merged.push(normalized); }
       });
-      circlePosts = trimCirclePosts(merged);   /* v111z75：裁剪优先裁「没有评论」的老动态 */
+      circlePosts = trimCirclePosts(merged);   /* v111z83：裁剪优先裁「没有评论」的老动态 */
       const ok = writeDreamJSON(CIRCLE_POSTS_STORAGE_KEY, circlePosts);
-      /* v111z75：存不进本机必须说出来。以前写失败只有控制台一行 warn，
+      /* v111z83：存不进本机必须说出来。以前写失败只有控制台一行 warn，
          用户看到评论发出去了，重开却没了 —— 那才是「莫名其妙」。 */
       if (ok === false) showCircleToast('这次改动没能存到本机（浏览器存储空间可能已满），请到「存储中心」清理后再试', 3600);
       renderDesktopPhotoWidgets();
@@ -17423,7 +17431,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       // 对方头像始终优先读取对应聊天室角色的最新头像。
       if(letter.direction === 'in'){
         const role = findRoleForSharedContent(letter.senderHandle, letter.sender, letter.colors);
-        /* v111z75：顺序反过来了 —— 以前只认「角色档案现在那张」，档案里没有就空着。
+        /* v111z83：顺序反过来了 —— 以前只认「角色档案现在那张」，档案里没有就空着。
            现在先看信件自己带的那张（收到时快照下来的），再看角色档案，兼容更多字段名。 */
         const imageSource = String(letter.avatarImage || role?.avatarImage || role?.avatar || role?.avatarSrc || role?.avatarUrl || '');
         const initials = role?.initials || Array.from(role?.name || letter.sender || '梦').slice(0, 2).join('') || '梦';
@@ -17601,7 +17609,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
     function addCircleStickerComment(postId, item) {
       if (!item) return;
       const selfComment = { id: `comment-${Date.now()}-${Math.random().toString(16).slice(2)}`, owner: 'self', author: getCircleProfile().nickname, text: '', replyTo: '', stickerUrl: item.src || '', emoji: item.src ? '' : item.emoji || '✨', createdAt: Date.now() };
-      /* v111z75：在最新数据上追加评论 */
+      /* v111z83：在最新数据上追加评论 */
       const post = withFreshCirclePost(postId, live => { live.comments = [...(live.comments || []), selfComment]; });
       if (!post) return;
       renderCirclePosts();
@@ -17609,13 +17617,13 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       showCircleToast('表情包评论已发送');
     }
 
-    /* v111z75：删评论留一份「后悔药」—— 自己评论右侧那个 22×22 的 × 点一下就立即删除、
+    /* v111z83：删评论留一份「后悔药」—— 自己评论右侧那个 22×22 的 × 点一下就立即删除、
        没有确认，手机上手滑/划动误触就会「评论莫名其妙没了」。这里把它变成可撤销的。 */
     let circleDeletedCommentUndo = null;
 
     function deleteCircleComment(postId, commentId) {
       const target = String(commentId || '');
-      /* v111z75：在最新数据上删这一条 —— 用旧快照删，既可能删不掉，也会顺手回退别人的新评论。 */
+      /* v111z83：在最新数据上删这一条 —— 用旧快照删，既可能删不掉，也会顺手回退别人的新评论。 */
       loadCirclePosts(true);
       const source = circlePosts.find(candidate => String(candidate.id) === String(postId));
       const list = Array.isArray(source?.comments) ? source.comments : [];
@@ -17774,7 +17782,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
           if (!lock) continue;
           try {
             // 取得跨页面锁后重新读取持久数据，绝不消费锁前的陈旧内存快照。
-            loadCirclePosts(true);   /* v111z75：以前这行是空操作（circleLoaded 已为真），旧快照会被写回 */
+            loadCirclePosts(true);   /* v111z83：以前这行是空操作（circleLoaded 已为真），旧快照会被写回 */
             const freshTasks = loadCircleCommentTasks();
             const task = freshTasks.find(item => String(item.roleId) === roleId);
             if (!task || Number(task.dueAt) > Date.now()) continue;
@@ -18023,7 +18031,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         const action = event.target.closest?.('[data-circle-action]')?.dataset.circleAction;
         if (!action) return;
         if (action === 'like') {
-          /* v111z75：在最新数据上取这条动态再改 —— 旧快照会把别人的新评论一起回退（已复现）。 */
+          /* v111z83：在最新数据上取这条动态再改 —— 旧快照会把别人的新评论一起回退（已复现）。 */
           withFreshCirclePost(post.id, live => { live.liked = !live.liked; });
           renderCirclePosts();
         } else if (action === 'comment') {
@@ -18078,7 +18086,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
           deleteCircleComment(event.target.closest('[data-circle-action]')?.dataset.circlePostId, event.target.closest('[data-circle-action]')?.dataset.circleCommentId);
         } else if (action === 'delete') {
           clearProactiveCircleReactions(post.id);
-          /* v111z75：删除写墓碑 —— 否则别的标签页/窗口的旧快照下次写入会把它整条写回来。 */
+          /* v111z83：删除写墓碑 —— 否则别的标签页/窗口的旧快照下次写入会把它整条写回来。 */
           markCirclePostDeleted(post.id, Date.now());
           loadCirclePosts(true);
           circlePosts = circlePosts.filter(item => String(item.id) !== String(post.id));
@@ -18252,7 +18260,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       toast.textContent = message;
       toast.classList.add('show');
       window.clearTimeout(window.circleToastTimer);
-      /* v111z75：可传停留时长 —— 长句说明 1.6 秒读不完（默认仍是 1.6 秒，老调用不受影响）；
+      /* v111z83：可传停留时长 —— 长句说明 1.6 秒读不完（默认仍是 1.6 秒，老调用不受影响）；
          还能挂一个「点一下就能撤销」的动作（删评论时用）。 */
       const tappable = typeof onTap === 'function';
       toast.classList.toggle('tappable', tappable);
@@ -18993,8 +19001,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       const lines = [...document.querySelectorAll('#chatThreadBody .chat-message-line.outgoing')];
       const line = lines[lines.length - 1];
       if (line) {
-        /* v111z76：这里原本给「没有时间戳的那条」补 Date.now() —— 房间最后一条正好是老行时，
-           一补就与磁盘上那份身份错开，下次合并又多出一份。回执只改显示，不动时间戳。 */
+        if (!Number(line.dataset.createdAt)) line.dataset.createdAt = String(Date.now());
         updateChatLineReceipt(line, status);
         scheduleSaveChatHistory();
       }
@@ -19011,8 +19018,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       document.querySelectorAll('#chatThreadBody .chat-message-line').forEach(line => {
         if (line.dataset.groupV2 === 'true' && window.GroupChatV2?.refreshReceiptLine) window.GroupChatV2.refreshReceiptLine(line);
         else if (line.classList.contains('outgoing')) updateChatLineReceipt(line, line.dataset.receiptStatus || 'delivered');
-        /* v111z76 · 这里是「重绘回执」，不是「发送」。老行没有时间戳就不能补 —— 补了它就变成刚发的。 */
-        else stampChatMessageLine(line, 0);
+        else stampChatMessageLine(line);
       });
     }
 
@@ -19480,7 +19486,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
             if (roleCount > 1) turnInfo = `，${roleCount} 位轮着开口：平均每人约 ${avgPerRoleMin} 分钟轮到一次`;
           }
         } catch (_) {}
-        /* v111z75：把两套节奏的区别、以及「你一发消息就重新计时」写在明面上。 */
+        /* v111z83：把两套节奏的区别、以及「你一发消息就重新计时」写在明面上。 */
         const quietNote = combinedMode ? '；你一发消息，倒计时就重新开始' : '';
         rangeHint.textContent = (combinedMode
           ? `最快 / 最慢（分）· 所有梦角合起来：每 ${human(mins / 60)} ~ ${human(maxM / 60)} 才会有一条主动消息${turnInfo}`
@@ -19940,7 +19946,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
     }
 
     function downloadDreamBackup(data) {
-      /* v111z75：这里原本混进了一行 `if (!shouldDownload) return payload;`
+      /* v111z83：这里原本混进了一行 `if (!shouldDownload) return payload;`
          （shouldDownload / payload 都不是本作用域的标识符）—— 点「导出所选数据」必抛 ReferenceError。
          删掉即可：本函数只负责把 archive 写成一个 JSON 文件下载。 */
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8' });
@@ -20282,7 +20288,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
           let changed = false;
           getProactiveContactRoles().forEach(role => {
             const roleState = state[role.id] || (state[role.id] = {});
-            /* v111z75：改设置时先替整个人群重抽「下一拍」，再让每位梦角排到那一拍上 ——
+            /* v111z83：改设置时先替整个人群重抽「下一拍」，再让每位梦角排到那一拍上 ——
                否则调慢之后各位仍按旧节奏各说各的（用户看到的就是「设了没用」）。 */
             if (wanted.includes('message') && proactiveMessageRhythmCombined()) rebaseProactiveBeat(now);
             if (proactiveMessageRhythmCombined()) wanted.forEach(type => { if (type !== 'message' && type !== 'glyphcard') rebaseProactiveBeatOf(type, now); });
@@ -22660,7 +22666,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       listenAudio.addEventListener('error', () => {
         listenIsPlaying = false;
         document.getElementById('listenVinylDisc')?.classList.remove('playing');
-        /* v111z75：远端链接这次取不到 → 记一笔，用户下次点播放时给这次请求加时间戳重新取。
+        /* v111z83：远端链接这次取不到 → 记一笔，用户下次点播放时给这次请求加时间戳重新取。
            并且**不再**给远端链接永久打「这条放不出来」（它可能只是这次被限流/令牌过期）。 */
         const failedReference = String(listenAudio.dataset.sourceReference || '');
         if (failedReference && !failedReference.startsWith('dream-media://') && !failedReference.startsWith('blob:')) {
@@ -22696,7 +22702,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       const sourceReference = String(track.audioUrl || '');
       const playableUrl = isDreamMediaReference(sourceReference) ? await resolveDreamMediaSource(sourceReference) : sourceReference;
       if (!playableUrl) {
-        /* v111z75：解析不出音频源（本地文件被清理过等）——必须把上一首的声音一起停掉并清源，
+        /* v111z83：解析不出音频源（本地文件被清理过等）——必须把上一首的声音一起停掉并清源，
            否则界面显示「没在播」、耳朵里还在放别的歌（实测进度条也还在走）。 */
         if (listenAudio) {
           listenAudio.pause();
@@ -22708,7 +22714,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         return null;
       }
       const audio = ensureListenAudio();
-      /* v111z75：这条链接刚才取不到过（1 分钟内）→ 这次请求带上时间戳：
+      /* v111z83：这条链接刚才取不到过（1 分钟内）→ 这次请求带上时间戳：
          既绕开浏览器对上一次失败结果的复用，也让「一次性 / 限流」的领取链接重新领一次。 */
       let elementUrl = playableUrl;
       if (!isDreamMediaReference(sourceReference) && Number(listenRetryMarks.get(sourceReference) || 0) > Date.now() - 60000) {
@@ -22747,7 +22753,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       });
     }
 
-    /* v111z75：这句话＝「这条音频没能加载成功」。按 MediaError.code 给出能照着做的原因，
+    /* v111z83：这句话＝「这条音频没能加载成功」。按 MediaError.code 给出能照着做的原因，
        不再笼统一句「请检查链接」—— 用户看到那句话不知道该改什么。 */
     function listenSourceProblem(code) {
       const n = Number(code) || 0;
@@ -22758,26 +22764,26 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       return '没能加载成功（很可能不是 .mp3 / .m4a 直链；http 链接在 https 页面下也会被浏览器拦住）';
     }
 
-    /* v111z75：链接「长得像不像音频文件」。像的那种（.mp3 结尾）不需要预检 ——
+    /* v111z83：链接「长得像不像音频文件」。像的那种（.mp3 结尾）不需要预检 ——
        预检要真发一次 GET，而音乐站的领取链接常常只让取一次或短时间重复取会被拦。 */
     const LISTEN_AUDIO_FILE_PATTERN = /\.(mp3|m4a|aac|wav|ogg|oga|opus|flac|weba|mp4|m4b)(?:[?#]|$)/i;
     function looksLikeAudioFileUrl(value) {
       return LISTEN_AUDIO_FILE_PATTERN.test(String(value || ''));
     }
 
-    /* v111z75：远端链接取不到时的说法 —— 不说成「它不是直链」（用户贴的就是 .mp3 直链），
+    /* v111z83：远端链接取不到时的说法 —— 不说成「它不是直链」（用户贴的就是 .mp3 直链），
        而是说清「这次没取到」，并给出下一步（再点一次 / 删掉重贴）。 */
     function listenFetchProblem() {
       return '这次没取到音频（链接可能已过期、被限流，或站点做了防盗链）';
     }
 
-    /* v111z75：预检结果缓存（同一条链接 10 分钟内只探一次）。 */
+    /* v111z83：预检结果缓存（同一条链接 10 分钟内只探一次）。 */
     const listenUrlProbeCache = new Map();
-    /* v111z75：哪些链接刚才失败过（下次点播放时给这次请求加一个时间戳，避开浏览器缓存的失败结果，
+    /* v111z83：哪些链接刚才失败过（下次点播放时给这次请求加一个时间戳，避开浏览器缓存的失败结果，
        也顺便让「一次性领取链接」重新领一次）。 */
     const listenRetryMarks = new Map();
 
-    /* v111z75：把「放不出来」的原因说准。
+    /* v111z83：把「放不出来」的原因说准。
        本地媒体库里的文件丢了（换设备、清过网站数据、系统回收过存储），
        不能说成「链接不是直链」—— 用户明明选的是本机 MP3。 */
     function listenLocalLossReason() {
@@ -22797,13 +22803,13 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       return listenSourceProblem(code);
     }
 
-    /* v111z75：完整一句「这条为什么放不出来 + 怎么办」——手动点按、错误事件共用。 */
+    /* v111z83：完整一句「这条为什么放不出来 + 怎么办」——手动点按、错误事件共用。 */
     function listenPlayFailMessage(code, reference, track) {
       const ref = String(reference || '');
       const looksLocal = ref.startsWith('blob:') || ref.startsWith('dream-media://')
         || Boolean(track && track.audioSource === 'local-mp3');
       if (looksLocal) return `这条放不出来：${listenLocalLossReason()}。歌会留在队列里，重新选一次本地 MP3 就能恢复`;
-      /* v111z75：.mp3/.m4a 这类直链取不到，多半是过期/限流/防盗链（不是「不是直链」）——
+      /* v111z83：.mp3/.m4a 这类直链取不到，多半是过期/限流/防盗链（不是「不是直链」）——
          并且再点一次播放会重新请求一次，这是能救回来的。 */
       if (looksLikeAudioFileUrl(ref)) return `这条放不出来：${listenFetchProblem()}。歌会留在队列里 —— 再点一次播放会重新取一次链接`;
       return `这条放不出来：${listenSourceProblem(code)}。歌会留在队列里，想稳就用「上传本地 MP3」`;
@@ -22813,7 +22819,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       try { const state = getListenState(); return state.queue[state.index] || null; } catch (_) { return null; }
     }
 
-    /* v111z75：进面板/渲染时顺手把当前曲目的本地源在后台预解析好。
+    /* v111z83：进面板/渲染时顺手把当前曲目的本地源在后台预解析好。
        只预热 objectURL 缓存（resolveDreamMediaSource 会把结果放进 dreamMediaObjectUrls），
        **不碰音频元素** —— 正在播的歌一个字都不能动。这样用户点播放时解析是缓存命中、
        play() 不用等索引库，iOS Safari 才认得出这是「同一个用户手势」。 */
@@ -22832,11 +22838,11 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       }, 400);
     }
 
-    /* v111z75：一起听唯一的「播起来」入口。
+    /* v111z83：一起听唯一的「播起来」入口。
        play() 必须在拿到音频对象后的**同一个 tick** 里调用，前面绝不排 await ——
        iOS Safari 会把「手势之后又等过一轮 I/O」的 play() 判成自动播放并拒掉
        （实测 v111z60 就是被推到 1600 ms 后才调，报出来的正是「无法自动播放」）。 */
-    /* v111z75：播起来了就是能放 —— 把这条曲目身上的「放不出来」标记和重试记录一起清掉。 */
+    /* v111z83：播起来了就是能放 —— 把这条曲目身上的「放不出来」标记和重试记录一起清掉。 */
     function noteListenPlaybackStarted() {
       try {
         const st = getListenState();
@@ -22856,14 +22862,14 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         listenIsPlaying = true;
         listenSessionHandle = currentPartnerHandle;
         document.getElementById('listenVinylDisc')?.classList.add('playing');
-        noteListenPlaybackStarted();   /* v111z75 */
+        noteListenPlaybackStarted();   /* v111z83 */
         try { schedulePartnerListenAct(); } catch (_) {}
         renderListenTogether();
         return true;
       }).catch(err => { listenHandlePlayFailure(audio, err); return false; });
     }
 
-    /* v111z75：同一句话 4 秒内只弹一次 —— 错误事件与 play() 失败会各报一句，
+    /* v111z83：同一句话 4 秒内只弹一次 —— 错误事件与 play() 失败会各报一句，
        句子本来就一样，叠在一起反而看不清。（按**文案**去重，不按来源，才拦得住重复。） */
     function listenToastOnce(key, message, windowMs) {
       const map = listenToastOnce._map || (listenToastOnce._map = {});
@@ -22871,11 +22877,11 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       const dedupeKey = String(message);
       if (map[dedupeKey] && now - map[dedupeKey] < (Number(windowMs) || 4000)) return false;
       map[dedupeKey] = now;
-      showChatToast(message, 3600);   /* v111z75：这类说明比普通提示长，多留一会儿 */
+      showChatToast(message, 3600);   /* v111z83：这类说明比普通提示长，多留一会儿 */
       return true;
     }
 
-    /* v111z75：加歌前先探一下这条链接到底能不能当音频播。
+    /* v111z83：加歌前先探一下这条链接到底能不能当音频播。
        探不通也照样让用户加进队列（老行为：保留为队列歌曲），但要**当场**说清原因。 */
     function probeListenAudioUrl(url, timeoutMs) {
       return new Promise(resolve => {
@@ -22900,7 +22906,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       });
     }
 
-    /* v111z75：播不出来时兜一层 —— 若只是数据还没就绪（没有媒体错误），等它就绪再试一次；
+    /* v111z83：播不出来时兜一层 —— 若只是数据还没就绪（没有媒体错误），等它就绪再试一次；
        其余情况给准确原因。 */
     async function listenHandlePlayFailure(audio, err, options) {
       const name = err && err.name;
@@ -22928,10 +22934,10 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         listenToastOnce('listen-abort', '播放被打断了，请再点一下播放');
       } else {
         const message = listenPlayFailMessage(code, ref, currentListenTrack());
-        /* v111z75：用户自己按的播放键 → 每次点都必须有回音。
+        /* v111z83：用户自己按的播放键 → 每次点都必须有回音。
            （以前按**文案**去重，同一条坏歌第二次点播放完全静默 —— 实测 toast 为空。） */
         if (options && options.manual) {
-          /* v111z75：用户自己按的播放键，每次点都要有回音；但同一句话
+          /* v111z83：用户自己按的播放键，每次点都要有回音；但同一句话
              （error 事件与 play() 失败报的是同一句）在屏幕上还没散就不再叠一遍。 */
           const map = listenToastOnce._map || (listenToastOnce._map = {});
           const key = String(message);
@@ -22950,13 +22956,13 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       const state = getListenState();
       const track = state.queue[state.index];
       const reference = String(track?.audioUrl || '');
-      /* v111z75 快路径：元素上已经是这首歌、而且没坏 —— 同一个 tick 就播，一次 await 都不欠。 */
+      /* v111z83 快路径：元素上已经是这首歌、而且没坏 —— 同一个 tick 就播，一次 await 都不欠。 */
       if (listenAudio && reference && String(listenAudio.dataset.sourceReference || '') === reference
         && listenAudio.src && !listenAudio.error) {
         startListenPlayback(listenAudio);
         return;
       }
-      /* v111z75：以前这里先 await waitListenAudioReady() 再 play()（实测把 play() 推到 1.6~2 秒后），
+      /* v111z83：以前这里先 await waitListenAudioReady() 再 play()（实测把 play() 推到 1.6~2 秒后），
          而且源解析不出来时**一声不响** —— 用户看到的就是「点了（这首歌）没动静」。
          现在：解析完立刻播；解析不出来就明说，并把状态摆正。 */
       syncListenAudioSource(track).then(audio => {
@@ -22989,7 +22995,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         && !listenAudio.paused
         && !listenAudio.ended
         && String(listenAudio.dataset.sourceReference || '') === String(track?.audioUrl || ''));
-      /* v111z75 快路径：元素上已经是这首歌的源 → 不再等索引库解析，play()/pause() 当场执行。
+      /* v111z83 快路径：元素上已经是这首歌的源 → 不再等索引库解析，play()/pause() 当场执行。
          只有源还没上元素时才走 await —— 那种情况 warmListenAudioSource 已把缓存预热过。 */
       const readyReference = String(track?.audioUrl || '');
       const readyAudio = (listenAudio && readyReference
@@ -23002,23 +23008,23 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
           audio.pause();
           listenIsPlaying = false;
         } else {
-          /* v111z75：play() 就在点击当刻直接调用 —— 中间夹 await 之后，
+          /* v111z83：play() 就在点击当刻直接调用 —— 中间夹 await 之后，
              iOS Safari 可能不再把这个播放当「用户手势」，于是报「无法自动播放」。
              数据没就绪时 play() 自己会等，不需要我们先等。 */
           audio.play().then(() => {
             listenIsPlaying = true;
             listenSessionHandle = currentPartnerHandle;
             document.getElementById('listenVinylDisc')?.classList.add('playing');
-            noteListenPlaybackStarted();   /* v111z75 */
+            noteListenPlaybackStarted();   /* v111z83 */
             renderListenTogether();
           }).catch(err => listenHandlePlayFailure(audio, err, { manual: true }));
         }
       } else if (track?.audioUrl) {
-        /* v111z75：曲目有音频源、却建不出音频（例如媒体仓里的本地文件已被清理）——
+        /* v111z83：曲目有音频源、却建不出音频（例如媒体仓里的本地文件已被清理）——
            不能假装在播（以前会空走进度条，看着像放出来了）。 */
         listenIsPlaying = false;
         document.getElementById('listenVinylDisc')?.classList.remove('playing');
-        /* v111z75：用户自己按的播放键 —— 每次点都要有回音。
+        /* v111z83：用户自己按的播放键 —— 每次点都要有回音。
            （实测：这句话刚在上一步弹过一次，按文案去重就把这次点击整个吞了，看起来「点了没反应」。） */
         showChatToast(listenSourceGoneMessage(), 3600);
       } else {
@@ -23364,10 +23370,10 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       }
       const audioUrl = currentListenAudioData || normalizeListenAudioUrl(url?.value || '');
       if (!currentListenAudioData && url?.value.trim() && !audioUrl) return showChatToast('请粘贴有效的音频直链');
-      /* v111z75：先探一下这条链接能不能当音频播 —— 分享链接/网页地址/需登录的地址，
+      /* v111z83：先探一下这条链接能不能当音频播 —— 分享链接/网页地址/需登录的地址，
          在浏览器里就是一个「格式错误」，等到用户点播放才报太晚，也说不清。 */
       let linkProbe = null;
-      /* v111z75：像音频文件的链接**不预检**。实测：同一条「302 换令牌」的音乐站链接，
+      /* v111z83：像音频文件的链接**不预检**。实测：同一条「302 换令牌」的音乐站链接，
          预检会先把这次请求额度花掉 —— z49 能放、z61 起放不了（见 out-listen-remote-matrix.json）。
          播放本身会给出准确原因，不该为了提前一句提示把链接花掉。
          其余链接（分享页那种）继续预检，而且同一条只探一次。 */
@@ -23401,7 +23407,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         audioUrl,
         audioName: currentListenAudioData ? currentListenAudioName : '',
         audioSource: currentListenAudioData ? 'local-mp3' : audioUrl ? 'remote-url' : 'simulation',
-        /* v111z75：探到放不出来的链接就记住 —— 队列行会标出来，免得下次又踩 */
+        /* v111z83：探到放不出来的链接就记住 —— 队列行会标出来，免得下次又踩 */
         unplayable: Boolean(linkProbe && !linkProbe.ok),
         createdAt: Date.now()
       };
@@ -24460,11 +24466,8 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       if (incoming) setChatAvatarVisual(avatar, currentPartnerInitials, currentPartnerVisual);
       else setSelfChatAvatarVisual(avatar);
       if (incoming) line.append(avatar, content); else line.append(content, avatar);
-      /* v111z76 · 按数据副本补出来的老转账卡：带上它当年那一笔的时间，并插回原来的位置，
-         否则它会一直顶着「最新一条消息」出现（用户报的「旧卡片反复出现在最新消息点」）。 */
-      const cardAt = chatRecordTimeValue(record);
-      if (cardAt > 0) line.dataset.createdAt = String(cardAt);
-      insertChatLineByTime(line, cardAt);
+      const typing = document.getElementById('chatTyping');
+      body.insertBefore(line, typing && typing.parentNode === body ? typing : null);
       if (!incoming) {
         line.dataset.receiptStatus = 'unread';
         stampChatMessageLine(line);
@@ -24507,10 +24510,8 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       if (incoming) setChatAvatarVisual(avatar, currentPartnerInitials, currentPartnerVisual);
       else setSelfChatAvatarVisual(avatar);
       if (incoming) line.append(avatar, content); else line.append(content, avatar);
-      /* v111z76 · 同转账卡：老红包卡按副本时间落位，不再被补成「刚刚」顶到末尾。 */
-      const cardAt = chatRecordTimeValue(record);
-      if (cardAt > 0) line.dataset.createdAt = String(cardAt);
-      insertChatLineByTime(line, cardAt);
+      const typing = document.getElementById('chatTyping');
+      body.insertBefore(line, typing && typing.parentNode === body ? typing : null);
       if (!incoming) {
         line.dataset.receiptStatus = 'unread';
         stampChatMessageLine(line);
@@ -24604,7 +24605,6 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         direction: 'out',
         status: 'pending',
         direction: 'out',
-        createdAt: now,
         time: new Date(now).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
         expiresAt: now + 24 * 60 * 60 * 1000,
         autoClaim,
@@ -24724,8 +24724,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       const buriedChecks = new Set((settings.deletedSpecialMessageIds || []).map(String));
       (settings.checkHistory || []).forEach(record => {
         if (buriedChecks.has(`check:${record.id}`)) return;
-        // v111z76：把记录自己的时间带进去 —— 补出来的老查岗卡会落回当年那一行，而不是被补成「刚刚」。
-        if (!existingIds.has(record.id)) sendChatCheckCard(record.text, record.direction, { id: record.id, time: record.time, createdAt: chatRecordTimeValue(record), kind: record.kind || (record.direction === 'out' && record.status === 'replied' ? 'reply' : ''), status: record.status, answered: record.direction === 'out' && record.kind === 'question' && record.status === 'replied', persist: false });
+        if (!existingIds.has(record.id)) sendChatCheckCard(record.text, record.direction, { id: record.id, time: record.time, kind: record.kind || (record.direction === 'out' && record.status === 'replied' ? 'reply' : ''), status: record.status, answered: record.direction === 'out' && record.kind === 'question' && record.status === 'replied', persist: false });
         if (record.direction === 'out' && (record.kind || 'question') === 'question' && record.status !== 'replied') scheduleDirectCheckReply(record, handle);
       });
       if (settings.pendingCheck && currentPartnerHandle === handle) {
@@ -24900,11 +24899,8 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       else setSelfChatAvatarVisual(avatar);
       if (incoming) line.append(avatar, content);
       else line.append(content, avatar);
-      /* v111z76 · 从查岗记录补出来的老卡片带自己的真实时间（restoreCheckRecords 传 options.createdAt），
-         并插回原来的位置；新发起的查岗没有 options.createdAt，行为与以前一致（追加到末尾）。 */
-      const cardAt = Number(options.createdAt) || 0;
-      if (cardAt > 0) line.dataset.createdAt = String(cardAt);
-      insertChatLineByTime(line, cardAt);
+      const typing = document.getElementById('chatTyping');
+      body.insertBefore(line, typing && typing.parentNode === body ? typing : null);
       if (!incoming) {
         line.dataset.receiptStatus = 'unread';
         stampChatMessageLine(line);
@@ -25637,7 +25633,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
     /* v111z36：本版实际包含 —— 引用只在所属房间取（不再串房）/ 房间切换不再抛
        insertBefore / 回到前台不再补发到点的主动来电 / 表情包上传压图·失败说清·失效占位。
        换壳时用同一个版本号比对离线壳，改完记得和 sw.js 的 CACHE_VERSION 一起动。 */
-    window.MOBIUS_SHELL_EXPECT = 'v111z76';
+    window.MOBIUS_SHELL_EXPECT = 'v111z83';
     function comboDebug(msg) {
       try {
         if (localStorage.getItem('mobius:combo-debug') !== '1') return;
@@ -26184,21 +26180,10 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       return true;
     }
 
-    /* inheritedAt 的三种用法（v111z76）：
-       ① 不传      —— 「这是一条刚插进来的新行」，没有时间戳就补 Date.now()（老行为，实时插入路径照旧）；
-       ② 传具体时间 —— 用这个时间（从数据副本补出来的老卡片带自己当年那一笔的时间）；
-       ③ 传 0      —— 「正在恢复历史」，**绝不补时间戳**。这是本次修复的关键：
-          以前恢复历史时也给没有时间戳的老行补 Date.now()，等于把这条老消息宣告成「刚刚发的」，
-          写回历史后它排到最新一条旁边（用户看到的「之前发的信息跑到最新一条消息前面」），
-          而磁盘上那一份没有时间戳 —— 两份身份对不上，于是每进一次房间就多复制一份
-          （实测：12 条老消息进出几次变成 36 条，全挤在最新消息那一端）。 */
-    function stampChatMessageLine(line, inheritedAt) {
+    function stampChatMessageLine(line) {
       if (!line?.classList.contains('chat-message-line')) return;
       if (isKomoCardChatLine(line)) { stripKomoCardMeta(line); return; }
-      if (!Number(line.dataset.createdAt) && inheritedAt !== 0) {
-        const at = Number(inheritedAt);
-        line.dataset.createdAt = String(at > 0 ? at : Date.now());
-      }
+      if (!Number(line.dataset.createdAt)) line.dataset.createdAt = String(Date.now());
       const meta = line.querySelector('.chat-message-meta');
       if (!meta) return;
       if (line.classList.contains('outgoing')) {
@@ -26209,7 +26194,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       }
     }
 
-    /* ═══ v111z75 · 聊天记录写盘一律「并集」，不再「覆盖」 ═══
+    /* ═══ v111z83 · 聊天记录写盘一律「并集」，不再「覆盖」 ═══
        用户实测（audit/repro-z66-twotab.js）：同一台设备开两个实例（PWA + 浏览器标签 /
        两个标签页）时，各实例的内存里只有自己渲染过的那几行；A 先说话、B 后写盘，
        写盘那一方拿自己的 DOM 覆盖整段历史 —— A 说的那几句就永久没了
@@ -26246,22 +26231,6 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       const keys = chatLineIdentityKeys(html);
       return keys.length ? keys[0] : '';
     }
-    /* ⚠ v111z76 · 「弱身份」：只由不随时间变的东西组成 —— 卡片身份，或「方向 + 气泡正文」。
-       用途单一：磁盘上那份没有 data-created-at，渲染出来的那份被补了一个时间戳，
-       两边的强身份（at: / msg: / sp:）全都对不上，同一行于是被存成两份。
-       只在「一边缺时间戳」时启用，且必须落在很近的位置上 —— 否则「你先后发了两条一样的
-       『好』」会被合掉一条（用户明确要求过不能这样）。 */
-    function chatLineWeakKey(html) {
-      const text = String(html || '');
-      if (!text) return '';
-      const special = chatSpecialIdentityAttrs(text);
-      if (special) return 'sp:' + special;
-      const bubble = chatBubbleTextOf(text);
-      if (!bubble) return '';
-      const direction = /class="[^"]*\bchat-message-line\b[^"]*\boutgoing\b/.test(text) ? 'out'
-        : /class="[^"]*\bchat-message-line\b[^"]*\bincoming\b/.test(text) ? 'in' : 'sys';
-      return `${direction}#${bubble}`;
-    }
     /* 删除时要不要留身份：行上没有明确时间点、也没有卡片身份的老记录不留 —— 免得删一句「好」
        之后，将来重新发出同样的「好」被一起挡掉。 */
     /* 删除要留「强身份」：只有正文的老记录不留 —— 免得删一句「好」之后，将来重新发出的「好」被一起挡掉 */
@@ -26288,7 +26257,6 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       const skip = deletedKeys instanceof Set ? deletedKeys : new Set();
       const out = [];
       const slotOf = new Map();
-      const weakSlots = new Map();
       const push = (html) => {
         const text = String(html || '');
         if (!text) return;
@@ -26296,17 +26264,6 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         if (keys.length && keys.some(key => skip.has(key))) return;
         let slot = -1;
         for (const key of keys) { if (slotOf.has(key)) { slot = slotOf.get(key); break; } }
-        if (slot < 0) {
-          /* v111z76 · 弱身份兜底：两份内容一样、但只有一边带时间戳（= 老行与它被补过
-             时间戳的副本）。距离超过 40 行就当两条独立消息，绝不合并。 */
-          const weak = chatLineWeakKey(text);
-          const candidate = weak ? weakSlots.get(weak) : undefined;
-          if (candidate !== undefined && out.length - candidate <= 40) {
-            const candidateHasAt = /\bdata-created-at="\d+"/.test(String(out[candidate]));
-            const hasAt = /\bdata-created-at="\d+"/.test(text);
-            if (candidateHasAt !== hasAt) slot = candidate;
-          }
-        }
         if (slot >= 0) {
           /* 同一行出现两次：留后写的那份（DOM 里的通常已经洗过引用块/字卡提示、回执也更新），
              并把这行新长出来的身份也登记上。 */
@@ -26317,25 +26274,17 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         const index = out.length;
         out.push(text);
         keys.forEach(key => slotOf.set(key, index));
-        const weak = chatLineWeakKey(text);
-        if (weak && !weakSlots.has(weak)) weakSlots.set(weak, index);
       };
       (Array.isArray(baseLines) ? baseLines : []).forEach(push);
       (Array.isArray(incomingLines) ? incomingLines : []).forEach(push);
-      /* ⚠ v111z76 · 没有 data-created-at 的行**不许再沉底**。
-         旧实现把「缺时间戳」当成 at = 0：排序时一律被甩到列表最末尾 —— 而进房间只渲染
-         尾部 N 行，于是老版本写进历史的老消息 / 老卡片就贴在「最新一条消息」那一端
-         （用户报的「之前发的信息跑到最新消息边上」「老卡片反复出现在最新消息点」）。
-         现在改成：没有时间戳的行沿用「它左边最近一条有时间戳的行」的时间，等同于原地不动；
-         只有真正带时间戳的行参与排序。 */
-      let inheritAt = 0;
       return out
-        .map((html, index) => {
-          const raw = Number((String(html).match(/data-created-at="(\d+)"/) || [])[1]) || 0;
-          if (raw) inheritAt = raw;
-          return { html, index, at: raw || inheritAt };
+        .map((html, index) => ({ html, index, at: Number((String(html).match(/data-created-at="(\d+)"/) || [])[1]) || 0 }))
+        .sort((a, b) => {
+          if (a.at && b.at && a.at !== b.at) return a.at - b.at;
+          if (a.at && !b.at) return -1;
+          if (!a.at && b.at) return 1;
+          return a.index - b.index;
         })
-        .sort((a, b) => (a.at - b.at) || (a.index - b.index))
         .map(item => item.html);
     }
 
@@ -26377,7 +26326,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         return true;
       }
       const partialStart = explicitlyDeleted ? 0 : Math.max(0, Number(body.dataset.historyLoadedStart) || 0);
-      /* v111z75：存储里那一份（可能含另一个实例刚写下的消息）与眼前 DOM 求并集，只增不删。
+      /* v111z83：存储里那一份（可能含另一个实例刚写下的消息）与眼前 DOM 求并集，只增不删。
          用户明确清空（historyDeleted）时才不并 —— 那是他本人要求的删除。 */
       const storedLines = Array.isArray(previous?.lines) ? previous.lines : [];
       const deletedKeys = new Set((getChatSettings(key).deletedChatLineKeys || []).map(String));
@@ -26455,12 +26404,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         // 不登记身份的老病根与转账卡相同：历史清洗去重 / 删除记忆 / DOM 兜底去重三套机制同时失效，
         // 卡会重复出现（用户实测过 count:2），删掉也记不住、下次进房间又回来。
         ['komo-pay-request', line.querySelector('.chat-komo-pay-request') ? line.dataset.komoPayRequestId : ''],
-        ['komo-pay-result', line.querySelector('.chat-komo-pay-result') ? line.dataset.komoPayRequestId : ''],
-        // ⚠ v111z76：KOMO / ORDER 流水卡（点单 / 配送 / 送达 / 里程碑 …）此前没在这里登记身份，
-        // 「历史清洗去重 / 删除记忆 / DOM 兜底去重」三套机制对它全部失效 ——
-        // 于是同一张流水卡能在历史里存好几份、每次进房间又往末尾补一张。
-        // cardId 各自唯一（order:<id> / ack:<id> / milestone:<id>），登记身份不会误合并。
-        ['komo-flow', line.dataset.komoFlowId || line.querySelector('[data-komo-flow-id]')?.dataset.komoFlowId]
+        ['komo-pay-result', line.querySelector('.chat-komo-pay-result') ? line.dataset.komoPayRequestId : '']
       ];
       const found = candidates.find(([, id]) => String(id || '').trim());
       return found ? `${found[0]}:${String(found[1])}` : '';
@@ -26535,295 +26479,6 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
     }
     window.dedupeChatSpecialCardsInDom = dedupeChatSpecialCardsInDom;
 
-    /* v111z76 · 按时间把一行插进它该在的位置。
-       实时插入（时间就是现在）走的还是「追加到末尾」——和以前一模一样；
-       只有「按数据副本补出来的老卡片」才会被放回它当年那一行旁边，
-       不再顶着最新一条消息出现。 */
-    function insertChatLineByTime(line, at) {
-      const body = document.getElementById('chatThreadBody');
-      if (!body || !line) return;
-      const typing = document.getElementById('chatTyping');
-      const when = Number(at) || 0;
-      /* 比「现在」新 90 秒以内的（刚发出去 / 刚补出来的新卡）永远落在末尾 ——
-         副本里的时间只精确到分钟（10:45），同分钟内插回「10:45:00」会把刚发的那条挤到后面。
-         只有真正的老卡才按时间插回原位。 */
-      if (when > Date.now() - 90000) {
-        body.insertBefore(line, typing && typing.parentNode === body ? typing : null);
-        return;
-      }
-      if (when > 0) {
-        const rows = [...body.querySelectorAll(':scope > .chat-message-line, :scope > .chat-call-system-message')];
-        const anchor = rows.find(node => Number(node.dataset.createdAt) > when);
-        if (anchor) { body.insertBefore(line, anchor); return; }
-      }
-      body.insertBefore(line, typing && typing.parentNode === body ? typing : null);
-    }
-    window.insertChatLineByTime = insertChatLineByTime;
-
-    /* v111z76 · 数据副本里「这张卡当时是什么时候发的」。
-       副本字段不全（老转账记录只有显示用的 10:05），所以按可靠度依次退化：
-       真实时间戳 → 红包的 24 小时有效期 → 领取计划时间 → 显示时间按「最近的过去」还原。 */
-    function chatRecordTrustedTime(record) {
-      if (!record || typeof record !== 'object') return 0;
-      const direct = Number(record.createdAt || record.createdAtMs || record.occurredAt || record.at || 0);
-      if (direct > 0) return direct;
-      if (Number(record.expiresAt) > 0) return Math.max(1, Number(record.expiresAt) - 24 * 60 * 60 * 1000);
-      if (Number(record.claimPlannedAt) > 0) return Math.max(1, Number(record.claimPlannedAt) - 6000);
-      return 0;
-    }
-    /* 副本里只剩一个「显示时间」时还能救回多少：
-       10月03日 10:05 / 2024/10/03 10:05 → 直接是绝对时间；
-       昨天 10:05 → 昨天的那个钟点；光一个 10:05 → 最近的、还没过去的那个钟点。 */
-    function chatRecordTimeValue(record) {
-      const trusted = chatRecordTrustedTime(record);
-      if (trusted > 0) return trusted;
-      const text = String(record?.time || record?.sentTime || '').trim();
-      const clock = /(\d{1,2}):(\d{2})/.exec(text);
-      if (!clock) return 0;
-      const hours = Number(clock[1]);
-      const minutes = Number(clock[2]);
-      const full = /(?:^|[^\d])(\d{4})\/(\d{1,2})\/(\d{1,2})/.exec(text);
-      const short = /(?:^|[^\d])(\d{1,2})月(\d{1,2})日/.exec(text);
-      if (full || short) {
-        const year = full ? Number(full[1]) : new Date().getFullYear();
-        const month = Number((full || short)[full ? 2 : 1]) - 1;
-        const day = Number((full || short)[full ? 3 : 2]);
-        const date = new Date(year, month, day, hours, minutes, 0, 0);
-        if (date.getTime() <= Date.now()) return date.getTime();
-      }
-      const date = new Date();
-      date.setHours(hours, minutes, 0, 0);
-      if (text.includes('昨天') || text.includes('昨日') || date.getTime() > Date.now()) date.setDate(date.getDate() - 1);
-      return date.getTime();
-    }
-    /* 每张特殊卡一行信息：
-       trusted  副本里有真实时间字段 —— 无条件采信，连「渲染时补错的时间戳」也一并纠正；
-       fallback 只有显示时间 —— 仅当行上没有时间戳，或行上的钟点与记录显示的钟点对不上时才用；
-       clock    记录显示出来的钟点（HH:MM），用来判断行上那个时间戳可不可信；
-       text     原始显示串，用来判断它有没有明确日期。 */
-    function chatSpecialCardTimeInfo(handle) {
-      const settings = getChatSettings(handle);
-      const map = new Map();
-      const put = (kind, id, record, override) => {
-        const key = `${kind}:${String(id || '').trim()}`;
-        if (key.endsWith(':') || map.has(key)) return;
-        const trusted = override !== undefined ? Number(override) || 0 : chatRecordTrustedTime(record);
-        const fallback = trusted > 0 ? trusted : chatRecordTimeValue(record);
-        if (!trusted && !fallback) return;
-        const text = String(record?.time || record?.sentTime || '').trim();
-        const clock = /(\d{1,2}):(\d{2})/.exec(text);
-        map.set(key, { trusted, fallback, clock: clock ? `${String(Number(clock[1])).padStart(2, '0')}:${clock[2]}` : '', text });
-      };
-      (settings.redEnvelopes || []).forEach(record => put('red', record?.id, record));
-      (settings.transferRecords || []).forEach(record => put('transfer', record?.id, record));
-      (settings.checkHistory || []).forEach(record => {
-        put('check', record?.id, record);
-        put('check-reply', record?.id, record, Number(record?.repliedAt));
-      });
-      (settings.decisionRecords || []).forEach(record => put('decision', record?.id, record));
-      (settings.inviteHistory || []).forEach(record => put('invite', record?.id, record));
-      return map;
-    }
-    function chatClockText(at) {
-      const date = new Date(Number(at) || 0);
-      return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-    }
-
-    function chatHistoryLineStampHTML(html, at) {
-      const text = String(html || '');
-      const value = Number(at) || 0;
-      if (!text || value <= 0) return text;
-      if (/\bdata-created-at="\d+"/.test(text)) return text;
-      return text.replace(/^(\s*<div\b)/, `$1 data-created-at="${value}"`);
-    }
-
-    /* 行内容指纹：卡片用身份，普通消息用「方向 + 气泡正文」；认不出来就不参与去重。 */
-    function chatPlainLineRepeatKey(line) {
-      if (!line?.classList?.contains?.('chat-message-line')) return '';
-      const bubble = line.querySelector('.chat-bubble');
-      if (!bubble) return '';
-      const direction = line.classList.contains('outgoing') ? 'out' : line.classList.contains('incoming') ? 'in' : 'sys';
-      return `${direction}|${String(line.dataset.messageKind || '')}|${String(bubble.innerHTML || '')}`;
-    }
-    /* 纯消息（不带任何卡片身份）：只有这种老行才允许被「按老消息整体前移」重排。 */
-    function chatLineIsPlainBubble(line) {
-      if (!line?.classList?.contains?.('chat-message-line')) return false;
-      if (chatSpecialIdentityFromLine(line)) return false;
-      if (isKomoCardChatLine(line)) return false;
-      return !line.querySelector('.chat-red-envelope-bubble,.chat-transfer-bubble,.chat-check-bubble,.chat-decision-bubble,.chat-invite-bubble,.chat-komo-pay-request,.chat-komo-pay-result,.chat-komo-flow-bubble,.chat-komo-gift-bubble,.chat-komo-request-bubble,.group-v2-special-bubble');
-    }
-
-    /* ═══ v111z76 · 聊天记录位置修复（幂等）═══
-       老版本写进历史的行没有 data-created-at（时间戳是后来才有的功能），
-       而 v111z75 的合并逻辑把「缺时间戳」当成 at = 0 一律排到最末尾，
-       渲染时又给它补一个 Date.now() —— 磁盘上没有、DOM 上有，两份身份对不上；
-       于是出现两个用户直接看得见的症状：
-         ① 老消息 / 老卡片被搬到「最新一条消息」那一端（进房间只渲染尾部 N 行）；
-         ② 每进一次房间就多复制一份（实测 12 条老消息进出几次变成 36 条）。
-       这里做一次可反复执行的修复：
-         ① 老卡片按数据副本（红包 / 转账 / 查岗 / 决策 / 邀请）里的真实时间落位；
-         ② 折叠「同一行被存成好几份」的复制 —— 只折叠「有副本缺时间戳」或卡片同身份的情况，
-            两句话都带时间戳的普通消息（你先后发了两条一样的「好」）绝不合并；
-         ③ 剩下的无时间戳纯消息 = 时间戳上线前的老消息：按原有相对顺序整体前移，
-            并给一个早于所有时间戳的真实时间，从此位置稳定、身份稳定，不再被搬来搬去。
-       跑第二遍不会再改任何东西。 */
-    function repairStoredChatHistoryLayout(handle = activeChatHandle) {
-      const key = String(handle || '').trim();
-      if (!key) return 0;
-      const snapshot = getChatHistorySnapshot(key);
-      if (!snapshot || !Array.isArray(snapshot.lines) || snapshot.lines.length < 2) return 0;
-      const parse = html => { const holder = document.createElement('div'); holder.innerHTML = String(html || ''); return holder.firstElementChild; };
-      const hasStamp = html => /\bdata-created-at="\d+"/.test(String(html || ''));
-      const cardTimes = chatSpecialCardTimeInfo(key);
-      /* 健康房间直接跳过 —— 修复是幂等的，跑过一次之后这里每天的代价就只剩字符串扫描，
-         不会再逐行解析 DOM（几千行的房间也不该因为「检查要不要修」而卡一下）。 */
-      {
-        const idScan = /data-(red|transfer|decision|check-reply|check|invite|komo-order|komo-request|komo-pay-request|komo-flow)-id="([^"]*)"/g;
-        const seen = new Set();
-        let suspicious = false;
-        let allStamped = true;
-        for (const html of snapshot.lines) {
-          const text = String(html || '');
-          if (!hasStamp(text)) { allStamped = false; break; }
-          idScan.lastIndex = 0;
-          const local = new Set();
-          let hit;
-          let duplicated = false;
-          while ((hit = idScan.exec(text))) {
-            if (!hit[2]) continue;
-            /* 代付请求卡与代付结果卡共用同一个 data-komo-pay-request-id（task id），
-               它们是两张卡、不是重复，按气泡类型分开算身份。 */
-            const side = hit[1] === 'komo-pay-request' ? (text.includes('chat-komo-pay-result') ? '|result' : '|request') : '';
-            const token = `${hit[1]}|${hit[2]}${side}`;
-            if (local.has(token)) continue;          /* 同一行里写了两遍（气泡 + 行）不算重复 */
-            local.add(token);
-            if (seen.has(token)) duplicated = true;   /* 另一行也带着同一个身份 → 确实存了好几份 */
-          }
-          local.forEach(token => seen.add(token));
-          if (duplicated) { suspicious = true; break; }
-        }
-        /* allStamped = 每行都有时间戳（否则可能有老行要挪）；suspicious = 同一张卡存了好几份 */
-        let needRepair = !allStamped || suspicious;
-        if (!needRepair && cardTimes.size) {
-          /* 就算每行都有时间戳，只要某张卡的时间戳与副本记录对不上，仍然要修 */
-          const joined = snapshot.lines.join('\n');
-          for (const [identity, info] of cardTimes) {
-            const at = info.trusted || info.fallback;
-            const id = identity.slice(identity.indexOf(':') + 1);
-            if (!at || !id || !joined.includes(String(id))) continue;
-            if (!joined.includes(`data-created-at="${at}"`)) { needRepair = true; break; }
-          }
-        }
-        if (!needRepair) return 0;
-      }
-      let changed = 0;
-
-      /* ① 老卡片按数据副本落位。
-            有真实时间字段 → 连「渲染时补错的时间戳」一并纠正（那张卡在历史里的时间本来就是错的，
-            所以钟点对不上就换掉；只替换属性的值，行本身一个字符都不动）。
-            只有显示时间的副本 → 行上没有时间戳时补上；有时间戳但钟点对不上时也换掉。 */
-      let lines = snapshot.lines.map(html => {
-        const text = String(html || '');
-        if (!text || !cardTimes.size) return text;
-        const line = parse(text);
-        const identity = line ? chatSpecialIdentityFromLine(line) : '';
-        if (!identity) return text;
-        const info = cardTimes.get(identity);
-        if (!info) return text;
-        const stampMatch = text.match(/\bdata-created-at="(\d+)"/);
-        const stamp = stampMatch ? Number(stampMatch[1]) || 0 : 0;
-        let target = 0;
-        if (info.trusted > 0) target = stamp === info.trusted ? 0 : info.trusted;
-        else if (!stamp) target = info.fallback || 0;
-        else if (info.clock && chatClockText(stamp) !== info.clock) target = info.fallback || 0;
-        if (!target) return text;
-        const fixed = stampMatch ? text.replace(/\bdata-created-at="\d+"/, `data-created-at="${target}"`) : chatHistoryLineStampHTML(text, target);
-        if (fixed !== text) changed += 1;
-        return fixed;
-      });
-
-      /* ② 折叠复制：同一内容出现多份时，只留「没有时间戳的那一份」（真身），
-            其余都是渲染时补过时间戳的副本。窗口 120 行，避免误伤相隔很远的相同消息。 */
-      const rows = lines.map((html, index) => {
-        const line = parse(html);
-        const identity = line ? chatSpecialIdentityFromLine(line) : '';
-        return {
-          html: String(html),
-          index,
-          identity,
-          hasAt: hasStamp(html),
-          plain: !identity && chatLineIsPlainBubble(line),
-          key: identity ? `id:${identity}` : chatPlainLineRepeatKey(line)
-        };
-      });
-      const drops = new Set();
-      const groups = new Map();
-      rows.forEach(row => {
-        if (!row.key) return;
-        const list = groups.get(row.key) || [];
-        list.push(row.index);
-        groups.set(row.key, list);
-      });
-      groups.forEach((indices, groupKey) => {
-        if (indices.length < 2) return;
-        const isCardKey = groupKey.startsWith('id:');
-        const unstamped = indices.filter(index => !rows[index].hasAt);
-        if (!unstamped.length && !isCardKey) return;
-        if (!isCardKey && indices[indices.length - 1] - indices[0] > 120) return;
-        let keep = -1;
-        if (unstamped.length) {
-          const first = unstamped[0];
-          let block = 1;
-          for (let i = first - 1; i >= 0 && !rows[i].hasAt && rows[i].plain; i -= 1) block += 1;
-          for (let i = first + 1; i < rows.length && !rows[i].hasAt && rows[i].plain; i += 1) block += 1;
-          /* 成片的老行（≥2 条连在一起）或同一内容 ≥3 份，才认定是「复制」；
-             孤零零一条无时间戳消息不动，宁可留一份也不误删你正常发的话。 */
-          if (unstamped.length >= 2 || block >= 2 || indices.length >= 3) keep = first;
-        }
-        if (keep < 0 && isCardKey) keep = indices[0];
-        if (keep < 0) return;
-        indices.forEach(index => { if (index !== keep) drops.add(index); });
-      });
-      if (drops.size) changed += drops.size;
-      const survivors = rows.filter(row => !drops.has(row.index));
-
-      /* ③ 剩下的老消息：整体前移，并给一个早于所有真实时间戳的时间 */
-      const known = survivors.map(row => Number((row.html.match(/data-created-at="(\d+)"/) || [])[1]) || 0).filter(value => value > 0);
-      const floor = known.length ? Math.min(...known) : 0;
-      const legacy = survivors.filter(row => !row.hasAt && row.plain);
-      if (floor > 0 && legacy.length) {
-        const legacySet = new Set(legacy);
-        const moved = legacy.map((row, index) => chatHistoryLineStampHTML(row.html, floor - (legacy.length - index)));
-        changed += legacy.length;
-        lines = [...moved, ...survivors.filter(row => !legacySet.has(row)).map(row => row.html)];
-      } else {
-        lines = survivors.map(row => row.html);
-      }
-
-      if (!changed) return 0;
-      /* 时间改对了，顺序也要跟着回到时间轴上：
-         与 writeback 合并用的是同一套规则（没有时间戳的行沿用左边最近的时间，原地不动）。 */
-      let inheritAt = 0;
-      lines = lines
-        .map((html, index) => {
-          const raw = Number((String(html).match(/data-created-at="(\d+)"/) || [])[1]) || 0;
-          if (raw) inheritAt = raw;
-          return { html, index, at: raw || inheritAt };
-        })
-        .sort((a, b) => (a.at - b.at) || (a.index - b.index))
-        .map(item => item.html);
-      if (lines.length === snapshot.lines.length && lines.every((html, index) => html === snapshot.lines[index])) return 0;
-      snapshot.lines = lines;
-      snapshot.updatedAt = Date.now();
-      snapshot.storageVersion = Math.max(4, Number(snapshot.storageVersion) || 0);
-      const state = loadChatHistoryState();
-      state[key] = snapshot;
-      try { persistChatHistoryState(key); } catch (_) {}
-      try { window.persistChatMessagesIndividually?.(key, lines); } catch (_) {}
-      return changed;
-    }
-    window.repairStoredChatHistoryLayout = repairStoredChatHistoryLayout;
-
     /* v75 · 特殊卡片入场动效（拼贴 E3）
        新卡片出现时加 .cc-in，播一次「纸片落下并回弹」。
        约定：
@@ -26893,7 +26548,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       bindCollageIntroObserver();
     }
 
-    /* ═══ v111z75 · 房间窗口记忆 ═══
+    /* ═══ v111z83 · 房间窗口记忆 ═══
        用户实测：反复点进聊天室，之前翻到的老记录就「不见了」。
        存储侧没丢（写盘并集，见 audit/fuzz-z66-loss.js 三个种子的随机进出复核），
        丢的是「看得见的那一段」——每次进房都从最新 100 行重新渲染。
@@ -26927,13 +26582,10 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
     }
     function restoreChatHistory(handle, options = {}) {
       const key = String(handle || '').trim();
-      let snapshot = getChatHistorySnapshot(key);
+      const snapshot = getChatHistorySnapshot(key);
       const body = document.getElementById('chatThreadBody');
       const typing = document.getElementById('chatTyping');
       if (!key || !body || !snapshot || !Array.isArray(snapshot.lines) || !snapshot.lines.length) return;
-      /* v111z76 · 先修一次位置与重复（幂等）：老消息不再被搬到最新一条那一端、
-         老卡片不再每进一次房间就多出一份。改动会立即落盘，下面按修好的那份渲染。 */
-      try { if (repairStoredChatHistoryLayout(key) > 0) snapshot = getChatHistorySnapshot(key) || snapshot; } catch (_) {}
       const normalizedLines = normalizeStoredChatSpecialLines(key, snapshot.lines);
       if (normalizedLines.length !== snapshot.lines.length || normalizedLines.some((html,index)=>html!==snapshot.lines[index])) {
         snapshot.lines = normalizedLines; snapshot.storageVersion = Math.max(4, Number(snapshot.storageVersion)||0); snapshot.updatedAt = Date.now();
@@ -26944,7 +26596,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       restoringChatHistory = true;
       const holder = document.createElement('div');
       const pageSize = 100;
-      /* v111z75：进房窗口 = max(最新 100 行, 上次看过的那一段)；options.all 仍表示「全都要」 */
+      /* v111z83：进房窗口 = max(最新 100 行, 上次看过的那一段)；options.all 仍表示「全都要」 */
       const rememberedRows = chatViewWindowSize(key);
       const loadedStart = options.all === true ? 0 : Math.max(0, normalizedLines.length - Math.max(pageSize, rememberedRows));
       body.dataset.historyLoadedStart = String(loadedStart);
@@ -26975,8 +26627,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
               }
             }
             body.insertBefore(line, typing && typing.parentNode === body ? typing : null);
-            /* v111z76 · 从快照重建 DOM —— 恢复历史，不补时间戳（老行原来就没有，补了会漂到最新一端）。 */
-            if (line.classList.contains('chat-message-line')) stampChatMessageLine(line, 0);
+            if (line.classList.contains('chat-message-line')) stampChatMessageLine(line);
           }
         }
         holder.replaceChildren();
@@ -27073,9 +26724,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         const newIncoming = [];
         records.forEach(record => record.addedNodes?.forEach(node => {
           if (node.nodeType !== 1 || !node.classList.contains('chat-message-line')) return;
-          /* v111z76：只有「此刻真的插进来」的新行才配 Date.now()。
-             恢复历史（重建旧行）时绝不能补 —— 那会把老行谎报成刚刚发的，见 stampChatMessageLine。 */
-          stampChatMessageLine(node, restoringChatHistory ? 0 : Date.now());
+          stampChatMessageLine(node);
           node.querySelectorAll('.chat-image-stack-bubble').forEach(syncChatImageStack);
            if (node.classList.contains('incoming') && node.dataset.chatUnreadObserved !== 'true') {
             node.dataset.chatUnreadObserved = 'true';
@@ -29379,7 +29028,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
           if (settings.transferRecords.length !== before) changed = true;
         }
       }
-      /* v111z75：普通文字消息被删掉时也留一条身份 —— 写盘改成「并集」后，
+      /* v111z83：普通文字消息被删掉时也留一条身份 —— 写盘改成「并集」后，
          不留身份的话下一句保存就会把它从旧副本里复活。 */
       const lineKeys = chatLineDeleteKeys(line.outerHTML || '');
       if (lineKeys.length) {
@@ -30403,7 +30052,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         // 只追加下一轮请求；当前 remaining、kind 和 typing 状态保持原样。
         const addedRequests = 1 + Math.max(0, Number(options.queuedUserMessages) || 0);
         existing.queuedUserMessages = Math.max(0, Number(existing.queuedUserMessages) || 0) + addedRequests;
-        /* v111z75：面板承诺是「你发一条后 40~60 秒回你」。所以还没落地的回复要按**最新一条**重新抽等待，
+        /* v111z83：面板承诺是「你发一条后 40~60 秒回你」。所以还没落地的回复要按**最新一条**重新抽等待，
            否则会出现「我 40 秒前发的第一条已经快到点、我又补了一句，TA 立刻就在我眼前回了」的错觉。
            （实测：第一条排 59 秒、第 40 秒发第二条 → 原行为 18.7 秒后就落。） */
         try {
@@ -30425,7 +30074,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       }
       if (!resume) clearReplyEngine(replyHandle);
       let pending = resume && settings.pendingReply && settings.pendingReply.roleId === replyHandle ? { ...settings.pendingReply, used: Array.isArray(settings.pendingReply.used) ? [...settings.pendingReply.used] : [], replyPassed: settings.pendingReply.replyPassed === true } : null;
-      /* v111z75：兜底 —— 存档里没有计划时间（老数据形状）或计划时间已经过期超过 90 秒时，
+      /* v111z83：兜底 —— 存档里没有计划时间（老数据形状）或计划时间已经过期超过 90 秒时，
          不再「立刻把话放出来」（实测 0.2 秒落地），而是按现在这一档节奏重新抽一次等待。 */
       if (pending) {
         try {
@@ -30570,7 +30219,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
             }
             pending.used = [...(pending.used || []), text].slice(-8);
             pending.remaining = Math.max(0, Number(pending.remaining) - 1);
-            /* v111z75：用户口径 ②——「对方发送消息后、我没回」才轮到主动发送消息。
+            /* v111z83：用户口径 ②——「对方发送消息后、我没回」才轮到主动发送消息。
                所以对方每说一句，主动计时就从**这一句**重新起算（而不是从我上一条消息）。 */
             try { armProactiveClockFromPeerMoment(pending.roleId, 'peer-message'); } catch (_) {}
             if (pending.remaining > 0) {
@@ -30604,7 +30253,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
           setChatAvatarVisual(reply.querySelector('.partner-avatar'), currentPartnerInitials, currentPartnerVisual);
           body.insertBefore(reply, typing && typing.parentNode === body ? typing : null);
           markOutgoingBatchReceipt(pending.batchId, 'read', pending.roleId);
-          /* v111z75：同上 —— 对方这句话在眼前落地，主动计时也从它起算。 */
+          /* v111z83：同上 —— 对方这句话在眼前落地，主动计时也从它起算。 */
           try { armProactiveClockFromPeerMoment(pending.roleId, 'peer-message'); } catch (_) {}
           body.scrollTop = body.scrollHeight;
           playGlobalSound('message');
@@ -30647,7 +30296,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
           // 关闭「已读不回」后跳过概率判定，梦角必定回复（不改各自 replyChance，重新开启即恢复原设定）。
           if (getGlobalAppSettings().readNoReplyEnabled !== false && Math.random() * 100 >= Number(role?.replyChance ?? 99)) {
             markOutgoingBatchReceipt(pending.batchId, 'readNoReply', pending.roleId);
-            /* v111z75：用户口径 ①——「已读不回」这一刻就是「主动发送消息」计时的起点。 */
+            /* v111z83：用户口径 ①——「已读不回」这一刻就是「主动发送消息」计时的起点。 */
             armProactiveClockIfBatchEnded(pending, 'read-no-reply');
             finishPendingReply();
             return;
@@ -30675,7 +30324,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         // 发送新消息只排队，不新建、不覆盖当前发送序列。
         pending.queuedUserMessages = Math.max(0, Number(pending.queuedUserMessages) || 0) + 1;
         if (options.batchId && !pending.batchId) pending.batchId = options.batchId;
-        /* v111z75：面板承诺是「你发一条后 40~60 秒回你」。所以还没落地的那句要按**最新一条**重新抽等待，
+        /* v111z83：面板承诺是「你发一条后 40~60 秒回你」。所以还没落地的那句要按**最新一条**重新抽等待，
            否则会出现「我 40 秒前发的已经快到点、我又补一句，TA 立刻在眼前回了」的错觉。
            （实测：第一条排 59 秒、第 40 秒补发第二条 → 原行为 18.7 秒后就落。） */
         try {
@@ -30781,7 +30430,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       toast.textContent = message;
       toast.classList.add('show');
       window.clearTimeout(window.chatToastTimer);
-      /* v111z75：可传停留时长 —— 一句较长的说明 1.6 秒读不完（默认仍是 1.6 秒，老调用不受影响） */
+      /* v111z83：可传停留时长 —— 一句较长的说明 1.6 秒读不完（默认仍是 1.6 秒，老调用不受影响） */
       const hold = Number(durationMs) > 0 ? Number(durationMs) : 1600;
       window.chatToastTimer = window.setTimeout(() => toast.classList.remove('show'), hold);
     }
@@ -34010,7 +33659,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
     window.addEventListener('storage', event => {
       if (!event.key || event.key.startsWith(DREAM_STORAGE_SAFETY_PREFIX)) return;
       if (!dreamPendingStorageWrites.has(event.key)) dreamJSONParseCache.delete(event.key);
-      /* v111z75：另一个实例（PWA + 浏览器标签 / 两个标签页）动了数据时，本实例的内存副本必须作废 ——
+      /* v111z83：另一个实例（PWA + 浏览器标签 / 两个标签页）动了数据时，本实例的内存副本必须作废 ——
          否则本实例还拿旧快照渲染、再写回去，就把对方刚说的话盖掉（用户实测的「记录丢失」）。 */
       if (event.key === CHAT_HISTORY_STORAGE_KEY || event.key === CHAT_HISTORY_SHARD_INDEX_KEY || event.key.startsWith(CHAT_HISTORY_SHARD_PREFIX)) {
         chatHistoryState = null;
@@ -37101,8 +36750,8 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
      所以不会再出现「指过去是 404 → 系统给一枚默认黑图标」。
      v111z3：这七个文件换成**用户自己的真 logo**（浅蓝灰底 + 深墨「∞」，由用户提供，原样交付）；
      并统一加 `?v=v111z3` —— 手机上可能还留着上一版占位图的 HTTP 缓存，换个 URL 才保证抓到新图。 */
-  const NOTIF_ICON_FALLBACK_URL = new URL('./icons/icon-192.png?v=v111z76', location.href).href;
-  const NOTIF_BADGE_URL = new URL('./icons/badge-96.png?v=v111z76', location.href).href;
+  const NOTIF_ICON_FALLBACK_URL = new URL('./icons/icon-192.png?v=v111z83', location.href).href;
+  const NOTIF_BADGE_URL = new URL('./icons/badge-96.png?v=v111z83', location.href).href;
   async function resolveNotificationAvatarIcon(routeData, opts) {
 
 
@@ -37824,13 +37473,20 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
               const mailHandle = String(newest.senderHandle || '');
               let mailVisual = newest.avatarImage ? { type:'image', src:newest.avatarImage } : '';
               if (mailHandle && !mailVisual) mailVisual = getChatBannerIdentity(mailHandle).visual;
-              showSystemInAppBanner({ handle:mailHandle, title:newest.sender || '新梦笺', preview:newest.title ? `${newest.title}：${newest.paragraphs?.[0]||''}` : '您收到一封新梦笺', route:'mail', routeData:{mailId:newest.id}, initials:Array.from(newest.sender||'信').slice(0,2).join(''), visual:mailVisual||'linear-gradient(135deg,#8a7059,#52636d)' });
+              /* v111z83：MAIL 的通知与站内横幅统一用「MAIL 版站点图标」（同站点 logo 的配色与形态，字改成 MAIL）。
+                 必须传 {type:'image'}：传字符串时 setChatAvatarVisual 走的是「渐变 + 首字母」分支，
+                 会在浅色底图上再叠一层白色「阿蓝」，实测是一块发白的空壳。 */
+              const mailNotifIcon = new URL('./icons/mail-192.png?v=v111z83', location.href).href;
+              mailVisual = { type: 'image', src: mailNotifIcon };
+              showSystemInAppBanner({ handle:mailHandle, title:newest.sender || '新邮件', preview:newest.title ? `${newest.title}：${newest.paragraphs?.[0]||''}` : '你收到了新邮件', route:'mail', routeData:{mailId:newest.id}, initials:Array.from(newest.sender||'信').slice(0,2).join(''), visual:mailVisual||'linear-gradient(135deg,#8a7059,#52636d)' });
               showSystemNotification({
-                title: newest.sender || '新梦笺',
-                body: newest.title ? (newest.title + '：' + (newest.paragraphs?.[0]||'').slice(0,60)) : '您收到一封新梦笺',
+                title: newest.sender || '新邮件',
+                body: newest.title ? (newest.title + '：' + (newest.paragraphs?.[0]||'').slice(0,60)) : '你收到了新邮件',
                 route: 'mail',
                 routeData: { mailId: newest.id },
-                tag: 'mail-'+newest.id
+                tag: 'mail-'+newest.id,
+                icon: mailNotifIcon,
+                visual: mailNotifIcon
               });
             }
           }
@@ -43260,7 +42916,7 @@ window.saveKomoWalletPrivacy=async function(roleId){const state=loadKomoState(),
 function appendKomoChatLine(role,line,options={}){line.dataset.createdAt=String(line.dataset.createdAt||Date.now());/* ⚠ v109：判据从「聊天室在前台」换成「#chatThreadBody 的 DOM 归属这个房间」。
    聊天室退到后台（返回列表、切到 KOMO/相册）时 DOM 依然属于该房间，若只写快照，
    重进房间看到的就是缺了这张卡的旧 DOM —— 代付请求卡「要等对方下一步动作才出现」的根因。
-   声音 / Toast / 滚动这类前台反馈仍然只在聊天室可见时给。 */if(isChatThreadDomForHandle(role.id)){const visible=isChatConversationLoaded(role.id);const body=document.getElementById('chatThreadBody'),typing=document.getElementById('chatTyping');/* v111z76 · 卡上带的是旧时间（按记录补出来的老卡）就插回原位；实时卡时间=现在，照旧落到末尾。 */if(typeof insertChatLineByTime==='function')insertChatLineByTime(line,Number(line.dataset.createdAt)||0);else body?.insertBefore(line,typing||null);if(line.classList.contains('outgoing')){line.dataset.receiptStatus='unread';stampChatMessageLine(line);scheduleChatUnreadReceipt(line);}else stampChatMessageLine(line);if(body&&visible)body.scrollTop=body.scrollHeight;if(line.classList.contains('incoming')){if(visible&&!options.silent){try{playGlobalSound('message');showChatToast(options.toast||`${getRoleDisplayNameForApp(role)} 发来一条 KOMO 消息`);}catch(_){}}else if(!visible){/* v109：卡片补进了 DOM 但用户没在看，未读角标照旧。 */try{incrementChatUnreadCount(role.id,1,options.unreadLabel||'[KOMO]');}catch(_){}}}saveChatHistoryForHandle(activeChatHandle,{reason:'komo-card'});return;}const snapshot=getChatHistorySnapshot(role.id)||{storageVersion:3,updatedAt:0,lines:[]};snapshot.lines=[...(snapshot.lines||[]),line.outerHTML];snapshot.updatedAt=Date.now();snapshot.storageVersion=3;const history=loadChatHistoryState();history[role.id]=snapshot;persistChatHistoryState(role.id);if(line.classList.contains('incoming')){try{incrementChatUnreadCount(role.id,1,options.unreadLabel||'[KOMO]');}catch(_){}}}
+   声音 / Toast / 滚动这类前台反馈仍然只在聊天室可见时给。 */if(isChatThreadDomForHandle(role.id)){const visible=isChatConversationLoaded(role.id);const body=document.getElementById('chatThreadBody'),typing=document.getElementById('chatTyping');body?.insertBefore(line,typing||null);if(line.classList.contains('outgoing')){line.dataset.receiptStatus='unread';stampChatMessageLine(line);scheduleChatUnreadReceipt(line);}else stampChatMessageLine(line);if(body&&visible)body.scrollTop=body.scrollHeight;if(line.classList.contains('incoming')){if(visible&&!options.silent){try{playGlobalSound('message');showChatToast(options.toast||`${getRoleDisplayNameForApp(role)} 发来一条 KOMO 消息`);}catch(_){}}else if(!visible){/* v109：卡片补进了 DOM 但用户没在看，未读角标照旧。 */try{incrementChatUnreadCount(role.id,1,options.unreadLabel||'[KOMO]');}catch(_){}}}saveChatHistoryForHandle(activeChatHandle,{reason:'komo-card'});return;}const snapshot=getChatHistorySnapshot(role.id)||{storageVersion:3,updatedAt:0,lines:[]};snapshot.lines=[...(snapshot.lines||[]),line.outerHTML];snapshot.updatedAt=Date.now();snapshot.storageVersion=3;const history=loadChatHistoryState();history[role.id]=snapshot;persistChatHistoryState(role.id);if(line.classList.contains('incoming')){try{incrementChatUnreadCount(role.id,1,options.unreadLabel||'[KOMO]');}catch(_){}}}
 /* 判断某张卡是否已经写进该聊天室的历史快照 —— 防止重复补卡。
    用属性字符串直接在序列化 HTML 里查，比反序列化整个快照便宜得多。 */
 function komoSnapshotHasCard(roleId,attr,id){if(!id)return false;const needle=`${attr}="${id}"`;
@@ -43424,9 +43080,7 @@ window.komoRefundOutgoingRedEnvelope=async function(record){const state=loadKomo
    于是「纯文字」成了常态，且回到聊天室后 restoreKomoRequestCards 又补一张卡，
    造成「文字 + 卡片」同时出现（实测 ["CARD","PLAIN-TEXT"]）。
    现在统一走 appendKomoChatLine：开着就插 DOM，没开着就写进历史快照。 */
-function appendKomoRequestCard(role,request,product){if(isRoleTemporarilyAway(role))return;const body=document.getElementById('chatThreadBody');const existing=body?.querySelector(`[data-komo-request-id="${request.id}"]`);if(existing){existing.querySelectorAll('[data-action]').forEach(button=>button.onclick=()=>handleKomoRequestAction(request.id,button.dataset.action));return;}/* ⚠ v111z76：这里原本只在「房间不在前台」时才查历史快照 —— 房间开着但那张卡落在分页窗口外（>100 行）时，
-   DOM 里找不到就当没有，于是每进一次房间都在末尾补一张新的（用户报的「之前的特殊卡片反复出现在最新消息点」）。
-   快照判定与前台无关，必须无条件执行（komoSnapshotHasCard 内部同时查 DOM 与完整历史）。 */if(komoSnapshotHasCard(role.id,'data-komo-request-id',request.id))return;const line=document.createElement('div');line.className='chat-message-line incoming';line.dataset.messageKind='komo-request';line.dataset.komoRequestId=request.id;line.innerHTML=`<div class="chat-message-avatar partner-avatar"></div><div class="chat-message-content"><div class="chat-bubble chat-komo-request-bubble"><div class="chat-komo-gift-head"><span>KOMO REQUEST</span><b>24H</b></div><div class="chat-komo-gift-body"><i>${product.icon}</i><div><strong>${product.name}</strong><small>${getRoleDisplayNameForApp(role)} 想请你帮忙带一件</small></div></div><div class="komo-request-actions"><button data-action="accept">帮 TA 带</button><button data-action="later">稍后</button><button data-action="decline">拒绝</button></div></div><div class="chat-message-meta">刚刚</div></div>`;setChatAvatarVisual(line.querySelector('.partner-avatar'),role.initials,role.avatarImage?{type:'image',src:role.avatarImage}:`linear-gradient(135deg,${role.color1},${role.color2})`);line.querySelectorAll('[data-action]').forEach(button=>button.onclick=()=>handleKomoRequestAction(request.id,button.dataset.action));/* v111z76 · 带上请求自己的时间：从记录补出来的老代买卡落回当年那一行。 */line.dataset.createdAt=String(Number(line.dataset.createdAt)||Number(request.createdAt)||Number(request.sentAt)||Date.now());appendKomoChatLine(role,line,{unreadLabel:'[KOMO 代买请求]',toast:`${getRoleDisplayNameForApp(role)} 想请你带一件东西`});}
+function appendKomoRequestCard(role,request,product){if(isRoleTemporarilyAway(role))return;const body=document.getElementById('chatThreadBody');const existing=body?.querySelector(`[data-komo-request-id="${request.id}"]`);if(existing){existing.querySelectorAll('[data-action]').forEach(button=>button.onclick=()=>handleKomoRequestAction(request.id,button.dataset.action));return;}if(!isChatConversationLoaded(role.id)&&komoSnapshotHasCard(role.id,'data-komo-request-id',request.id))return;const line=document.createElement('div');line.className='chat-message-line incoming';line.dataset.messageKind='komo-request';line.dataset.komoRequestId=request.id;line.innerHTML=`<div class="chat-message-avatar partner-avatar"></div><div class="chat-message-content"><div class="chat-bubble chat-komo-request-bubble"><div class="chat-komo-gift-head"><span>KOMO REQUEST</span><b>24H</b></div><div class="chat-komo-gift-body"><i>${product.icon}</i><div><strong>${product.name}</strong><small>${getRoleDisplayNameForApp(role)} 想请你帮忙带一件</small></div></div><div class="komo-request-actions"><button data-action="accept">帮 TA 带</button><button data-action="later">稍后</button><button data-action="decline">拒绝</button></div></div><div class="chat-message-meta">刚刚</div></div>`;setChatAvatarVisual(line.querySelector('.partner-avatar'),role.initials,role.avatarImage?{type:'image',src:role.avatarImage}:`linear-gradient(135deg,${role.color1},${role.color2})`);line.querySelectorAll('[data-action]').forEach(button=>button.onclick=()=>handleKomoRequestAction(request.id,button.dataset.action));appendKomoChatLine(role,line,{unreadLabel:'[KOMO 代买请求]',toast:`${getRoleDisplayNameForApp(role)} 想请你带一件东西`});}
 /* v82：点「稍后」后按钮被整段抹掉，重开聊天室也不恢复（实测 buttons 0→0），
    这条代买请求从此没有任何入口，等于死局。
    现在 later 状态保留一个「现在去带」主按钮，其余状态才收成纯文案。 */
@@ -45619,7 +45273,7 @@ if(currentLines.length&&snapshotStale){
   try{body.innerHTML=defaultChatThreadMarkup;body.dataset.loadedChatHandle=key;restoreChatHistory(key,{preserveRestoreFlag:true});applyChatHistoryState();}finally{restoringChatHistory=false;}
   return;
 }const deleted=new Set((getChatSettings(key).deletedSpecialMessageIds||[]).map(String)),seen=new Map(),recovered=[];records.forEach(record=>{const holder=document.createElement('div');holder.innerHTML=String(record.html||'');const identity=chatSpecialIdentityFromLine(holder.firstElementChild);if(identity&&deleted.has(identity))return;if(identity&&seen.has(identity)){recovered[seen.get(identity)]=record.html;return;}if(identity)seen.set(identity,recovered.length);recovered.push(record.html);});if(!recovered.length)return;const state=loadChatHistoryState();state[key]={storageVersion:4,updatedAt:Date.now(),lines:recovered,source:'individual-message-store-recovery'};persistChatHistoryState(key);const body=document.getElementById('chatThreadBody');if(!body||String(activeChatHandle)!==key)return;chatHistoryMutationIgnoreUntil=Date.now()+400;restoringChatHistory=true;try{body.innerHTML=defaultChatThreadMarkup;body.dataset.loadedChatHandle=key;restoreChatHistory(key,{preserveRestoreFlag:true});applyChatHistoryState();}finally{restoringChatHistory=false;}};
-function insertEarlierLines(handle,lines){const body=document.getElementById('chatThreadBody'),typing=document.getElementById('chatTyping');if(!body||!lines.length)return;const oldHeight=body.scrollHeight,anchor=body.querySelector(':scope > .chat-message-line, :scope > .chat-call-system-message')||typing,holder=document.createElement('div'),fragment=document.createDocumentFragment();lines.forEach(html=>{holder.innerHTML=String(html||'');const line=holder.firstElementChild;if(line&&(line.classList.contains('chat-message-line')||line.classList.contains('chat-call-system-message'))){/* ⚠ v111z76：加载更早记录 = 恢复历史，不是发送。以前这里给老行补 Date.now()，翻页一次就把几十条老消息改成「刚刚发的」，写回后全漂到最新一端 —— 必须传 0。 */if(line.classList.contains('chat-message-line'))stampChatMessageLine(line,0);fragment.appendChild(line);}holder.replaceChildren();});body.insertBefore(fragment,anchor||null);hydrateDreamMediaTree(body);window.rehydrateStoredChatAvatars?.(body,handle);body.querySelectorAll('.chat-voice-bubble').forEach(bindChatVoiceBubbleInteractions);window.dedupeChatSpecialCardsInDom?.(body);lucide.createIcons();body.scrollTop+=body.scrollHeight-oldHeight;}
+function insertEarlierLines(handle,lines){const body=document.getElementById('chatThreadBody'),typing=document.getElementById('chatTyping');if(!body||!lines.length)return;const oldHeight=body.scrollHeight,anchor=body.querySelector(':scope > .chat-message-line, :scope > .chat-call-system-message')||typing,holder=document.createElement('div'),fragment=document.createDocumentFragment();lines.forEach(html=>{holder.innerHTML=String(html||'');const line=holder.firstElementChild;if(line&&(line.classList.contains('chat-message-line')||line.classList.contains('chat-call-system-message'))){if(line.classList.contains('chat-message-line'))stampChatMessageLine(line);fragment.appendChild(line);}holder.replaceChildren();});body.insertBefore(fragment,anchor||null);hydrateDreamMediaTree(body);window.rehydrateStoredChatAvatars?.(body,handle);body.querySelectorAll('.chat-voice-bubble').forEach(bindChatVoiceBubbleInteractions);window.dedupeChatSpecialCardsInDom?.(body);lucide.createIcons();body.scrollTop+=body.scrollHeight-oldHeight;}
 window.ensureChatHistoryLoadEarlierButton=function(handle){const body=document.getElementById('chatThreadBody');if(!body)return;body.querySelector(':scope > .chat-load-earlier-v4')?.remove();const start=Math.max(0,Number(body.dataset.historyLoadedStart)||0);if(start<=0)return;const button=document.createElement('button');button.type='button';button.className='chat-load-earlier-v4';button.textContent=`加载更早记录（还有 ${start} 条）`;button.onclick=()=>window.loadEarlierChatHistoryPage(handle,button);body.insertBefore(button,body.firstChild);};
 window.loadEarlierChatHistoryPage=async function(handle,button){const body=document.getElementById('chatThreadBody'),snapshot=getChatHistorySnapshot(handle);if(!body||!Array.isArray(snapshot?.lines))return;button.disabled=true;button.textContent='正在加载…';const end=Math.max(0,Number(body.dataset.historyLoadedStart)||0),start=Math.max(0,end-CHAT_V4_PAGE_SIZE);chatHistoryMutationIgnoreUntil=Date.now()+350;restoringChatHistory=true;try{insertEarlierLines(handle,snapshot.lines.slice(start,end));body.dataset.historyLoadedStart=String(start);rememberChatViewWindow(handle,snapshot.lines.length-start);}finally{restoringChatHistory=false;}window.ensureChatHistoryLoadEarlierButton(handle);};
 function backupHashUpdate(hash,text){let h=hash>>>0;for(let i=0;i<text.length;i++){h^=text.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
@@ -47450,20 +47104,17 @@ window.sendChatTransfer=function(yuan,noteText){
     wallet.updatedAt=Date.now();
     state.ledger=Array.isArray(state.ledger)?state.ledger:[];
     // id 带随机后缀：同毫秒连发两笔会撞 id，卡片会被去重逻辑吞掉一张
-    // v111z76：时间戳也写进副本 —— 只有「10:45」这种显示时间的话，进房间重建卡片时只能猜，
-    // 猜出来的钟点可能把刚发的消息挤到卡片前面（用户报的「信息跑到最新一条前面」同理）。
     const txId=`transfer-${handle}-${Date.now()}-${Math.random().toString(16).slice(2,8)}`;
-    const txAt=Date.now();
     state.ledger.push({id:txId,walletId:handle,type:'transfer',
       sourceType:'transfer',direction:'income',amountCents:amount,
       balanceAfterCents:wallet.balanceCents,title:note||'收到转账',category:'转账',
-      occurredAt:txAt,createdAt:txAt});
+      occurredAt:Date.now(),createdAt:Date.now()});
     komoSave(state,'chat-transfer');
     if(typeof closeChatAttachmentPanel==='function')closeChatAttachmentPanel();
     // 在会话里留一张卡片，而不是只弹一句 toast 就没了
     if(typeof window.appendTransferCard==='function'){
       window.appendTransferCard({id:txId,direction:'out',
-        amount:(amount/100).toFixed(2),note,createdAt:txAt,
+        amount:(amount/100).toFixed(2),note,
         time:new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})});
     }
     if(typeof recordUserChatActivity==='function')recordUserChatActivity(handle);
@@ -51679,7 +51330,7 @@ body #chatApp[data-card-skin] .chat-decision-bubble.is-answered .chat-decision-s
 }
 </style>
   <style id="mailGmailSkin">
-/* ===== v111z75：MAIL 换成 Gmail（最新版 · Material 3 / Material You）观感 =====
+/* ===== v111z83：MAIL 换成 Gmail（最新版 · Material 3 / Material You）观感 =====
    纯皮肤层，可整块回退（删掉 <style id="mailGmailSkin"> 这一块就回到上一版观感）。
    决定：手机版 Gmail / 深色跟随系统（prefers-color-scheme）/ 文案 100% Gmail 化；
         入口名保留 MAIL；Aurora 主题下也永远用 Gmail 配色（不套极光渐变）。
@@ -51871,7 +51522,7 @@ body #chatApp[data-card-skin] .chat-decision-bubble.is-answered .chat-decision-s
 #appScreen .mail-app .mail-reader-avatar {
   width: 38px !important; height: 38px !important; border-radius: 30% !important;
   font-size: 10px !important;
-  /* v111z75：这里原来写的是 `background: var(--m3-search) !important` —— 简写带 !important
+  /* v111z83：这里原来写的是 `background: var(--m3-search) !important` —— 简写带 !important
      会把 JS 内联的头像图（background-image）一并抹掉，于是「对方的头像显示不出来」，
      只剩一个浅蓝圆圈、白字还看不见。改成只给底色，图片/角色渐变得以显示。 */
   background-color: var(--m3-search) !important;
@@ -51968,7 +51619,7 @@ body #chatApp[data-card-skin] .chat-decision-bubble.is-answered .chat-decision-s
   </style>
   <style id="mailGmailSkin70">
 
-/* ===== v111z75：长正文不再被剪（用户报「查看详情内容被省略」）=====
+/* ===== v111z83：长正文不再被剪（用户报「查看详情内容被省略」）=====
    复现：内容存的是完整的，但 .mail-reader-paper 里 clientHeight 761 / scrollHeight 1322，
    且 overflow:hidden + flex-shrink:1 —— 超出部分被剪掉而且滚不到。
    修法：信纸按内容长高，滚动交给 .mail-reader-panel。 */
@@ -51977,7 +51628,7 @@ body #chatApp[data-card-skin] .chat-decision-bubble.is-answered .chat-decision-s
 #appScreen .mail-app .mail-reader-panel { overscroll-behavior: contain; }
 /* 引用区给多一点：2 行 → 4 行（配合 JS 里 180 → 600 字） */
 #appScreen .mail-app .mail-reply-reference p { -webkit-line-clamp: 4 !important; clamp: 4 !important; }
-/* ===== v111z75：只留一个返回箭头 =====
+/* ===== v111z83：只留一个返回箭头 =====
    头部 ← 按模式返回（关阅读 / 关写信）；头部 ✕ 退出 MAIL；阅读页自带的 ← 与写信页自带的 ✕ 隐藏。 */
 #appScreen .mail-app .mail-reader-back { display: none !important; }
 #appScreen .mail-app .mail-compose-head > button:not(.mail-send-letter) { display: none !important; }
@@ -51990,7 +51641,7 @@ body #chatApp[data-card-skin] .chat-decision-bubble.is-answered .chat-decision-s
   </style>
 
   <style id="mailGmailSkin73">
-/* ===== v111z75：MAIL 字号统一并放大（用户：转发页字体与正常邮件界面不一致 / 列表与信件字号小）=====
+/* ===== v111z83：MAIL 字号统一并放大（用户：转发页字体与正常邮件界面不一致 / 列表与信件字号小）=====
    口径：阅读页正文 ＝ 撰写页正文 ＝ 12.5px / 1.8（跟内联钉死的一致，见 pinMailTypography）；
         列表整行放大；头像改成方圆型（30%）。配色与布局仍是 Material 3。 */
 #appScreen .mail-app {
@@ -52040,5 +51691,1616 @@ body #chatApp[data-card-skin] .chat-decision-bubble.is-answered .chat-decision-s
 #appScreen .mail-app .mail-reader-avatar,
 #appScreen .mail-app .mail-sender-avatar { background-repeat: no-repeat !important; background-position: center !important; background-size: cover !important; }
 </style>
+
+  <style id="iosShell78">
+/* ============================================================================
+   v111z83 · 桌面三件事（只动这三样，网站其余部分保持原样）
+     ① 顶栏内容收起（编辑模式自动回来，否则「主题 / 撤销 / 重做 / 完成」没处点）
+     ② 桌面图标放大（形状、材质、投影、按压反馈全部沿用原样，只改尺寸）
+     ③ 底部 Tab 栏 → iOS 式：悬浮玻璃胶囊 + 图标 + 文字标签 + 选中指示条
+   不动：容器尺寸、字号、配色、卡片材质、任何逻辑。
+   ========================================================================== */
+
+/* ① 顶栏 -------------------------------------------------------------------- */
+#appScreen:not(.edit-mode) > .app-header { display: none !important; }
+/* 顶栏不在了，桌面顶部直接吃安全区，不让第一行图标贴边 */
+#appScreen > .desktop-viewport { padding-top: max(22px, calc(env(safe-area-inset-top, 0px) + 6px)) !important; }
+#appScreen.edit-mode > .app-header { padding: 16px 14px 6px !important; }
+#appScreen.edit-mode > .app-header .title { font-size: 20px !important; }
+
+/* ② 桌面图标 52 → 64px（圆角按比例 16 → 19），字形 20 → 30，标签 9 → 12.5 ------ */
+#appScreen > .desktop-viewport .app-icon-box,
+#appScreen .desktop-page .app-icon-box {
+  width: 60px !important;
+  height: 60px !important;
+  border-radius: 18px !important;
+}
+/* 图标放大后，网站自己的「自适应重排」会把卡片贴到屏幕边 —— 给卡片本身留一点边距，
+   四个方向都留 8px，视觉上才不顶边（拖拽 / 编辑坐标仍然按 left+top 算，不受影响）。 */
+#appScreen .desktop-page > .draggable-card { margin: 8px 0 0 8px !important; }
+#appScreen[data-desktop-icon-shape="circle"] .desktop-page .app-icon-box { border-radius: 50% !important; }
+#appScreen[data-desktop-icon-shape="square"] .desktop-page .app-icon-box { border-radius: 6px !important; }
+#appScreen .desktop-page .app-icon-box svg { width: 28px !important; height: 28px !important; }
+#appScreen .desktop-page .app-icon-box .app-icon-custom { width: 100% !important; height: 100% !important; }
+#appScreen .desktop-page .app-icon-item { gap: 6px !important; }
+#appScreen .desktop-page .app-icon-label { font-size: 12px !important; letter-spacing: .2px !important; }
+
+/* ③ iOS 底部 Tab 栏 --------------------------------------------------------- */
+#appScreen {
+  --app-nav-button-size: 52px;
+  --app-nav-icon-size: 23px;
+  --app-bottom-nav-base: 64px;
+  /* 悬浮胶囊上下各留白，页面容器（字卡 / 朋友圈）也跟着让位，别被挡住 */
+  --app-bottom-nav-height: calc(64px + var(--app-bottom-safe, 0px) + 16px);
+}
+#appScreen > .bottom-nav {
+  flex: 0 0 64px !important;
+  height: 64px !important;
+  min-height: 64px !important;
+  margin: 6px 12px calc(var(--app-bottom-safe, 0px) + 8px) !important;
+  padding: 6px !important;
+  gap: 4px !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  border-radius: 24px !important;
+  border: 1px solid rgba(255, 255, 255, .68) !important;
+  background: rgba(255, 255, 255, .72) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  box-shadow:
+    0 14px 30px -18px rgba(16, 24, 40, .48),
+    0 2px 8px rgba(16, 24, 40, .06),
+    inset 0 1px 0 rgba(255, 255, 255, .92) !important;
+}
+/* 应用给按钮留的「选中横条」在 ::after，所以文字标签走 ::before */
+#appScreen > .bottom-nav .nav-btn {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 3px !important;
+  flex: 1 1 0 !important;
+  width: auto !important;
+  height: 100% !important;
+  padding: 8px 0 7px !important;
+  border-radius: 18px !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+#appScreen > .bottom-nav .nav-btn svg { width: 23px !important; height: 23px !important; order: 1 !important; }
+#appScreen > .bottom-nav .nav-btn::before {
+  content: attr(data-tab-label);
+  order: 2;
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .3px;
+  line-height: 1.05;
+  white-space: nowrap;
+  color: inherit;
+}
+#appScreen > .bottom-nav .nav-btn.active svg { stroke-width: 2.5 !important; }
+#appScreen > .bottom-nav .nav-btn:active { transform: scale(.94); }
+
+</style>
+
+  <script id="iosShell78js">
+  /* v111z83 · 给底部 Tab 栏补 iOS 式文字标签（样式里用 ::before 读这个属性） */
+  (function () {
+    var LABELS = ['主页', '字卡', '朋友圈', '设置'];
+    function labelTabs() {
+      var btns = document.querySelectorAll('#appScreen > .bottom-nav .nav-btn');
+      for (var i = 0; i < btns.length; i++) {
+        if (!btns[i].dataset.tabLabel) btns[i].dataset.tabLabel = LABELS[i] || '';
+      }
+    }
+    function run() { try { labelTabs(); } catch (_) {} }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run, { once: true });
+    else run();
+    setTimeout(run, 800);
+    try { new MutationObserver(run).observe(document.getElementById('appScreen') || document.body, { childList: true, subtree: true }); } catch (_) {}
+  })();
+  </script>
+
+  <style id="typeScale81">
+/* v111z83 · 收敛版样式
+   口径：不再整体放大、不再加粗；只有「看不清的极小字」抬到可读，
+   并且**保证每个元素的换行数与 v111z83 原版一致**（脚本里做「不改行数」校验）。
+   本文件只做：Tab 条、触控目标、单行省略、字卡左栏、设置说明不溢出。 */
+
+/* ① 底部 Tab：去掉黑色指示条；选中态只用颜色，不加粗（避免字宽变化引起抖动） */
+#appScreen > .bottom-nav .nav-btn::after,
+#appScreen .circle-bottom-tab::after { display: none !important; }
+#appScreen > .bottom-nav .nav-btn.active { color: #0b1220 !important; }
+
+/* ② 触控目标：只有图标的按钮（返回/关闭/头部图标键）44×44 */
+#appScreen [data-hit81="icon"] {
+  min-width: 44px !important;
+  min-height: 44px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+/* 带文字的小按钮不再统一撑高（z79 那条把字卡工具栏挤成了两排），只保留图标按钮 44×44 */
+
+/* ③ CHAT 列表行：名字/预览强制单行省略 —— 这样字号抬高也不会挤成两行 */
+#appScreen .chat-row-name,
+#appScreen .chat-row-preview,
+#appScreen .chat-row-preview > span { white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; min-width: 0 !important; }
+#appScreen .chat-row-preview { display: flex !important; gap: 6px; }
+#appScreen .chat-row-preview > span:last-child { flex: 0 0 auto; }
+
+/* ④ 字卡管理左栏放宽（原来 96~104px，中文才勉强不折行）—— 纯容器，与字号无关 */
+#appScreen .card-manager-workspace { grid-template-columns: 128px minmax(0,1fr) !important; }
+#appScreen .card-manager-group-item b { white-space: nowrap !important; }
+#appScreen .card-manager-group-item span { white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
+
+/* ⑤ 设置页长说明：允许在词内断行，避免撑破容器 */
+#appScreen .dashboard-setting-row small { overflow-wrap: anywhere; }
+
+</style>
+
+  <script id="typeScale81js">
+  /* v111z83 · 只抬极小字；三重校验保证「换行数 / 排数 / 溢出」与原版一致 */
+  (function () {
+    var SKIP_SEL = 'svg,img,canvas,video,[data-global-font-ignore="true"],.app-icon-custom,.card-badge,.tips-icon-mark,.star-sparkle';
+    var MINE = /^(BUTTON|INPUT|TEXTAREA|SELECT|OPTION|LABEL|A|SPAN|STRONG|SMALL|B|EM|I|P|DIV|LI|TIME|CODE|OUTPUT|LEGEND|SUMMARY|TD|TH|DT|DD|FIGCAPTION)$/;
+
+    /* 极小字逐级退档表：只到 9.5px 为止（10px 及以上不动） */
+    var LADDER = [
+      [5.5, [8.5, 8, 7.5, 7, 6.5, 6]],
+      [6.5, [10, 9.5, 9, 8.5, 8, 7.5, 7]],
+      [7.5, [10.5, 10, 9.5, 9, 8.5, 8]],
+      [8.5, [11, 10.5, 10, 9.5, 9]],
+      [9.5, [11.5, 11, 10.5, 10, 9.5]]
+    ];
+    /* CHAT 列表：点名的重点区域，单独给一档（没有命中就退回上面的通用表） */
+    var CHAT_TARGETS = [
+      ['.chat-row-name', 12.5], ['.chat-row-preview', 11.5], ['.chat-row-time', 11.5],
+      ['.chat-tab', 11.5], ['.chat-unread', 11.5], ['.chat-empty-search', 11.5], ['.request-count', 11.5]
+    ];
+    function ladderFor(el, size) {
+      for (var i = 0; i < CHAT_TARGETS.length; i++) {
+        if (el.matches && el.matches(CHAT_TARGETS[i][0]) && size < CHAT_TARGETS[i][1] - 0.3) {
+          var t = CHAT_TARGETS[i][1], out = [];
+          for (var k = 0; k < 5; k++) out.push(Math.round((t - k * 0.5) * 10) / 10);
+          return out;
+        }
+      }
+      for (var j = 0; j < LADDER.length; j++) if (size <= LADDER[j][0] + 0.001) return LADDER[j][1];
+      return null;
+    }
+
+    function textLines(el) {
+      var tops = [], i, j, k, r, rects;
+      for (i = 0; i < el.childNodes.length; i++) {
+        k = el.childNodes[i];
+        if (k.nodeType === 3 && String(k.nodeValue || '').replace(/\s+/g, '')) {
+          r = document.createRange(); r.selectNodeContents(k);
+          rects = r.getClientRects();
+          for (j = 0; j < rects.length; j++) if (rects[j].width > 1 && rects[j].height > 1) tops.push(rects[j].top);
+        } else if (k.nodeType === 1 && k.tagName === 'BR') { tops.push(-1e7 - tops.length); }
+      }
+      tops.sort(function (a, b) { return a - b; });
+      var uniq = [];
+      for (i = 0; i < tops.length; i++) if (!uniq.length || Math.abs(tops[i] - uniq[uniq.length - 1]) > 2) uniq.push(tops[i]);
+      return uniq.length;
+    }
+    /* 子元素占了几「排」：按纵向区间分 band，不受 align-items:center 影响 */
+    function bands(rects) {
+      rects.sort(function (a, b) { return a.top - b.top; });
+      var n = 0, bottom = -1e9, i, r;
+      for (i = 0; i < rects.length; i++) {
+        r = rects[i];
+        if (r.top > bottom - 1) { n += 1; bottom = r.bottom; }
+        else if (r.bottom > bottom) bottom = r.bottom;
+      }
+      return n;
+    }
+    function sibRows(node) {
+      if (!node || !node.children) return 0;
+      var rects = [], i, c, r;
+      for (i = 0; i < node.children.length; i++) {
+        c = node.children[i];
+        if (c.tagName === 'BR') continue;
+        try { if (c.checkVisibility && !c.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })) continue; } catch (_) {}
+        var ccs = getComputedStyle(c);
+        if (ccs.position === 'absolute' || ccs.position === 'fixed') continue;   /* 绝对定位不占排 */
+        r = c.getBoundingClientRect();
+        if (r.width < 1 && r.height < 1) continue;
+        rects.push({ top: r.top, bottom: r.bottom });
+      }
+      return bands(rects);
+    }
+
+    var SOFT = (function () { try { return localStorage.getItem('typeScale81AllowWrap') === '1'; } catch (_) { return false; } })();
+    var CONTAINERS = new Map();     /* 容器 → 改前的排数 */
+    var CHANGED = new Set();        /* 我们改过字号的元素 */
+    var SCANNED = false;
+
+    function measure(el) {
+      return { lines: textLines(el) || 1,
+               overY: Math.max(0, el.scrollHeight - el.clientHeight),
+               overX: Math.max(0, el.scrollWidth - el.clientWidth),
+               rowsP: sibRows(el.parentElement), rowsG: sibRows(el.parentElement && el.parentElement.parentElement) };
+    }
+    function smallContainer(node) {
+      if (!node) return false;
+      var n = 0;
+      for (var i = 0; i < node.children.length; i++) {
+        var c = node.children[i];
+        try { if (c.checkVisibility && !c.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })) continue; } catch (_) {}
+        n += 1;
+      }
+      return n > 1 && n <= 14;      /* 只管「一排/几排」的小容器（工具栏、行、卡片组） */
+    }
+    function markContainers(el) {
+      var p = el.parentElement, g = p && p.parentElement;
+      if (p && !CONTAINERS.has(p) && smallContainer(p)) CONTAINERS.set(p, sibRows(p));
+      if (g && !CONTAINERS.has(g) && smallContainer(g)) CONTAINERS.set(g, sibRows(g));
+    }
+    function setSize(el, px) {
+      if (px == null) el.style.removeProperty('font-size');
+      else el.style.setProperty('font-size', px + 'px', 'important');
+    }
+    function trySize(el, px, base) {
+      var before = el.style.getPropertyValue('font-size');
+      setSize(el, px);
+      var l = textLines(el) || 1;
+      var overY = Math.max(0, el.scrollHeight - el.clientHeight);
+      var overX = Math.max(0, el.scrollWidth - el.clientWidth);
+      var okLines = l >= 1 && ((l <= base.lines) || (SOFT && base.lines >= 2 && l <= base.lines + 1));
+      var okOver = (overY <= base.overY + 1) && (overX <= base.overX + 1);
+      var okRows = sibRows(el.parentElement) <= base.rowsP &&
+                   sibRows(el.parentElement && el.parentElement.parentElement) <= base.rowsG;
+      if (okLines && okOver && okRows) return true;
+      if (before) el.style.setProperty('font-size', before, 'important'); else el.style.removeProperty('font-size');
+      return false;
+    }
+    function isSmallControl(el) {
+      var t = el.tagName;
+      if (t === 'INPUT') return !/^(checkbox|radio|range|color|file|hidden|button|submit|reset)$/.test(el.type || '');
+      return t === 'TEXTAREA' || (t === 'SELECT' && !el.multiple);
+    }
+
+    function apply(el, size, mult) {
+      if (isSmallControl(el)) {                       /* 输入控件同样只抬极小字 */
+        if (size >= 9.6) return;
+        var cap = [11.5, 11, 10.5, 10, 9.5];
+        for (var q = 0; q < cap.length; q++) {
+          if (cap[q] <= size + 0.05) break;
+          el.style.setProperty('font-size', Math.round(cap[q] * mult * 10) / 10 + 'px', 'important');
+          CHANGED.add(el); return;
+        }
+        return;
+      }
+      if (el.dataset.globalFontMultiplierApplied && el.children.length && !el.matches('.chat-row-name,.chat-row-preview')) return;
+      var cand = ladderFor(el, size);
+      if (!cand) return;
+      var base = measure(el);
+      for (var i = 0; i < cand.length; i++) {
+        var px = Math.round(cand[i] * mult * 10) / 10;
+        if (px <= size + 0.05) break;
+        if (trySize(el, px, base)) {
+          CHANGED.add(el);
+          var lhNum = parseFloat(getComputedStyle(el).lineHeight);
+          if (isNaN(lhNum)) lhNum = size * 1.2;
+          if (lhNum < px * 1.05) el.style.setProperty('line-height', Math.round(px * 1.2) + 'px', 'important');
+          return;
+        }
+      }
+    }
+
+    function candidates(root) {
+      var sel = (typeof GLOBAL_FONT_SCALE_TEXT_SELECTOR === 'string')
+        ? GLOBAL_FONT_SCALE_TEXT_SELECTOR + ',b,em,i,div,td,th,dt,dd,figcaption,span,strong,small,p,a,label,li,time,code'
+        : 'button,input,textarea,select,label,a,span,strong,small,b,em,p,div,li,time,code,output,legend,summary';
+      var list = root.querySelectorAll(sel), out = [], i, el;
+      for (i = 0; i < list.length; i++) {
+        el = list[i];
+        if (el.dataset.ts81 === '1') continue;
+        if (!MINE.test(el.tagName)) continue;
+        if (el.closest && el.closest(SKIP_SEL)) continue;
+        try { if (el.checkVisibility && !el.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })) continue; } catch (_) {}
+        var r = el.getBoundingClientRect();
+        if (r.width < 2 || r.height < 2) continue;
+        var cs;
+        try { cs = getComputedStyle(el); } catch (_) { continue; }
+        if (!cs || cs.display === 'none' || cs.visibility === 'hidden') continue;
+        var size = parseFloat(cs.fontSize);
+        if (!size) continue;
+        out.push([el, size]);
+      }
+      return out;
+    }
+
+    /* 主流程：先记录所有「会被改」的元素的容器基线与字号（此时还没动过任何东西）→ 再改 → 再全校验回滚 */
+    function runAll() {
+      try { tagHits(); } catch (_) {}
+      var root = document.getElementById('appScreen');
+      if (!root) return;
+      var list = candidates(root), i, el, size, mult, work = [];
+      if (!SCANNED) { for (i = 0; i < list.length; i++) markContainers(list[i][0]); SCANNED = true; }
+      for (i = 0; i < list.length; i++) {
+        el = list[i][0]; size = list[i][1];
+        mult = parseFloat(el.dataset.globalFontMultiplierApplied || '1') || 1;
+        if (!(size <= 9.5 + 0.01) && !(el.matches && el.matches('.chat-row-name,.chat-row-preview,.chat-tab,.chat-row-time,.chat-unread,.chat-empty-search,.request-count'))) continue;
+        el.dataset.ts81 = '1';
+        work.push([el, size, mult]);
+        markContainers(el);
+      }
+      var j = 0;
+      (function chunk() {
+        var t0 = performance.now();
+        while (j < work.length && performance.now() - t0 < 8) {
+          try { apply(work[j][0], work[j][1], work[j][2]); } catch (_) {}
+          j += 1;
+        }
+        if (j < work.length) setTimeout(chunk, 16); else setTimeout(verifyAndRepair, 60);
+      })();
+    }
+
+    /* 全量校验：任何容器的排数比改前多 → 回滚该容器内的改动，再从小到大一点点加回来 */
+    function repair(c, base) {
+      var inside = [];
+      CHANGED.forEach(function (el) { if (c.contains(el)) inside.push(el); });
+      function clearAll(el) { setSize(el, null); el.style.removeProperty('line-height'); }
+      var saved = [];
+      inside.forEach(function (el) {
+        var v = el.style.getPropertyValue('font-size');
+        if (v) saved.push([el, v]);
+      });
+      if (!saved.length) { CONTAINERS.set(c, sibRows(c)); return false; }   /* 排数变化不是我们造成的 → 更新基线 */
+      saved.forEach(function (pair) { clearAll(pair[0]); });                /* 先全部撤掉 */
+      if (sibRows(c) > base) {                                              /* 撤掉也回不去 → 与本补丁无关 */
+        saved.forEach(function (pair) { setSize(pair[0], pair[1]); });
+        CONTAINERS.set(c, sibRows(c));
+        return false;
+      }
+      saved.sort(function (a, b) { return parseFloat(a[1]) - parseFloat(b[1]); });   /* 小的先加回来 */
+      saved.forEach(function (pair) {
+        setSize(pair[0], pair[1]);
+        if (sibRows(c) > base) clearAll(pair[0]);
+      });
+      return true;
+    }
+    function verifyAndRepair() {
+      for (var round = 0; round < 3; round++) {
+        var any = false;
+        CONTAINERS.forEach(function (base, c) {
+          if (!c.isConnected) { CONTAINERS.delete(c); return; }
+          if (sibRows(c) > base) { if (repair(c, base)) any = true; }
+        });
+        if (CONTAINERS.size > 400) { var keys = []; CONTAINERS.forEach(function (v, k) { keys.push(k); }); return; }
+        if (!any) break;
+      }
+    }
+
+    function tagHits() {
+      var nodes = document.querySelectorAll('#appScreen button, #appScreen [role="button"], #appScreen .chat-plain-btn');
+      for (var i = 0; i < nodes.length; i++) {
+        var el = nodes[i];
+        if (el.closest('.bottom-nav') || el.getAttribute('data-hit81')) continue;
+        var r = el.getBoundingClientRect();
+        if (r.width < 1 || r.height < 1) continue;
+        if (el.querySelector('svg') && !(el.textContent || '').trim()) el.setAttribute('data-hit81', 'icon');
+      }
+    }
+
+    var timer = 0;
+    function schedule() { clearTimeout(timer); timer = setTimeout(runAll, 280); }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { setTimeout(runAll, 400); }, { once: true });
+    else setTimeout(runAll, 400);
+    setTimeout(runAll, 1500);
+    setTimeout(runAll, 3000);
+    setTimeout(runAll, 6000);
+    setTimeout(runAll, 12000);
+    try { new MutationObserver(schedule).observe(document.getElementById('appScreen') || document.body, { childList: true, subtree: true }); } catch (_) {}
+
+    ['applyGlobalFontScaleToTree', 'applyGlobalFontScale'].forEach(function (name) {
+      var orig = window[name];
+      if (typeof orig !== 'function' || orig.__ts81) return;
+      var wrapped = function () {
+        var out = orig.apply(this, arguments);
+        try {
+          var marked = document.querySelectorAll('#appScreen [data-ts81]');
+          for (var i = 0; i < marked.length; i++) {
+            delete marked[i].dataset.ts81;
+            marked[i].style.removeProperty('font-size');
+            marked[i].style.removeProperty('line-height');
+          }
+          SCANNED = false; CONTAINERS = new Map(); CHANGED = new Set();
+        } catch (_) {}
+        try { schedule(); } catch (_) {}
+        return out;
+      };
+      wrapped.__ts81 = true; window[name] = wrapped;
+    });
+
+    window.__typeScale81 = runAll;
+    window.__typeScale81Stats = function () {
+      return { 已改元素: CHANGED.size, 记录容器: CONTAINERS.size, 软模式: SOFT };
+    };
+    window.__typeScale81Soft = function (on) {
+      try { localStorage.setItem('typeScale81AllowWrap', on ? '1' : '0'); } catch (_) {}
+      SOFT = !!on;
+      var marked = document.querySelectorAll('#appScreen [data-ts81]');
+      for (var i = 0; i < marked.length; i++) {
+        delete marked[i].dataset.ts81;
+        marked[i].style.removeProperty('font-size');
+        marked[i].style.removeProperty('line-height');
+      }
+      SCANNED = false; CONTAINERS = new Map(); CHANGED = new Set();
+      runAll();
+    };
+  })();
+  </script>
+
+  <style id="mailM3Skin82">
+/* ============================================================================
+   v111z83 · MAIL 对齐最新版 Gmail（Material 3）+ 修错
+   范围：只作用于 #mailApp。不碰其它屏、不碰配色 token、不碰深色跟随系统。
+   数值口径（用户本轮选定「小幅提」）：
+     列表   发件人 12.5 / 主题 12 / 摘要 12 / 时间 11.5，行高 ≈84，圆角 16
+     chip   36px 高 · 8px 圆角 · 未选中 #e9eef6（深色 #2a2b2d）
+     搜索   44px 高 · 22px 圆角 · 有输入时出现清除键
+     FAB    52×52 · 16px 圆角 · 只留图标
+     阅读   标题 20px/500；正文 12.5/1.8 不变
+     未读   加粗 + 蓝色时间（去掉旧的棕色主题色）
+   ========================================================================== */
+
+#appScreen #mailApp {
+  --m82-chip: #e9eef6;
+  --m82-on: #1f1f1f;
+  --m82-on2: #444746;
+  --m82-line: rgba(0, 0, 0, .08);
+  --m82-blue: #0b57d0;
+}
+@media (prefers-color-scheme: dark) {
+  #appScreen #mailApp { --m82-chip: #2a2b2d; --m82-on: #e3e3e3; --m82-on2: #c4c7c5; --m82-line: rgba(255,255,255,.12); --m82-blue: #a8c7fa; }
+}
+
+/* ---------- 筛选 chips：36px 高、可横向滑动（不换行） ---------- */
+#appScreen #mailApp #mailFilterRow { display: flex; flex-wrap: nowrap; gap: 8px; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding: 2px 1px 4px; }
+#appScreen #mailApp #mailFilterRow::-webkit-scrollbar { display: none; }
+#appScreen #mailApp #mailFilterRow button {
+  flex: 0 0 auto; height: 36px !important; min-height: 36px; padding: 0 14px !important;
+  border: 0 !important; border-radius: 8px !important;
+  background: var(--m82-chip) !important; color: var(--m82-on2) !important;
+  font-size: 11.5px !important; font-weight: 600 !important; letter-spacing: 0;
+}
+#appScreen #mailApp #mailFilterRow button.active { background: #c2e7ff !important; color: #001d35 !important; }
+@media (prefers-color-scheme: dark) { #appScreen #mailApp #mailFilterRow button.active { background: #004a77 !important; color: #c2e7ff !important; } }
+#appScreen #mailApp #mailFilterRow button em { font-style: normal; opacity: .78; }
+
+/* ---------- 搜索条：44px 高；有输入时显示清除 ---------- */
+#appScreen #mailApp .mail-search-wrap { min-height: 44px !important; border-radius: 22px !important; padding: 0 6px 0 14px !important; }
+#appScreen #mailApp .mail-search-wrap input { font-size: 12.5px !important; }
+#appScreen #mailApp .mail-search-clear {
+  flex: 0 0 44px; width: 44px; height: 44px; display: grid; place-items: center;
+  border: 0; background: transparent; color: var(--m82-on2); font-size: 15px; line-height: 1;
+  border-radius: 50%; cursor: pointer;
+}
+#appScreen #mailApp .mail-search-clear:hover { background: var(--m82-chip); }
+
+/* ---------- 列表：字号、行高、卡片圆角 16 ---------- */
+#appScreen #mailApp .mail-letter-item {
+  border-radius: 16px !important;
+  padding: 14px 12px 14px 14px !important;
+  min-height: 84px;
+  align-items: center;
+  gap: 12px;
+}
+#appScreen #mailApp .mail-item-copy { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+#appScreen #mailApp .mail-item-from { font-size: 12.5px !important; line-height: 18px !important; }
+#appScreen #mailApp .mail-item-copy strong {
+  font-size: 12px !important; line-height: 17px !important; font-weight: 600 !important;
+  display: block; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+#appScreen #mailApp .mail-item-copy small {
+  font-size: 12px !important; line-height: 17px !important;
+  display: block; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* 未读 = 加粗 + 蓝时间（主题色统一回到 on-surface，去掉旧的棕色遗留） */
+#appScreen #mailApp .mail-item-copy strong { color: var(--m82-on) !important; }
+#appScreen #mailApp .mail-letter-item.unread .mail-item-copy strong { color: var(--m82-on) !important; font-weight: 700 !important; }
+#appScreen #mailApp .mail-letter-item.unread .mail-item-from { font-weight: 800 !important; }
+#appScreen #mailApp .mail-letter-item:not(.unread) .mail-item-from { font-weight: 600 !important; }
+#appScreen #mailApp .mail-letter-item.unread .mail-item-meta time { color: var(--m82-blue) !important; font-weight: 700 !important; }
+#appScreen #mailApp .mail-letter-item:not(.unread) .mail-item-meta time { color: var(--m82-on2) !important; font-weight: 400 !important; }
+#appScreen #mailApp .mail-item-meta time { font-size: 11.5px !important; }
+
+/* 行内删除键：视觉仍小，热区 44×44（与 z81 的触控口径一致） */
+#appScreen #mailApp .mail-letter-delete {
+  width: 44px !important; height: 44px !important; min-width: 44px;
+  display: grid !important; place-items: center;
+  border: 0; border-radius: 50%; background: transparent;
+  font-size: 15px !important; opacity: .5; cursor: pointer;
+}
+#appScreen #mailApp .mail-letter-delete:active { background: var(--m82-chip); opacity: .85; }
+/* 桌面（有真悬停）保持原观感：默认隐身、悬停才出现；手机（无 hover）常显，热区仍是 44×44 */
+@media (hover: hover) and (pointer: fine) {
+  #appScreen #mailApp .mail-letter-delete { opacity: 0; }
+  #appScreen #mailApp .mail-letter-item:hover .mail-letter-delete,
+  #appScreen #mailApp .mail-letter-delete:focus-visible { opacity: .6; }
+}
+
+/* ---------- 撰写/发送 FAB：52×52、16 圆角、只留图标 ---------- */
+#appScreen #mailApp .mail-compose-button {
+  width: 52px !important; height: 52px !important; min-width: 52px; min-height: 52px;
+  border-radius: 16px !important;
+  box-shadow: 0 6px 16px rgba(11, 87, 208, .26);
+}
+#appScreen #mailApp .mail-compose-button svg { width: 22px !important; height: 22px !important; }
+#appScreen #mailApp .mail-compose-button span { display: none !important; }
+
+/* ---------- 阅读页：标题 20/500 ---------- */
+#appScreen #mailApp #mailReaderTitle { font-size: 20px !important; font-weight: 500 !important; line-height: 1.35 !important; }
+#appScreen #mailApp #mailReaderSender { font-size: 13px !important; }
+#appScreen #mailApp #mailReaderTools > span { font-size: 11.5px !important; }
+
+/* ---------- 撰写页：主题行 + 底部工具条 ---------- */
+#appScreen #mailApp .mail-compose-subject { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--m82-line); }
+#appScreen #mailApp .mail-compose-subject > span { flex: 0 0 auto; font-size: 11.5px; color: var(--m82-on2); }
+#appScreen #mailApp .mail-compose-subject input { flex: 1; min-width: 0; height: 28px; border: 0; outline: 0; background: transparent; color: inherit; font-size: 12.5px !important; }
+#appScreen #mailApp .mail-compose-tools { display: flex; align-items: center; gap: 6px; padding: 8px 0 0; }
+#appScreen #mailApp .mail-tool-btn {
+  min-height: 36px; padding: 0 12px; display: inline-flex; align-items: center; gap: 6px;
+  border: 0; border-radius: 10px; background: transparent; color: var(--m82-on2);
+  font-size: 11.5px; font-weight: 600; cursor: pointer;
+}
+#appScreen #mailApp .mail-tool-btn:active { background: var(--m82-chip); }
+#appScreen #mailApp .mail-draft-discard { margin-left: auto; color: #b3261e; }
+#appScreen #mailApp .mail-draft-hint { margin: 6px 0 0; font-size: 11px; color: var(--m82-on2); }
+
+/* ---------- 回收站视图 ---------- */
+#appScreen #mailApp .mail-trash-actions { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+#appScreen #mailApp .mail-trash-btn {
+  flex: 0 0 auto; white-space: nowrap; min-height: 34px; padding: 0 10px;
+  border: 0; border-radius: 10px; background: var(--m82-chip); color: var(--m82-on);
+  font-size: 11.5px; font-weight: 600; cursor: pointer;
+}
+/* 回收站行：列定义改成「头像 | 正文 | 时间 | 动作」，保证两个按钮永远完整显示（原行是 4 列网格） */
+#appScreen #mailApp .mail-letter-item:has(.mail-trash-actions) {
+  grid-template-columns: 38px minmax(0, 1fr) auto auto !important;
+  min-height: 76px;
+}
+#appScreen #mailApp .mail-letter-item:has(.mail-trash-actions) .mail-item-copy small { display: none; }
+#appScreen #mailApp .mail-letter-item:has(.mail-trash-actions) .mail-item-meta { align-items: flex-end; }
+#appScreen #mailApp .mail-trash-btn.danger { color: #b3261e; }
+@media (prefers-color-scheme: dark) { #appScreen #mailApp .mail-trash-btn.danger, #appScreen #mailApp .mail-draft-discard { color: #f2b8b5; } }
+
+/* ---------- 提示条（可带一个动作，例如「撤销」） ---------- */
+#appScreen #mailApp .mail-toast { display: inline-flex; align-items: center; gap: 12px; padding: 10px 10px 10px 16px; border-radius: 8px; }
+#appScreen #mailApp .mail-toast button {
+  border: 0; background: transparent; color: #a8c7fa; font-size: 12.5px; font-weight: 700;
+  padding: 8px 8px; min-height: 36px; border-radius: 8px; cursor: pointer;
+}
+#appScreen #mailApp .mail-toast button:active { background: rgba(255, 255, 255, .12); }
+
+</style>
+
+  <script id="mailFn82">
+  /* v111z83 · MAIL：回收站（撤销 5 秒 + 保留 30 天）、草稿、主题、计数、搜索清除 */
+  (function () {
+    var TRASH_KEY = 'dream-messenger:mail-trash:v1';
+    var DRAFT_KEY = 'dream-messenger:mail-draft:v1';
+    var TTL = 30 * 864e5;
+    var UNDO_MS = 5000;
+
+    function readJSON(key, fb) { try { var v = readDreamJSON(key, fb); return (v === undefined || v === null) ? fb : v; } catch (_) { return fb; } }
+    function writeJSON(key, val) { try { return writeDreamJSON(key, val) !== false; } catch (_) { return false; } }
+
+    var trash = readJSON(TRASH_KEY, {});
+    if (!trash || typeof trash !== 'object' || Array.isArray(trash)) trash = {};
+    function persistTrash() { writeJSON(TRASH_KEY, trash); }
+    function purgeTrash() {
+      var now = Date.now(), n = 0;
+      Object.keys(trash).forEach(function (id) {
+        if (now - (Number(trash[id] && trash[id].deletedAt) || 0) > TTL) { delete trash[id]; n += 1; }
+      });
+      if (n) persistTrash();
+      return n;
+    }
+    function countTrash() { return Object.keys(trash).length; }
+    function updateTrashCount() {
+      var el = document.getElementById('mailCountTrash');
+      if (el) el.textContent = String(countTrash());
+    }
+
+    /* ---- 可带动作的提示条（撤销用） ---- */
+    function snack(message, actionLabel, action, ms) {
+      var toast = document.getElementById('mailToast');
+      if (!toast) return;
+      window.clearTimeout(window.mailToastTimer);
+      toast.textContent = '';
+      var span = document.createElement('span');
+      span.textContent = message;
+      toast.appendChild(span);
+      if (actionLabel && action) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = actionLabel;
+        btn.addEventListener('click', function () { toast.classList.remove('show'); action(); });
+        toast.appendChild(btn);
+      }
+      toast.classList.add('show');
+      window.mailToastTimer = window.setTimeout(function () { toast.classList.remove('show'); }, ms || 1600);
+    }
+    window.__mail82Snack = snack;
+
+    /* 原来的纯文字提示：若上一条带着按钮，先清干净再写 */
+    var origToast = window.showMailToast;
+    window.showMailToast = function () {
+      var toast = document.getElementById('mailToast');
+      if (toast && toast.querySelector('button')) {
+        window.clearTimeout(window.mailToastTimer);
+        toast.textContent = '';
+        toast.classList.remove('show');
+        var self = this, args = arguments;
+        window.setTimeout(function () { origToast.apply(self, args); }, 30);
+        return;
+      }
+      return origToast.apply(this, arguments);
+    };
+
+    /* ---- 回收站 ---- */
+    function trashLetter(id) {
+      var letter = mailLetters[id];
+      if (!letter) return false;
+      trash[id] = { deletedAt: Date.now(), letter: JSON.parse(JSON.stringify(letter)) };
+      persistTrash();
+      return true;
+    }
+    function restoreLetter(id) {
+      var entry = trash[id];
+      if (!entry) return false;
+      var letter = normalizeMailLetter(id, entry.letter);
+      delete trash[id];
+      mailLetters[id] = letter;
+      persistTrash();
+      persistMailLetters();
+      renderMailList();
+      updateTrashCount();
+      return true;
+    }
+    function purgeLetter(id) {
+      if (!trash[id]) return false;
+      delete trash[id];
+      persistTrash();
+      renderMailList();
+      updateTrashCount();
+      return true;
+    }
+    window.__mail82Trash = {
+      all: function () { return trash; },
+      count: countTrash,
+      restore: function (id) { return restoreLetter(id); },
+      purge: function (id) { return purgeLetter(id); },
+      purgeExpired: function () { return purgeTrash(); },
+      seed: function (id, entry) { trash[id] = entry; persistTrash(); updateTrashCount(); }
+    };
+
+    /* 删除：先留一份进回收站，再走原来的删除流程，然后给「撤销」 */
+    var origDelete = window.deleteMailLetter;
+    window.deleteMailLetter = function (id) {
+      var stored = trashLetter(id);
+      var out = origDelete.apply(this, arguments);
+      if (stored) {
+        updateTrashCount();
+        if (String(activeMailFilter) === 'trash') renderMailList();
+        snack('已移到「已删除」', '撤销', function () {
+          restoreLetter(id);
+          if (String(activeMailFilter) === 'trash') renderMailList();
+          snack('已恢复');
+        }, UNDO_MS);
+      }
+      return out;
+    };
+
+    /* ---- 回收站视图 ---- */
+    function renderTrashList() {
+      var list = document.getElementById('mailLetterList');
+      if (!list) return;
+      var q = String(mailSearchQuery || '');
+      var entries = Object.keys(trash).map(function (id) {
+        return { id: id, entry: trash[id] || {}, letter: normalizeMailLetter(id, (trash[id] || {}).letter || {}) };
+      }).filter(function (e) {
+        if (!q) return true;
+        return ((e.letter.sender || '') + (e.letter.recipient || '') + (e.letter.title || '') + (e.letter.excerpt || '')).toLocaleLowerCase().includes(q);
+      }).sort(function (a, b) { return (Number(b.entry.deletedAt) || 0) - (Number(a.entry.deletedAt) || 0); });
+
+      list.replaceChildren();
+      if (!entries.length) {
+        var empty = document.createElement('div');
+        empty.className = 'mail-list-empty';
+        empty.textContent = countTrash() ? '没有搜索结果' : '回收站是空的 · 删除的邮件会在这里保留 30 天';
+        list.appendChild(empty);
+        return;
+      }
+      entries.forEach(function (e) {
+        var item = document.createElement('article');
+        item.className = 'mail-letter-item' + (e.letter.unread ? ' unread' : '');
+        item.dataset.mailId = e.id;
+
+        var avatar = document.createElement('span');
+        avatar.className = 'mail-sender-avatar';
+        var av = getMailAvatarVisual(e.letter);
+        if (typeof setChatAvatarVisual === 'function') {
+          setChatAvatarVisual(avatar, av.initials, av.visual);
+          avatar.style.setProperty('display', 'grid', 'important');
+          avatar.style.setProperty('place-items', 'center', 'important');
+        } else { avatar.textContent = av.initials; }
+
+        var copy = document.createElement('span');
+        copy.className = 'mail-item-copy';
+        var from = document.createElement('span');
+        from.className = 'mail-item-from';
+        from.textContent = e.letter.direction === 'out' ? ('至：' + (e.letter.recipient || '')) : (e.letter.sender || '');
+        var title = document.createElement('strong');
+        title.textContent = normalizeMailDisplayTitle(e.letter.title) || '（无主题）';
+        var small = document.createElement('small');
+        small.textContent = (e.letter.paragraphs && e.letter.paragraphs[0]) || '';
+        copy.append(from, title, small);
+
+        var meta = document.createElement('div');
+        meta.className = 'mail-item-meta';
+        var time = document.createElement('time');
+        time.textContent = formatMailTime(e.entry.deletedAt);
+        meta.appendChild(time);
+
+        var actions = document.createElement('span');
+        actions.className = 'mail-trash-actions';
+        var bRestore = document.createElement('button');
+        bRestore.type = 'button'; bRestore.className = 'mail-trash-btn'; bRestore.textContent = '恢复';
+        bRestore.addEventListener('click', function (ev) {
+          ev.stopPropagation();
+          restoreLetter(e.id);
+          if (String(activeMailFilter) === 'trash') renderMailList();
+          snack('已恢复');
+        });
+        var bPurge = document.createElement('button');
+        bPurge.type = 'button'; bPurge.className = 'mail-trash-btn danger'; bPurge.textContent = '彻底删除';
+        bPurge.addEventListener('click', function (ev) {
+          ev.stopPropagation();
+          purgeLetter(e.id);
+          renderMailList();
+          snack('已彻底删除');
+        });
+        actions.append(bRestore, bPurge);
+
+        item.append(avatar, copy, meta, actions);
+        item.addEventListener('click', function () { snack('在回收站里：可以「恢复」或「彻底删除」'); });
+        list.appendChild(item);
+      });
+    }
+
+    /* ---- 搜索清除键 ---- */
+    function syncSearchClear() {
+      var input = document.getElementById('mailSearchInput');
+      var clear = document.querySelector('#mailApp .mail-search-clear');
+      if (!clear || !input) return;
+      clear.hidden = !String(input.value || '').length;
+    }
+    window.clearMailSearch = function () {
+      var input = document.getElementById('mailSearchInput');
+      if (input) input.value = '';
+      try { mailSearchQuery = ''; } catch (_) {}
+      renderMailList();
+      syncSearchClear();
+    };
+    var origUpdateSearch = window.updateMailSearch;
+    window.updateMailSearch = function () {
+      var out = origUpdateSearch.apply(this, arguments);
+      syncSearchClear();
+      return out;
+    };
+
+    /* ---- 草稿 ---- */
+    function composeFields() {
+      var v = function (id) { var el = document.getElementById(id); return el ? String(el.value || '') : ''; };
+      return { recipient: v('mailComposeRecipientInput'), subject: v('mailComposeSubject'), body: v('mailComposeBody'), signature: v('mailComposeSignature') };
+    }
+    function hasContent(f) { f = f || composeFields(); return !!(f.recipient.trim() || f.subject.trim() || f.body.trim()); }
+    function saveDraft() {
+      var f = composeFields();
+      if (!hasContent(f)) { clearDraft(); return false; }
+      writeJSON(DRAFT_KEY, { replyId: String(activeMailReplyId || ''), recipient: f.recipient, subject: f.subject, body: f.body, signature: f.signature, updatedAt: Date.now() });
+      return true;
+    }
+    function draftEmpty(d) {
+      return !d || (!String(d.recipient || '').trim() && !String(d.subject || '').trim() && !String(d.body || '').trim());
+    }
+    /* 注意：不能 removeItem —— 本地存储的恢复机制会把旧值原地复活；改写空对象最稳 */
+    function clearDraft() { writeJSON(DRAFT_KEY, { replyId: '', recipient: '', subject: '', body: '', signature: '', updatedAt: 0 }); }
+    function fillCompose(entry) {
+      var set = function (id, v) { var el = document.getElementById(id); if (el) el.value = v || ''; };
+      set('mailComposeRecipientInput', entry.recipient);
+      set('mailComposeSubject', entry.subject);
+      set('mailComposeBody', entry.body);
+      set('mailComposeSignature', entry.signature);
+      var hint = document.querySelector('#mailApp .mail-draft-hint'); if (hint) hint.hidden = false;
+      var discard = document.querySelector('#mailApp .mail-draft-discard'); if (discard) discard.hidden = false;
+    }
+    function hideDraftChrome() {
+      var hint = document.querySelector('#mailApp .mail-draft-hint'); if (hint) hint.hidden = true;
+      var discard = document.querySelector('#mailApp .mail-draft-discard'); if (discard) discard.hidden = true;
+    }
+    window.__mail82Draft = {
+      read: function () { var d = readJSON(DRAFT_KEY, null); return draftEmpty(d) ? null : d; },
+      save: saveDraft,
+      clear: clearDraft
+    };
+    window.__mail82DiscardDraft = function () {
+      clearDraft();
+      ['mailComposeRecipientInput', 'mailComposeSubject', 'mailComposeBody'].forEach(function (id) {
+        var el = document.getElementById(id); if (el) el.value = '';
+      });
+      hideDraftChrome();
+      snack('草稿已丢弃');
+    };
+    var origCloseCompose = window.closeMailCompose;
+    window.closeMailCompose = function () {
+      if (!window.__mail82Sending) { try { saveDraft(); } catch (_) {} }
+      hideDraftChrome();
+      return origCloseCompose.apply(this, arguments);
+    };
+    var origOpenCompose = window.openMailCompose;
+    window.openMailCompose = function (replyId) {
+      var out = origOpenCompose.apply(this, arguments);
+      try {
+        var draft = readJSON(DRAFT_KEY, null);
+        if (draft && String(draft.replyId || '') === String(replyId || '') && hasContent(draft)) fillCompose(draft);
+        else hideDraftChrome();
+      } catch (_) {}
+      return out;
+    };
+    var origSend = window.sendMailLetter;
+    window.sendMailLetter = function () {
+      var before = Object.keys(mailLetters).length;
+      window.__mail82Sending = true;
+      var out;
+      try { out = origSend.apply(this, arguments); } finally { window.__mail82Sending = false; }
+      if (Object.keys(mailLetters).length > before) {          /* 真发出去了才清草稿 */
+        clearDraft();
+        ['mailComposeRecipientInput', 'mailComposeSubject', 'mailComposeBody'].forEach(function (id) {
+          var el = document.getElementById(id); if (el) el.value = '';
+        });
+        hideDraftChrome();
+      }
+      return out;
+    };
+
+    /* ---- 撰写页两个占位键（不动数据，只给一句说明） ---- */
+    document.addEventListener('click', function (ev) {
+      var btn = ev.target && ev.target.closest ? ev.target.closest('#mailApp [data-mail-tool]') : null;
+      if (!btn) return;
+      ev.preventDefault();
+      snack(btn.dataset.mailTool === 'attach' ? '附件暂未支持（数据里还没有附件字段）' : '富文本格式暂未支持');
+    }, true);
+
+    /* ---- 挂到列表渲染上：回收站视图 + 计数 + 清除键状态 ---- */
+    var origRender = window.renderMailList;
+    window.renderMailList = function () {
+      if (String(activeMailFilter) === 'trash') { renderTrashList(); updateTrashCount(); syncSearchClear(); return; }
+      var out = origRender.apply(this, arguments);
+      updateTrashCount();
+      syncSearchClear();
+      return out;
+    };
+
+    /* ---- 启动 ---- */
+    function boot() {
+      purgeTrash();
+      updateTrashCount();
+      syncSearchClear();
+      if (String(activeMailFilter) === 'trash') renderMailList();
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
+    else setTimeout(boot, 300);
+    setTimeout(boot, 1500);
+    window.__mail82Boot = boot;
+  })();
+  </script>
+
+  <style id="mailM3Skin83">
+/* ============================================================================
+   v111z83 · MAIL 四件事
+     ① 撤销条（snackbar）→ 白色磨砂玻璃
+     ② 阅读页「回复 / 转发」→ 移到底部常驻条（短信也在屏幕底部；长信滚动时钉住）
+     ③ MAIL 的通知与站内横幅头像 → 站点 logo 的配色/形态，字改成 MAIL
+   ========================================================================== */
+
+/* ---------- ① 白色磨砂撤销条 ---------- */
+#appScreen #mailApp .mail-toast {
+  left: 12px !important; right: 12px !important; bottom: 14px !important;
+  max-width: none !important;
+  display: flex !important; align-items: center; gap: 10px;
+  padding: 10px 12px 10px 16px !important;
+  border: 1px solid rgba(255, 255, 255, .55) !important;
+  border-radius: 14px !important;
+  background: rgba(255, 255, 255, .72) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(1.6) !important;
+  backdrop-filter: blur(16px) saturate(1.6) !important;
+  box-shadow: 0 8px 26px rgba(16, 24, 40, .16) !important;
+  color: #1f1f1f !important;
+  font-size: 12.5px !important;
+  transform: translateY(8px) !important;
+}
+#appScreen #mailApp .mail-toast.show { transform: translateY(0) !important; }
+#appScreen #mailApp .mail-toast button {
+  margin-left: auto; border: 0; background: transparent;
+  color: #0b57d0; font-size: 12.5px; font-weight: 700;
+  min-height: 36px; padding: 6px 10px; border-radius: 8px; cursor: pointer;
+}
+#appScreen #mailApp .mail-toast button:active { background: rgba(11, 87, 208, .1); }
+/* 站点自身的「性能精简模式」会全站关闭 backdrop-filter（mobiusPerfGeneratedStyles，含 !important）。
+   这里不跟它打架，只把白度抬到 90%，没有磨砂时仍是一张干净的白色卡片。 */
+html[data-perf-mode="lite"] #appScreen #mailApp .mail-toast {
+  background: rgba(255, 255, 255, .9) !important;
+}
+@media (prefers-color-scheme: dark) {
+  #appScreen #mailApp .mail-toast {
+    border-color: rgba(255, 255, 255, .14) !important;
+    background: rgba(38, 40, 43, .72) !important;
+    box-shadow: 0 8px 26px rgba(0, 0, 0, .42) !important;
+    color: #e3e3e3 !important;
+  }
+  #appScreen #mailApp .mail-toast button { color: #a8c7fa; }
+  #appScreen #mailApp .mail-toast button:active { background: rgba(168, 199, 250, .14); }
+  html[data-perf-mode="lite"] #appScreen #mailApp .mail-toast {
+    background: rgba(38, 40, 43, .92) !important;
+  }
+}
+
+/* 撤销条是磨砂半透的，右下角的撰写 FAB 会从底下透出来一团蓝。
+   M3 对 Snackbar 的规范就是「FAB 让位、抬到它上方」→ 这里照做（离开列表页/收起提示条即复位）。 */
+#appScreen #mailApp .mail-compose-button { transition: transform .18s ease; }
+#appScreen #mailApp .mail-app-shell:has(.mail-toast.show) .mail-compose-button { transform: translateY(-64px) !important; }
+
+/* ---------- ② 回复 / 转发：底部常驻条 ---------- */
+/* 信纸可伸长，短信用它把动作条顶到屏幕底部；长信不裁（flex-shrink:0） */
+#appScreen #mailApp .mail-reader-paper { flex: 1 0 auto !important; }
+/* 阅读面板原有 16px 底内边距会把「贴底」顶起来（实测差 16px）→ 改由动作条自己承担底部留白 */
+#appScreen #mailApp .mail-reader-panel { padding-bottom: 0 !important; }
+#appScreen #mailApp .mail-reader-actions {
+  position: sticky !important; bottom: 0 !important; z-index: 3;
+  display: flex; gap: 10px; justify-content: center;
+  margin: 8px -10px 0;                         /* 铺满面板横向、贴到面板底 */
+  padding: 6px 10px calc(6px + env(safe-area-inset-bottom));
+  border-top: 1px solid rgba(0, 0, 0, .06);
+  background: rgba(248, 250, 253, .94);
+  -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+}
+/* 阅读态把撰写 FAB（52×52 蓝色铅笔）藏掉：它固定在右下角，会压在「转发」上。
+   站点本来就有同类做法（`.mail-app.composing .mail-compose-button` 也是隐藏）。
+   Gmail 手机版进单封邮件后同样收掉撰写键 → 离开阅读页立刻回来。要恢复：删掉这一条即可。 */
+#appScreen #mailApp.mail-app.reading .mail-compose-button { display: none !important; }
+
+/* 按钮用「文字 + 图标」而不是两枚大胶囊：更贴 Gmail 底部动作行，也避免满屏等大的观感 */
+#appScreen #mailApp .mail-reader-actions button {
+  flex: 1 1 0; min-height: 48px; display: inline-flex; align-items: center; justify-content: center;
+  gap: 8px; padding: 0 12px;
+  border: 0; border-radius: 999px;
+  background: transparent; color: var(--m82-blue, #0b57d0);
+  font-size: 12.5px; font-weight: 600; cursor: pointer;
+}
+#appScreen #mailApp .mail-reader-actions button svg { width: 18px; height: 18px; }
+#appScreen #mailApp .mail-reader-actions button:active { background: #e9eef6; }
+@media (prefers-color-scheme: dark) {
+  #appScreen #mailApp .mail-reader-actions {
+    border-top-color: rgba(255, 255, 255, .1);
+    background: rgba(19, 19, 20, .92);
+  }
+  #appScreen #mailApp .mail-reader-actions button { background: transparent; color: #a8c7fa; }
+  #appScreen #mailApp .mail-reader-actions button:active { background: rgba(168, 199, 250, .14); }
+}
+
+</style>
+<!-- ==================== v111z84 · 时间线锁定 + 卡片防重 + 字号一次到位 ====================
+  报修三件事（用户 2026-10-07）：
+    ① 之前发的信息会跑到最新一条消息的前面 —— 重进聊天室后顺序被重排；
+    ② 之前的特殊卡片反复出现在「最新的消息点」；
+    ③ 切换到每一页时，字体渐进放大然后停止。
+
+  根因（都在存储/渲染的接缝上）：
+    ①+②：写盘走 v111z83 的「并集 + 按 data-created-at 排序」（mergeChatHistoryLineLists），
+          但界面插入一律「追加到底部」。两套规矩打架 ——
+          · 离线补发的消息带着旧时间戳补插到底部 → 下次渲染按时间戳被排到新消息上方；
+          · KOMO / ORDER 卡片永远没有 data-created-at（stampChatMessageLine 直接 return），
+            排序时「没有时间戳的排到最后」→ 每次写盘都被挪到列表末尾（最新的消息点）；
+          · 老卡片（红包/转账/查岗/INVITE/决策/KOMO）在快照里被挪到末尾后，一次次进房间
+            都从数据副本重建 → 反复出现在最新位置。
+    ③：v111z83 的 typeScale81 补丁为了不卡页面，把「抬字号」拆成每帧 8ms、
+       剩下的丢给 setTimeout 逐帧做 —— 用户看到的就是字号一格一格变大；
+       加上 MutationObserver(280ms 防抖) 与 applyGlobalFontScale 的重跑，每次切页都会再来一遍。
+
+  做法（不改旧代码，只加护栏）：
+    A. 【时间线锁定】在 DOM 入口（insertBefore / appendChild 到 #chatThreadBody）先把
+       data-created-at 归一化成「和眼前看到的顺序一致」：新消息按当前时间盖章，
+       迟到/回填的旧时间戳提升到前一条之后（原始到达时间留在 data-arrived-at 里照常显示），
+       没有时间戳的卡片按「前一条 + 1ms」落位。写盘再排序时，顺序与用户看到的一致，不再跳。
+    B. 【卡片防重 + 归位】卡片按 identity（data-*-id）去重：同一张卡在 DOM 里已有、
+       或它在历史快照里的位置在「当前渲染窗口之前」→ 不再重复插入；对老卡则从
+       id / 数据副本里找回真实时间戳，放回它本来该在的位置（而不是又冒到最底部）。
+       没有身份标记的旧卡（里程碑/退款/充值等同类渲染路径）用「同族 + 全文一致」认亲：
+       在 DOM 里找到同一张就把最新状态并过去，在窗口外的旧快照里找到就整条不插 ——
+       只认卡片，纯文字消息一个字节都不动（顺序问题不靠删行解决）。
+    C. 【字号一次到位】把 typeScale81 的同一套算法改成「同一帧内一次算完」（临时把
+       setTimeout 换成同步执行器跑它自己的 __typeScale81），并顺带修掉重复放大。
+       最终字号与现在完全一致，只是不再有「逐渐变大」的过程。
+
+  回退：整块删掉这个 <script id="v111z84TimelineJs"> 即可，旧代码一个字节都没动。
+   ============================================================================== -->
+<script id="v111z84TimelineJs">
+(function () {
+  'use strict';
+  if (window.__mobiusTimeline84) return;
+  window.__mobiusTimeline84 = true;
+
+  var SHARD_PREFIX = 'dream-messenger:chat-history:v3:room:';
+  var SETTINGS_KEY = 'dream_transmit_chat_settings_v1';
+  var KOMO_KEY = 'dream-messenger:komo-store:v1';
+  var STATS = { restamped: 0, reordered: 0, deduped: 0, healed: 0 };
+
+  function threadBody() { return document.getElementById('chatThreadBody'); }
+  function isLine(el) {
+    return !!el && el.nodeType === 1 && el.classList &&
+      (el.classList.contains('chat-message-line') || el.classList.contains('chat-call-system-message'));
+  }
+  function num(value) { var n = Number(value); return Number.isFinite(n) && n > 0 ? n : 0; }
+  function stampOf(el) { return el ? num(el.dataset && el.dataset.createdAt) : 0; }
+  function currentHandle() {
+    var body = threadBody();
+    var handle = body && body.dataset ? String(body.dataset.loadedChatHandle || '') : '';
+    if (!handle) handle = String((typeof window.currentPartnerHandle === 'string' && window.currentPartnerHandle) || '');
+    return handle.trim();
+  }
+  function prevLineOf(el, container) {
+    var node = el.previousElementSibling;
+    while (node && node.parentNode === container) {
+      if (isLine(node)) return node;
+      node = node.previousElementSibling;
+    }
+    return null;
+  }
+  /* 与站点自带 formatChatMessageTimestamp 同一口径（模块里的函数够不着，这里复制一份）。 */
+  function formatStamp(ts) {
+    var time = Number(ts) || Date.now();
+    var date = new Date(time), now = new Date();
+    var day = function (d) { return d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate(); };
+    var yesterday = new Date(now); yesterday.setDate(now.getDate() - 1);
+    var clock = String(date.getHours()).padStart(2, '0') + ':' + String(date.getMinutes()).padStart(2, '0');
+    if (day(date) === day(now)) return clock;
+    if (day(date) === day(yesterday)) return '昨天 ' + clock;
+    if (date.getFullYear() === now.getFullYear()) {
+      return String(date.getMonth() + 1).padStart(2, '0') + '月' + String(date.getDate()).padStart(2, '0') + '日 ' + clock;
+    }
+    return date.getFullYear() + '/' + String(date.getMonth() + 1).padStart(2, '0') + '/' + String(date.getDate()).padStart(2, '0') + ' ' + clock;
+  }
+  /* 迟到的消息显示它本来的到达时间（v111j5 的约定），但排序按锁定后的时间走。 */
+  function applyArrivedMeta(line) {
+    var arrived = num(line.dataset && line.dataset.arrivedAt);
+    if (!arrived || line.classList.contains('outgoing')) return;
+    var meta = line.querySelector('.chat-message-meta');
+    if (!meta) return;
+    var text = formatStamp(arrived);
+    var cur = String(meta.textContent || '');
+    var cut = cur.indexOf(' · ');
+    var next = cut >= 0 ? text + cur.slice(cut) : text;
+    if (cur !== next) meta.textContent = next;
+  }
+
+  /* ─────────────── A. 插入时把时间戳归一化成「眼前看到的顺序」 ─────────────── */
+  var ID_ATTRS = [
+    ['red', 'data-red-id'],
+    ['transfer', 'data-transfer-id'],
+    ['check-reply', 'data-check-reply-for'],
+    ['check-reply', 'data-check-reply-id'],
+    ['check', 'data-check-id'],
+    ['invite', 'data-invite-id'],
+    ['decision-answer', 'data-decision-answer-id'],
+    ['decision', 'data-decision-id'],
+    ['komo-order', 'data-komo-order-id'],
+    ['komo-request', 'data-komo-request-id'],
+    ['komo-pay', 'data-komo-pay-request-id'],
+    ['komo-flow', 'data-komo-flow-id'],
+    ['pending-incoming', 'data-pending-incoming-id']
+    /* 普通文字消息（data-message-id 是「收藏时才补」的临时身份）不参与去重：
+       用户口径 ① 的老消息问题是顺序，不是重复；宁可不动纯文字行。 */
+  ];
+  function attrValue(el, attr) {
+    if (!el || !el.getAttribute) return '';
+    var own = el.getAttribute(attr);
+    if (own) return String(own);
+    var holder = el.querySelector ? el.querySelector('[' + attr + ']') : null;
+    return holder ? String(holder.getAttribute(attr) || '') : '';
+  }
+  function cardIdentity(line) {
+    for (var i = 0; i < ID_ATTRS.length; i++) {
+      var kind = ID_ATTRS[i][0], attr = ID_ATTRS[i][1];
+      var id = attrValue(line, attr);
+      if (!id) continue;
+      if (kind === 'komo-pay') kind = line.querySelector('.chat-komo-pay-result') ? 'komo-pay-result' : 'komo-pay-request';
+      return { kind: kind, attr: attr, id: id };
+    }
+    return null;
+  }
+  function kindMatches(node, kind) {
+    if (!node || node.nodeType !== 1) return false;
+    var scope = (node.closest && node.closest('.chat-message-line, .chat-call-system-message')) || node;
+    if (kind === 'komo-pay-request') return !!scope.querySelector('.chat-komo-pay-request');
+    if (kind === 'komo-pay-result') return !!scope.querySelector('.chat-komo-pay-result');
+    if (kind === 'check') return !!scope.querySelector('.chat-check-bubble:not(.chat-check-reply-bubble)');
+    if (kind === 'check-reply') return !!scope.querySelector('.chat-check-reply-bubble');
+    return true;
+  }
+  /* 没有身份标记的老卡片（里程碑 / 退款 / 充值等 KOMO flow 卡走同一渲染路径、不带 id）：
+     用「同族 + 全文一致」认得同一个它，避免被当成新卡重新插到底部。只认卡片，不动纯文字行。 */
+  var CARD_SELECTORS = [
+    '.chat-red-envelope-bubble', '.chat-transfer-bubble', '.chat-check-bubble',
+    '.chat-invite-bubble', '.chat-decision-bubble', '.chat-komo-flow-bubble',
+    '.chat-komo-request-bubble', '.chat-komo-gift-bubble', '.chat-komo-pay-request', '.chat-komo-pay-result'
+  ];
+  function familyScope(line) {
+    if (!line || !line.querySelector) return null;
+    for (var i = 0; i < CARD_SELECTORS.length; i++) {
+      var hit = line.querySelector(CARD_SELECTORS[i]);
+      if (hit) return { scope: hit, family: CARD_SELECTORS[i] };
+    }
+    return null;
+  }
+  function signatureOf(line) {
+    var info = familyScope(line);
+    if (!info) return '';
+    var text = String(info.scope.textContent || '').replace(/\s+/g, '');
+    if (text.length < 6) return '';              /* 太短的文本不足以当成「同一张」 */
+    return info.family + '|' + text;
+  }
+  function findTwin(container, line) {
+    var sig = signatureOf(line);
+    if (!sig) return null;
+    var lines = container.querySelectorAll(':scope > .chat-message-line, :scope > .chat-call-system-message');
+    for (var i = 0; i < lines.length; i++) {
+      if (lines[i] === line) continue;
+      if (signatureOf(lines[i]) === sig) return lines[i];
+    }
+    return null;
+  }
+  var textIndex = { handle: '', upto: 0, blob: '' };
+  function storedTextBefore(handle, upto) {
+    /* 把「渲染窗口之外」那段历史行的可见文本拼成一份索引（按 handle 缓存）。 */
+    if (textIndex.handle === handle && textIndex.upto >= upto && textIndex.blob) return textIndex.blob;
+    var lines = readShardLines(handle);
+    if (!lines) return '';
+    var tpl = document.createElement('template');
+    var parts = [];
+    var stop = Math.min(upto, lines.length);
+    for (var i = 0; i < stop; i++) {
+      try { tpl.innerHTML = String(lines[i] || ''); parts.push(String(tpl.content.textContent || '')); } catch (_) {}
+    }
+    textIndex = { handle: handle, upto: upto, blob: parts.join('').replace(/\s+/g, '') };
+    return textIndex.blob;
+  }
+  function storedHasSignature(handle, line, loadedStart) {
+    if (!loadedStart || loadedStart <= 0 || !handle) return false;   /* 只在「渲染窗口之外」的旧卡上拦 */
+    var info = familyScope(line);
+    if (!info) return false;
+    var text = String(info.scope.textContent || '').replace(/\s+/g, '');
+    if (text.length < 8) return false;
+    var blob = storedTextBefore(handle, loadedStart);
+    return !!blob && blob.indexOf(text) >= 0;
+  }
+  function escapeValue(value) {
+    var text = String(value || '');
+    try { if (window.CSS && CSS.escape) return CSS.escape(text); } catch (_) {}
+    return text.replace(/["\\]/g, '\\$&');
+  }
+
+  /* 房间快照：只用来判断「这张卡在历史里的位置」，不写盘。 */
+  var shardCache = { handle: '', at: 0, lines: null };
+  function readShardLines(handle) {
+    if (!handle) return null;
+    var now = Date.now();
+    if (shardCache.handle === handle && shardCache.lines && now - shardCache.at < 1500) return shardCache.lines;
+    var lines = null;
+    try {
+      var raw = localStorage.getItem(SHARD_PREFIX + encodeURIComponent(handle));
+      if (raw) {
+        var parsed = JSON.parse(raw);
+        if (parsed && Array.isArray(parsed.lines)) lines = parsed.lines;
+      }
+    } catch (_) { lines = null; }
+    shardCache = { handle: handle, at: now, lines: lines };
+    return lines;
+  }
+  function storedIndexOf(handle, ident) {
+    var lines = readShardLines(handle);
+    if (!lines) return -1;
+    var needle = ident.attr + '="' + ident.id + '"';
+    for (var i = 0; i < lines.length; i++) { if (String(lines[i] || '').indexOf(needle) >= 0) return i; }
+    return -1;
+  }
+  function domHasCard(body, ident) {
+    var nodes;
+    try { nodes = body.querySelectorAll('[' + ident.attr + '="' + escapeValue(ident.id) + '"]'); }
+    catch (_) { return null; }
+    for (var i = 0; i < nodes.length; i++) { if (kindMatches(nodes[i], ident.kind)) return nodes[i]; }
+    return null;
+  }
+  /* 同一张卡的第二份：把最新状态搬到留着的那一份上，再丢掉新的（与站点自己的兜底去重同规矩）。 */
+  function absorbInto(existing, incoming) {
+    try {
+      var a = existing.closest ? (existing.closest('.chat-message-line, .chat-call-system-message') || existing) : existing;
+      var b = incoming.closest ? (incoming.closest('.chat-message-line, .chat-call-system-message') || incoming) : incoming;
+      var aBubble = a.querySelector('.chat-bubble'), bBubble = b.querySelector('.chat-bubble');
+      if (aBubble && bBubble && aBubble !== bBubble) { aBubble.innerHTML = bBubble.innerHTML; aBubble.className = bBubble.className; }
+    } catch (_) {}
+  }
+  function suppressDuplicate(container, line, handle) {
+    var ident = cardIdentity(line);
+    if (ident) {
+      var existing = domHasCard(container, ident);
+      if (existing) { absorbInto(existing, line); STATS.deduped += 1; return true; }
+      var index = storedIndexOf(handle, ident);
+      var loadedStart = num(container.dataset && container.dataset.historyLoadedStart);
+      if (index >= 0 && loadedStart > 0 && index < loadedStart) { STATS.deduped += 1; return true; }
+      return false;
+    }
+    /* 无身份标记的卡片（各卡片家族的旧版重渲染）：同族全文一致就归并，不新插一条。 */
+    var twin = findTwin(container, line);
+    if (twin) {
+      absorbInto(twin, line);
+      try { placeInOrder(container, twin); } catch (_) {}
+      STATS.deduped += 1;
+      return true;
+    }
+    if (storedHasSignature(handle, line, num(container.dataset && container.dataset.historyLoadedStart))) {
+      STATS.deduped += 1;
+      return true;
+    }
+    return false;
+  }
+
+  function normalizeOrder(nodes, container, ref) {
+    var prev = ref && ref.parentNode === container ? prevLineOf(ref, container) : (function () {
+      var last = container.lastElementChild;
+      while (last && !isLine(last)) last = last.previousElementSibling;
+      return last;
+    })();
+    for (var i = 0; i < nodes.length; i++) {
+      var line = nodes[i];
+      if (!isLine(line)) continue;
+      var prevStamp = prev ? stampOf(prev) : 0;
+      var cur = stampOf(line);
+      if (!cur) {
+        var meta = line.querySelector('.chat-message-meta');
+        var metaText = meta ? String(meta.textContent || '') : '';
+        /* 卡片没有 meta：按前一条 +1ms 落位，永远待在它该在的地方；
+           带「刚刚」的是一条刚产生的活消息：按现在盖章；
+           其余（老格式历史行）按位置锁定。 */
+        cur = !meta ? (prevStamp ? prevStamp + 1 : Date.now())
+          : (metaText.indexOf('刚刚') >= 0 ? Date.now() : (prevStamp ? prevStamp + 1 : Date.now()));
+        line.dataset.createdAt = String(cur);
+        STATS.restamped += 1;
+      } else if (prevStamp && cur <= prevStamp) {
+        /* 迟到/回填的消息：显示时间留给 data-arrived-at，排序时间锁到现在的位置。 */
+        if (!line.dataset.arrivedAt) {
+          line.dataset.arrivedAt = String(cur);
+          line.dataset.ts84Arrived = '1';
+        }
+        line.dataset.createdAt = String(prevStamp + 1);
+        STATS.restamped += 1;
+      }
+      applyArrivedMeta(line);
+      prev = line;
+    }
+  }
+  function prepareNode(container, node, ref) {
+    if (!node || !container) return true;
+    var handle = currentHandle();
+    if (node.nodeType === 11) {
+      var children = [].slice.call(node.children || []);
+      var kept = [];
+      for (var i = 0; i < children.length; i++) {
+        var child = children[i];
+        if (isLine(child) && suppressDuplicate(container, child, handle)) { try { node.removeChild(child); } catch (_) {} continue; }
+        kept.push(child);
+      }
+      normalizeOrder(kept, container, ref);
+      return true;
+    }
+    if (node.nodeType !== 1) return true;
+    if (node.parentNode === container) return true;              /* 只是移动，不重盖时间 */
+    if (!isLine(node)) return true;
+    if (suppressDuplicate(container, node, handle)) return false; /* 老卡片：不再重复插入 */
+    normalizeOrder([node], container, ref);
+    return true;
+  }
+
+  var nativeInsertBefore = Node.prototype.insertBefore;
+  var nativeAppendChild = Node.prototype.appendChild;
+  Node.prototype.insertBefore = function (node, ref) {
+    try {
+      if (this && this.id === 'chatThreadBody' && !prepareNode(this, node, ref || null)) return node;
+    } catch (_) {}
+    return nativeInsertBefore.call(this, node, ref);
+  };
+  Node.prototype.appendChild = function (node) {
+    try {
+      if (this && this.id === 'chatThreadBody' && !prepareNode(this, node, null)) return node;
+    } catch (_) {}
+    return nativeAppendChild.call(this, node);
+  };
+
+  /* ─────────────── B. 老卡片「归位」：从 id / 数据副本里找回真实时间 ─────────────── */
+  var blobs = { at: 0, settings: null, komo: null };
+  function blobCache() {
+    var now = Date.now();
+    if (blobs.settings && now - blobs.at < 2000) return blobs;
+    var settings = null, komo = null;
+    try {
+      var raw = localStorage.getItem(SETTINGS_KEY);
+      if (raw) settings = JSON.parse(raw);
+    } catch (_) { settings = null; }
+    try {
+      if (window.KomoStore && typeof window.KomoStore.exportData === 'function') komo = window.KomoStore.exportData();
+      else {
+        var rawKomo = localStorage.getItem(KOMO_KEY);
+        if (rawKomo) komo = JSON.parse(rawKomo);
+      }
+    } catch (_) { komo = null; }
+    blobs = { at: now, settings: settings, komo: komo };
+    return blobs;
+  }
+  /* 站点大量 id 形如 red-1759812345678-ab12 / order-tx-… ；取最后一个像 13 位毫秒的片段。 */
+  function timeFromId(id) {
+    var text = String(id || '');
+    var hits = text.match(/\d{13}/g);
+    if (!hits) return 0;
+    var floor = Date.UTC(2020, 0, 1), ceil = Date.now() + 2 * 86400000;
+    for (var i = hits.length - 1; i >= 0; i--) {
+      var ts = Number(hits[i]);
+      if (ts >= floor && ts <= ceil) return ts;
+    }
+    return 0;
+  }
+  function findIn(list, id) {
+    if (!Array.isArray(list)) return null;
+    for (var i = 0; i < list.length; i++) { if (list[i] && String(list[i].id || '') === String(id)) return list[i]; }
+    return null;
+  }
+  function recoverTrueTime(line, ident) {
+    if (!ident) return 0;
+    var fromId = timeFromId(ident.id);
+    if (fromId) return fromId;
+    var cache = blobCache();
+    var settings = cache.settings || {};
+    var komo = cache.komo || {};
+    var record = null;
+    if (ident.kind === 'red') {
+      for (var key in settings) {
+        if (!Object.prototype.hasOwnProperty.call(settings, key)) continue;
+        record = findIn(settings[key] && settings[key].redEnvelopes, ident.id);
+        if (record) break;
+      }
+      if (record) {
+        if (record.expiresAt) return Number(record.expiresAt) - 86400000;
+        if (record.claimedAt) return Number(record.claimedAt);
+      }
+      return 0;
+    }
+    var pick = function (containerKey, listKey, fields) {
+      var room = settings[containerKey];
+      var item = findIn(room && room[listKey], ident.id);
+      if (!item) return 0;
+      for (var f = 0; f < fields.length; f++) { var value = num(item[fields[f]]); if (value) return value; }
+      return 0;
+    };
+    for (var handle in settings) {
+      if (!Object.prototype.hasOwnProperty.call(settings, handle)) continue;
+      var room = settings[handle];
+      if (!room || typeof room !== 'object') continue;
+      if (ident.kind === 'transfer') {
+        var tr = findIn(room.transferRecords, ident.id);
+        if (tr) return num(tr.createdAt) || num(tr.time && Date.parse(tr.time)) || 0;
+      } else if (ident.kind === 'check') {
+        var ck = findIn(room.checkHistory, ident.id);
+        if (ck) return num(ck.createdAt);
+      } else if (ident.kind === 'check-reply') {
+        var cr = findIn(room.checkHistory, ident.id);
+        if (cr) return num(cr.repliedAt) || num(cr.createdAt);
+      } else if (ident.kind === 'invite') {
+        var iv = findIn(room.inviteHistory, ident.id);
+        if (iv) return num(iv.createdAt);
+      } else if (ident.kind === 'decision') {
+        var dc = findIn(room.decisionRecords, ident.id);
+        if (dc) return num(dc.createdAt);
+      } else if (ident.kind === 'decision-answer') {
+        var da = findIn(room.decisionRecords, ident.id);
+        if (da) return num(da.answeredAt) || num(da.createdAt);
+      }
+    }
+    if (ident.kind === 'komo-order') {
+      var order = findIn(komo.orders, ident.id);
+      if (order) return num(order.createdAt);
+    }
+    if (ident.kind === 'komo-request') {
+      var request = findIn(komo.shoppingRequests, ident.id);
+      if (request) return num(request.sentAt) || num(request.createdAt);
+    }
+    if (ident.kind === 'komo-pay-request' || ident.kind === 'komo-pay-result') {
+      var task = findIn(komo.payTasks || komo.sponsorTasks || komo.tasks, ident.id);
+      if (task) return num(task.createdAt) || num(task.sentAt) || num(task.completedAt);
+    }
+    if (ident.kind === 'komo-flow') {
+      var entry = findIn(komo.ledger, ident.id);
+      if (entry) return num(entry.createdAt);
+      var flowOrder = findIn(komo.orders, ident.id);
+      if (flowOrder) return num(flowOrder.createdAt);
+    }
+    return 0;
+  }
+  function placeInOrder(container, line) {
+    var stamp = stampOf(line);
+    if (!stamp) return;
+    /* 找到「第一个比它晚的消息」：它应当排在这条前面。已经站对就不动。 */
+    var node = container.firstElementChild, anchor = null;
+    while (node) {
+      if (node !== line && isLine(node) && stampOf(node) > stamp) { anchor = node; break; }
+      node = node.nextElementSibling;
+    }
+    if (!anchor) return;
+    var placed = true;
+    try { placed = !(line.compareDocumentPosition(anchor) & Node.DOCUMENT_POSITION_PRECEDING); } catch (_) { placed = true; }
+    if (placed) return;                     /* 已经在它前面，不折腾 */
+    try { nativeInsertBefore.call(container, line, anchor); STATS.reordered += 1; } catch (_) {}
+  }
+  function pingSave(container) {
+    /* 站点只监听 childList —— 借一次「插入再移除」的空节点，让它把这一轮修复写盘。 */
+    try {
+      var marker = document.createElement('span');
+      marker.setAttribute('data-ts84-ping', '1');
+      marker.style.display = 'none';
+      nativeAppendChild.call(container, marker);
+      container.removeChild(marker);
+    } catch (_) {}
+  }
+  function healThread(reason) {
+    var container = threadBody();
+    if (!container) return 0;
+    var handle = currentHandle();
+    var lines = [].slice.call(container.querySelectorAll(':scope > .chat-message-line, :scope > .chat-call-system-message'));
+    if (!lines.length) return 0;
+    var changed = false;
+    var prevStamp = 0;
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i];
+      var cur = stampOf(line);
+      var ident = cardIdentity(line);
+      var truth = recoverTrueTime(line, ident);
+      if (truth && Math.abs(truth - cur) > 1000) {
+        /* 找到了这张卡真正的发生时间：以它为准（本补丁自己锁的时间让位，
+           站点原生的「迟到到达时间」照旧保留）。 */
+        if (line.dataset.ts84Arrived === '1') { delete line.dataset.arrivedAt; delete line.dataset.ts84Arrived; }
+        line.dataset.createdAt = String(truth);
+        cur = truth;
+        changed = true;
+        STATS.restamped += 1;
+      } else if (!cur || cur <= prevStamp) {
+        if (cur && !line.dataset.arrivedAt) {
+          line.dataset.arrivedAt = String(cur);
+          line.dataset.ts84Arrived = '1';
+        }
+        cur = prevStamp + 1;
+        line.dataset.createdAt = String(cur);
+        changed = true;
+        STATS.restamped += 1;
+      }
+      if (cur) prevStamp = cur;
+      applyArrivedMeta(line);
+    }
+    if (changed) { STATS.healed += 1; }
+    for (var j = 0; j < lines.length; j++) placeInOrder(container, lines[j]);
+    if (changed) pingSave(container);
+    return 1;
+  }
+  /* 进房间后让站点自己的恢复流程跑完，再修复一次（幂等，重复调用无副作用）。 */
+  function scheduleHeal() {
+    [180, 520, 1200, 2400].forEach(function (delay) {
+      window.setTimeout(function () { try { healThread('settle'); } catch (_) {} }, delay);
+    });
+  }
+  function wrapOpenConversation() {
+    if (typeof window.openConversation !== 'function' || window.openConversation.__ts84) return;
+    var original = window.openConversation;
+    var wrapped = function () {
+      var out = original.apply(this, arguments);
+      scheduleHeal();
+      return out;
+    };
+    wrapped.__ts84 = true;
+    window.openConversation = wrapped;
+  }
+  if (typeof window.loadEarlierChatHistoryPage === 'function' && !window.loadEarlierChatHistoryPage.__ts84) {
+    var originalPage = window.loadEarlierChatHistoryPage;
+    var wrappedPage = function () {
+      var out = originalPage.apply(this, arguments);
+      scheduleHeal();
+      return out;
+    };
+    wrappedPage.__ts84 = true;
+    window.loadEarlierChatHistoryPage = wrappedPage;
+  }
+  wrapOpenConversation();
+  window.addEventListener('load', function () { wrapOpenConversation(); scheduleHeal(); });
+  if (document.readyState !== 'loading') scheduleHeal();
+
+  /* ─────────────── C. 字号：同一套算法，一次算完（不再逐帧放大） ─────────────── */
+  function runTypeScaleInstant() {
+    if (typeof window.__typeScale81 !== 'function') return;
+    var originalSetTimeout = window.setTimeout;
+    try {
+      /* typeScale81 把工作拆成每帧 8ms、剩下的交给 setTimeout。
+         这里临时把 setTimeout 换成「立刻执行」，让同一帧里一次算完 ——
+         算法、字号阶梯、校验全部照旧，只是没有中间态可看。 */
+      window.setTimeout = function (fn) { try { if (typeof fn === 'function') fn(); } catch (_) {} return 0; };
+      window.__typeScale81();
+    } catch (_) {} finally {
+      window.setTimeout = originalSetTimeout;
+    }
+  }
+  var typeScalePending = false;
+  var typeScaleLastRun = 0;
+  function scheduleTypeScale() {
+    if (typeScalePending) return;
+    typeScalePending = true;
+    var raf = window.requestAnimationFrame || function (fn) { return window.setTimeout(fn, 16); };
+    raf(function () {
+      typeScalePending = false;
+      var now = performance.now();
+      var wait = Math.max(0, 120 - (now - typeScaleLastRun));
+      if (!wait) { typeScaleLastRun = performance.now(); runTypeScaleInstant(); return; }
+      window.setTimeout(function () { typeScaleLastRun = performance.now(); runTypeScaleInstant(); }, wait);
+    });
+  }
+  (function observeTypeScale() {
+    var screen = document.getElementById('appScreen') || document.body;
+    if (!screen) return;
+    try {
+      new MutationObserver(function (records) {
+        for (var i = 0; i < records.length; i++) {
+          if (records[i].addedNodes && records[i].addedNodes.length) { scheduleTypeScale(); return; }
+        }
+      }).observe(screen, { childList: true, subtree: true });
+    } catch (_) {}
+  })();
+  (function wrapFontScale() {
+    if (typeof window.applyGlobalFontScale !== 'function' || window.applyGlobalFontScale.__ts84) return;
+    var original = window.applyGlobalFontScale;
+    var wrapped = function () {
+      var out = original.apply(this, arguments);
+      scheduleTypeScale();
+      return out;
+    };
+    wrapped.__ts84 = true;
+    window.applyGlobalFontScale = wrapped;
+  })();
+  scheduleTypeScale();
+  window.addEventListener('load', scheduleTypeScale);
+  window.setTimeout(scheduleTypeScale, 400);
+  window.setTimeout(scheduleTypeScale, 1500);
+
+  window.mobiusTimeline84 = {
+    version: 'v111z84',
+    heal: function () { return healThread('manual'); },
+    stats: function () { return Object.assign({}, STATS); },
+    typeScale: runTypeScaleInstant
+  };
+  try { console.info('[v111z84] 时间线锁定 / 卡片防重 / 字号一次到位 已启用'); } catch (_) {}
+})();
+</script>
+
 </body>
 </html>
