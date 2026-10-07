@@ -1,0 +1,22 @@
+/* 场景⑦：写盘时要把「全局字号」留下的内联字号与标记剥掉（聊天记录不该带设备字号）。 */
+const { api, storage, document, ctx } = require('./harness');
+const H = 'h1';
+api.setHandle(H);
+api.setSettings(H, { deletedSpecialMessageIds: [], deletedChatLineKeys: [], redEnvelopes: [], transferRecords: [], checkHistory: [], decisionRecords: [], inviteHistory: [] });
+const T0 = Date.UTC(2026, 9, 1, 10, 0, 0);
+const withFont = `<div class="chat-message-line incoming" data-message-kind="text" data-created-at="${T0}" data-global-base-font-size="16" data-global-font-scale-applied="1.15" data-global-font-harmony-base="16" style="font-size: 17.39px !important; color: rgb(20,20,21);"><div class="chat-message-avatar partner-avatar"></div><div class="chat-message-content"><div class="chat-bubble">你好</div><div class="chat-message-meta">10:00</div></div></div>`;
+const plain = `<div class="chat-message-line outgoing" data-message-kind="text" data-created-at="${T0 + 60000}"><div class="chat-message-avatar self-avatar"></div><div class="chat-message-content"><div class="chat-bubble">早</div><div class="chat-message-meta">10:01 · 已送达</div></div></div>`;
+storage.set('dream-messenger:chat-history:room:h1', JSON.stringify({ storageVersion: 4, updatedAt: T0, lines: [withFont, plain] }));
+storage.set('dream-messenger:chat-history:rooms', JSON.stringify(['h1']));
+const body = document.getElementById('chatThreadBody');
+body.innerHTML = '<div id="chatTyping"></div>';
+ctx.restoringChatHistory = false;
+api.restoreChatHistory(H, {});
+ctx.restoringChatHistory = false;
+api.saveChatHistoryForHandle(H, { reason: 'test' });
+const lines = JSON.parse(storage.get('dream-messenger:chat-history:room:h1')).lines;
+const first = lines.find(l => l.includes('你好'));
+console.log('存储里还带字号标记吗 =', /data-global-/.test(first));
+console.log('存储里还有内联 font-size 吗 =', /font-size/.test(first));
+console.log('其它内联样式保留了吗 =', /color:\s*rgb\(20,\s*20,\s*21\)/.test(first));
+console.log('DOM 里的那行还有内联字号吗 =', Boolean(body.querySelector('.chat-message-line').style.fontSize));

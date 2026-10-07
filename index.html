@@ -13,9 +13,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Möbius">
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png?v=v111z76">
-  <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon-180.png?v=v111z76">
-  <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png?v=v111z76">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png?v=v111z77">
+  <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon-180.png?v=v111z77">
+  <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png?v=v111z77">
   <!-- 填写后端 Web Push 配置后，页面关闭或系统锁屏时也可由推送服务器唤醒 SW。 -->
   <meta name="dream-push-vapid-public-key" content="">
   <meta name="dream-push-subscribe-endpoint" content="">
@@ -18615,31 +18615,23 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       return base;
     }
 
+    /* v111z77：单元素入口保留（外部/排障代码可能调用），但实现统一走「读-写分离」的
+       批处理版本 applyGlobalFontScaleToTree —— 逐元素「读一个写一个」正是「字体一格一格
+       长大」的根因，这里不再保留第二份实现。 */
     function applyGlobalFontScaleToElement(element, scale) {
-      if (!isGlobalFontScaleTarget(element)) return;
-      const computedStyle = window.getComputedStyle(element);
-      const computed = parseFloat(computedStyle.fontSize || '');
-      const parentComputed = element.parentElement ? parseFloat(window.getComputedStyle(element.parentElement).fontSize || '') : NaN;
-      const inheritedFromParent = element.id !== 'appScreen' && !element.style.fontSize && Number.isFinite(parentComputed) && Number.isFinite(computed) && Math.abs(parentComputed - computed) < .01;
-      if (inheritedFromParent) {
-        element.dataset.globalFontInherited = 'true';
-        return;
-      }
-      delete element.dataset.globalFontInherited;
-      const appliedMultiplier = Number(element.dataset.globalFontMultiplierApplied) || 1;
-      if (!element.dataset.globalBaseFontSize && Number.isFinite(computed) && computed > 0) element.dataset.globalBaseFontSize = String(computed / (element.dataset.globalFontMultiplierApplied ? appliedMultiplier : 1));
-      const base = parseFloat(element.dataset.globalBaseFontSize || '');
-      if (Number.isFinite(base) && base > 0) {
-        const harmonizedBase = getHarmonizedGlobalFontBaseSize(base);
-        const multiplier = getHarmonizedGlobalFontMultiplier(harmonizedBase, scale);
-        const readableSize = Math.max(7.5, harmonizedBase * multiplier);
-        element.style.setProperty('font-size', `${readableSize}px`, 'important');
-        element.dataset.globalFontMultiplierApplied = String(multiplier);
-        element.dataset.globalFontScaleApplied = String(scale);
-        element.dataset.globalFontHarmonyBase = String(harmonizedBase);
-      }
+      if (!element) return;
+      applyGlobalFontScaleToTree(element, scale);
     }
 
+    /* ⚠ v111z77 · 字号必须「一帧到位」，不许再一段一段长大。
+       旧实现按 7ms 一批、每批里「读一个元素的 getComputedStyle → 立刻写它的 font-size」
+       交替进行：写字号会让整页布局失效，下一次 getComputedStyle 又强制整页重排 ——
+       几千个元素就是几千次重排，用户看到的就是「切换到每一页时字体慢慢变大好几秒才停」。
+       现在的做法：
+         ① 已经按当前比例算过的元素直接跳过（连 getComputedStyle 都不调）——
+            切页面、来新消息时几乎零成本；
+         ② 剩下要算的先**全部读完**（一次样式计算），再**统一写回**（一次布局）——
+            整页只在同一帧里变一次，不再逐格放大。 */
     function applyGlobalFontScaleToTree(root, scale) {
       if (!root) return;
       /* ⚠ v88 性能：scale===1 时这整棵树的遍历是纯浪费 —— 每个元素要跑两次
@@ -18647,36 +18639,101 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
          监听 appScreen 整个 subtree，打开 KOMO 插入 1024 个节点就触发同样次数的遍历。
          CPU 采样里 applyGlobalFontScaleToElement 合计占 12.7%，全是白烧。
          缩放为 1 时直接返回；用户真调过字号才走原路径。 */
-      if (Math.abs(Number(scale) - 1) < 0.001) return;
-      const version = globalFontScaleApplyVersion;
+      if (Math.abs(Number(scale) - 1) < 0.001) {
+        /* v111z77：调回 100% 时必须把我们写过的内联字号撤掉 —— 否则「放大过再调回来」
+           的字号永远回不到原样（内联 !important 会一直盖住样式表）。
+           只撤自己写下的（带 globalFontScaleApplied 标记的）元素，别人的内联字号不动。 */
+        const touched = [root, ...(root.querySelectorAll?.('[data-global-font-scale-applied]') || [])];
+        touched.forEach(element => {
+          if (!element || element.nodeType !== 1 || !element.dataset.globalFontScaleApplied) return;
+          element.style.removeProperty('font-size');
+          delete element.dataset.globalFontScaleApplied;
+          delete element.dataset.globalFontMultiplierApplied;
+          delete element.dataset.globalBaseFontSize;
+          delete element.dataset.globalFontHarmonyBase;
+          delete element.dataset.globalFontInherited;
+        });
+        return;
+      }
+      const scaleKey = String(scale);
       const elements = [root, ...(root.querySelectorAll?.(GLOBAL_FONT_SCALE_TEXT_SELECTOR) || [])];
-      let index = 0;
-      const processChunk = () => {
-        if (version !== globalFontScaleApplyVersion) return;
-        const start = performance.now();
-        while (index < elements.length && performance.now() - start < 7) {
-          applyGlobalFontScaleToElement(elements[index], scale);
-          index += 1;
+      /* 第一遍：只读 —— 把需要重算的元素、以及它们「写回之前」的字号一次性读出来。
+         这一步里一个样式都不写，所以整棵树只会发生一次样式计算。 */
+      const targets = [];
+      const measured = [];
+      for (let index = 0; index < elements.length; index += 1) {
+        const element = elements[index];
+        if (!element || element.nodeType !== 1) continue;
+        if (element.style && element.style.fontSize && element.dataset.globalFontScaleApplied === scaleKey) continue;
+        if (!isGlobalFontScaleTarget(element)) continue;
+        let computed = NaN;
+        let parentComputed = NaN;
+        try { computed = parseFloat(window.getComputedStyle(element).fontSize || ''); } catch (_) {}
+        if (element.parentElement) { try { parentComputed = parseFloat(window.getComputedStyle(element.parentElement).fontSize || ''); } catch (_) {} }
+        targets.push(element);
+        measured.push([computed, parentComputed]);
+      }
+      /* 第二遍：统一写回（这一遍里不再读样式，所以只会触发一次布局）。
+         ⚠ 父级的「写回后字号」用 appliedSizes 模拟 —— 文档顺序保证父级先算，
+         效果与旧实现逐个元素「父级先写、子级再读」完全一致，
+         又不会有每写一个元素就强制一次整页重排的开销。 */
+      const appliedSizes = new Map();
+      for (let index = 0; index < targets.length; index += 1) {
+        const element = targets[index];
+        const computed = measured[index][0];
+        const parentComputed = measured[index][1];
+        const parentNext = element.parentElement && appliedSizes.has(element.parentElement)
+          ? appliedSizes.get(element.parentElement)
+          : parentComputed;
+        const inheritedFromParent = element.id !== 'appScreen' && !element.style.fontSize && Number.isFinite(parentNext) && Number.isFinite(computed) && Math.abs(parentNext - computed) < .01;
+        if (inheritedFromParent) {
+          element.dataset.globalFontInherited = 'true';
+          appliedSizes.set(element, parentNext);
+          continue;
         }
-        if (index < elements.length) {
-          const schedule = window.requestAnimationFrame || (callback => window.setTimeout(callback, 0));
-          schedule(processChunk);
-        }
-      };
-      processChunk();
+        delete element.dataset.globalFontInherited;
+        const appliedMultiplier = Number(element.dataset.globalFontMultiplierApplied) || 1;
+        if (!element.dataset.globalBaseFontSize && Number.isFinite(computed) && computed > 0) element.dataset.globalBaseFontSize = String(computed / (element.dataset.globalFontMultiplierApplied ? appliedMultiplier : 1));
+        const base = parseFloat(element.dataset.globalBaseFontSize || '');
+        if (!(Number.isFinite(base) && base > 0)) continue;
+        const harmonizedBase = getHarmonizedGlobalFontBaseSize(base);
+        const multiplier = getHarmonizedGlobalFontMultiplier(harmonizedBase, scale);
+        const readableSize = Math.max(7.5, harmonizedBase * multiplier);
+        element.style.setProperty('font-size', `${readableSize}px`, 'important');
+        element.dataset.globalFontMultiplierApplied = String(multiplier);
+        element.dataset.globalFontScaleApplied = scaleKey;
+        element.dataset.globalFontHarmonyBase = String(harmonizedBase);
+        appliedSizes.set(element, readableSize);
+      }
     }
 
     function observeGlobalFontScale() {
       const screen = document.getElementById('appScreen');
       if (!screen || globalFontScaleObserver) return;
+      /* v111z77 · 把「这一帧里新加的节点」攒起来，一帧只扫一次。
+         切页面 / 进房间会一口气插入几百个节点，逐个扫等于把同一棵子树来回扫几百遍
+         —— 那正是用户看到的「字体一小步一小步长大」。 */
+      let pendingNodes = null;
+      let pendingFrame = 0;
+      const flushGlobalFontScaleNodes = () => {
+        pendingFrame = 0;
+        const batch = pendingNodes;
+        pendingNodes = null;
+        if (!batch || !batch.size) return;
+        const scale = loadGlobalAppSettings().fontScale / 100;
+        if (Math.abs(scale - 1) < 0.001) return;
+        batch.forEach(node => { if (node.isConnected) applyGlobalFontScaleToTree(node, scale); });
+      };
       globalFontScaleObserver = new MutationObserver(records => {
         const scale = loadGlobalAppSettings().fontScale / 100;
         // v88：默认字号下直接短路，不进遍历（observer 本身的回调开销无法避免，
         // 但可以避免它后面那串 getComputedStyle）。
         if (Math.abs(scale - 1) < 0.001) return;
-        records.forEach(record => record.addedNodes?.forEach(node => {
-          if (node.nodeType === 1) applyGlobalFontScaleToTree(node, scale);
-        }));
+        if (!pendingNodes) pendingNodes = new Set();
+        records.forEach(record => record.addedNodes?.forEach(node => { if (node.nodeType === 1) pendingNodes.add(node); }));
+        if (pendingFrame) return;
+        const schedule = window.requestAnimationFrame || (callback => window.setTimeout(callback, 16));
+        pendingFrame = schedule(flushGlobalFontScaleNodes);
       });
       globalFontScaleObserver.observe(screen, { childList: true, subtree: true });
     }
@@ -24461,10 +24518,12 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       else setSelfChatAvatarVisual(avatar);
       if (incoming) line.append(avatar, content); else line.append(content, avatar);
       /* v111z76 · 按数据副本补出来的老转账卡：带上它当年那一笔的时间，并插回原来的位置，
-         否则它会一直顶着「最新一条消息」出现（用户报的「旧卡片反复出现在最新消息点」）。 */
+         否则它会一直顶着「最新一条消息」出现（用户报的「旧卡片反复出现在最新消息点」）。
+         v111z77：副本里没有可用时间（只剩「刚刚」这类显示文案）时也按老卡处理，
+         插到这一屏最上面并固定下来，不再每次进房间都顶着最新消息。 */
       const cardAt = chatRecordTimeValue(record);
       if (cardAt > 0) line.dataset.createdAt = String(cardAt);
-      insertChatLineByTime(line, cardAt);
+      insertChatLineByTime(line, cardAt, { oldCard: true });
       if (!incoming) {
         line.dataset.receiptStatus = 'unread';
         stampChatMessageLine(line);
@@ -24507,10 +24566,11 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       if (incoming) setChatAvatarVisual(avatar, currentPartnerInitials, currentPartnerVisual);
       else setSelfChatAvatarVisual(avatar);
       if (incoming) line.append(avatar, content); else line.append(content, avatar);
-      /* v111z76 · 同转账卡：老红包卡按副本时间落位，不再被补成「刚刚」顶到末尾。 */
+      /* v111z76 · 同转账卡：老红包卡按副本时间落位，不再被补成「刚刚」顶到末尾。
+         v111z77：副本里没有可用时间时同样按老卡处理（插到这一屏最上面并固定）。 */
       const cardAt = chatRecordTimeValue(record);
       if (cardAt > 0) line.dataset.createdAt = String(cardAt);
-      insertChatLineByTime(line, cardAt);
+      insertChatLineByTime(line, cardAt, { oldCard: true });
       if (!incoming) {
         line.dataset.receiptStatus = 'unread';
         stampChatMessageLine(line);
@@ -24725,7 +24785,9 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       (settings.checkHistory || []).forEach(record => {
         if (buriedChecks.has(`check:${record.id}`)) return;
         // v111z76：把记录自己的时间带进去 —— 补出来的老查岗卡会落回当年那一行，而不是被补成「刚刚」。
-        if (!existingIds.has(record.id)) sendChatCheckCard(record.text, record.direction, { id: record.id, time: record.time, createdAt: chatRecordTimeValue(record), kind: record.kind || (record.direction === 'out' && record.status === 'replied' ? 'reply' : ''), status: record.status, answered: record.direction === 'out' && record.kind === 'question' && record.status === 'replied', persist: false });
+        /* v111z77：带 restored 标记 —— 让 insertChatLineByTime 知道这是「从记录补出来的老卡」，
+           副本里没有可用时间时插到这一屏最上面，而不是顶到最新消息点。 */
+        if (!existingIds.has(record.id)) sendChatCheckCard(record.text, record.direction, { id: record.id, time: record.time, createdAt: chatRecordTimeValue(record), kind: record.kind || (record.direction === 'out' && record.status === 'replied' ? 'reply' : ''), status: record.status, answered: record.direction === 'out' && record.kind === 'question' && record.status === 'replied', persist: false, restored: true });
         if (record.direction === 'out' && (record.kind || 'question') === 'question' && record.status !== 'replied') scheduleDirectCheckReply(record, handle);
       });
       if (settings.pendingCheck && currentPartnerHandle === handle) {
@@ -24904,7 +24966,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
          并插回原来的位置；新发起的查岗没有 options.createdAt，行为与以前一致（追加到末尾）。 */
       const cardAt = Number(options.createdAt) || 0;
       if (cardAt > 0) line.dataset.createdAt = String(cardAt);
-      insertChatLineByTime(line, cardAt);
+      insertChatLineByTime(line, cardAt, { oldCard: options.restored === true });
       if (!incoming) {
         line.dataset.receiptStatus = 'unread';
         stampChatMessageLine(line);
@@ -25637,7 +25699,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
     /* v111z36：本版实际包含 —— 引用只在所属房间取（不再串房）/ 房间切换不再抛
        insertBefore / 回到前台不再补发到点的主动来电 / 表情包上传压图·失败说清·失效占位。
        换壳时用同一个版本号比对离线壳，改完记得和 sw.js 的 CACHE_VERSION 一起动。 */
-    window.MOBIUS_SHELL_EXPECT = 'v111z76';
+    window.MOBIUS_SHELL_EXPECT = 'v111z77';
     function comboDebug(msg) {
       try {
         if (localStorage.getItem('mobius:combo-debug') !== '1') return;
@@ -26191,8 +26253,10 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
           以前恢复历史时也给没有时间戳的老行补 Date.now()，等于把这条老消息宣告成「刚刚发的」，
           写回历史后它排到最新一条旁边（用户看到的「之前发的信息跑到最新一条消息前面」），
           而磁盘上那一份没有时间戳 —— 两份身份对不上，于是每进一次房间就多复制一份
-          （实测：12 条老消息进出几次变成 36 条，全挤在最新消息那一端）。 */
-    function stampChatMessageLine(line, inheritedAt) {
+          （实测：12 条老消息进出几次变成 36 条，全挤在最新消息那一端）。
+       displayAt 是 v111z77 新加的「只给时间文案用、不写进 data-created-at」的参数：
+       没有时间戳的老行按「左边最近一条的时间」显示，而不是把自己的时间文案改成「现在」。 */
+    function stampChatMessageLine(line, inheritedAt, displayAt) {
       if (!line?.classList.contains('chat-message-line')) return;
       if (isKomoCardChatLine(line)) { stripKomoCardMeta(line); return; }
       if (!Number(line.dataset.createdAt) && inheritedAt !== 0) {
@@ -26204,8 +26268,10 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       if (line.classList.contains('outgoing')) {
         updateChatLineReceipt(line, line.dataset.receiptStatus || 'delivered');
       } else {
-        meta.dataset.receiptBase = formatChatMessageTimestamp(line.dataset.createdAt);
-        meta.textContent = meta.dataset.receiptBase;
+        /* v111z77：行上没有时间戳时，绝不再把「现在」写成时间文案 —— 那会让老消息
+           看起来像刚发出来的（并跟着写进存档）。有左边邻居的时间就沿用它，没有就保持原样。 */
+        const showAt = Number(line.dataset.createdAt) || Number(displayAt) || 0;
+        if (showAt > 0) { meta.dataset.receiptBase = formatChatMessageTimestamp(showAt); meta.textContent = meta.dataset.receiptBase; }
       }
     }
 
@@ -26348,11 +26414,42 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       try { sanitizeChatQuoteBlocks(body); } catch (_) {}
       /* v111z8：老历史里的字卡请求卡还带着「拼不出来」那句提示 —— 写回之前也剥掉 */
       try { sanitizeGlyphRequestBubbles(body); } catch (_) {}
-      lines.forEach(stampChatMessageLine);
+      /* ⚠ v111z77 · 写盘时**不许**给没有时间戳的行补时间戳。
+         旧写法是 `lines.forEach(stampChatMessageLine)`：forEach 会把「数组下标」当成
+         inheritedAt 传进去 —— 第 0 行因为 inheritedAt===0 被当成「正在恢复历史」不补，
+         第 1 行开始每行补上 `data-created-at="1"`、`"2"`…（等于 1970 年），
+         于是一进房间、一写盘，老卡片 / 老消息就被搬到最前面（长时间轴里直接落到渲染窗口
+         之外，看起来像「卡片消失/乱跑」）；而房间最后一条要是老行，又会一路漂到最新一端。
+         现在：老行的时间戳保持「没有」，只在显示文案上沿用左边最近一条的时间
+         （并集排序对「缺时间戳」的行本来就是「沿用左边最近的时间、原地不动」）。 */
+      let inheritDisplayAt = 0;
+      lines.forEach(line => {
+        const own = Number(line.dataset.createdAt) || 0;
+        if (own) inheritDisplayAt = own;
+        stampChatMessageLine(line, 0, own ? 0 : inheritDisplayAt);
+      });
       // 不设任何条数/体积上限（用户指令：系统不得自动删除聊天记录）；存储真写满时由 writeDreamJSON 如实提示，删什么由用户决定。
+      /* v111z77 · 全局字号是「每台设备每次渲染」的事，不该被写进聊天记录：
+         写进去会让每一条老消息都带着一个当时算好的 font-size 和内联标记，
+         换设备 / 改字号后这些死字号要么显得不对，要么一路把字号叠大
+         （内联尺寸被当成「原始字号」重新放大）。存之前把它们剥掉，
+         渲染时由 applyGlobalFontScale 按当前设置重新算 —— 这才是常态。 */
+      const FONT_ARTIFACT_ATTR = '(?:data-global-font-(?:scale-applied|multiplier-applied|harmony-base|inherited)|data-global-base-font-size)';
+      const FONT_ARTIFACT_TAG = new RegExp(`<[a-z][^>]*${FONT_ARTIFACT_ATTR}\\b[^>]*>`, 'gi');
+      const FONT_ARTIFACT_ATTR_G = new RegExp(`\\s${FONT_ARTIFACT_ATTR}(?:="[^"]*")?`, 'gi');
+      const stripGlobalFontArtifacts = html => {
+        const text = String(html || '');
+        if (!text.includes('data-global-')) return text;
+        return text.replace(FONT_ARTIFACT_TAG, tag => tag
+          .replace(FONT_ARTIFACT_ATTR_G, '')
+          .replace(/\sstyle="([^"]*)"/i, (match, css) => {
+            const kept = String(css).split(';').map(part => part.trim()).filter(part => part && !/^font-size\s*:/i.test(part));
+            return kept.length ? ` style="${kept.join('; ')}"` : '';
+          }));
+      };
       const serialized = lines.map(line => {
         // [PERF] 绝大多数纯文字消息不含媒体，直接取 outerHTML，跳过整棵子树的深拷贝。
-        if (!line.matches?.('[data-dream-media-source],[data-avatar-source]') && !line.querySelector?.('[data-dream-media-source],[data-avatar-source]')) return line.outerHTML;
+        if (!line.matches?.('[data-dream-media-source],[data-avatar-source]') && !line.querySelector?.('[data-dream-media-source],[data-avatar-source]')) return stripGlobalFontArtifacts(line.outerHTML);
         // blob: URL 只在当前页面生命周期内有效，刷新后必然失效。序列化前把它还原成 IndexedDB 的持久媒体引用。
         const clone = line.cloneNode(true);
         const mediaNodes = [];
@@ -26366,7 +26463,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
           const source = String(avatar.dataset.avatarSource || '');
           if (isDreamMediaReference(source) || String(avatar.style.backgroundImage || '').includes('blob:')) avatar.style.backgroundImage = 'none';
         });
-        return clone.outerHTML;
+        return stripGlobalFontArtifacts(clone.outerHTML);
       }).filter(Boolean);
       const state = loadChatHistoryState();
       const previous = getChatHistorySnapshot(key);
@@ -26539,24 +26636,40 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
        实时插入（时间就是现在）走的还是「追加到末尾」——和以前一模一样；
        只有「按数据副本补出来的老卡片」才会被放回它当年那一行旁边，
        不再顶着最新一条消息出现。 */
-    function insertChatLineByTime(line, at) {
+    function insertChatLineByTime(line, at, options = {}) {
       const body = document.getElementById('chatThreadBody');
       if (!body || !line) return;
       const typing = document.getElementById('chatTyping');
+      const appendAtEnd = () => body.insertBefore(line, typing && typing.parentNode === body ? typing : null);
       const when = Number(at) || 0;
       /* 比「现在」新 90 秒以内的（刚发出去 / 刚补出来的新卡）永远落在末尾 ——
          副本里的时间只精确到分钟（10:45），同分钟内插回「10:45:00」会把刚发的那条挤到后面。
          只有真正的老卡才按时间插回原位。 */
-      if (when > Date.now() - 90000) {
-        body.insertBefore(line, typing && typing.parentNode === body ? typing : null);
-        return;
-      }
+      if (when > Date.now() - 90000) { appendAtEnd(); return; }
+      const rows = [...body.querySelectorAll(':scope > .chat-message-line, :scope > .chat-call-system-message')];
       if (when > 0) {
-        const rows = [...body.querySelectorAll(':scope > .chat-message-line, :scope > .chat-call-system-message')];
         const anchor = rows.find(node => Number(node.dataset.createdAt) > when);
         if (anchor) { body.insertBefore(line, anchor); return; }
+        /* v111z77 · 比眼前这一屏里所有行都老 → 它属于这一屏**上面**那段更早的历史，
+           不能落到末尾。以前这里走下面的兜底 = 追加到最新一条消息后面，
+           于是「从记录补出来的老卡片」总顶在最新消息点上（用户报的另一个形状）。 */
+        if (rows.length) { body.insertBefore(line, rows[0]); return; }
+        appendAtEnd();
+        return;
       }
-      body.insertBefore(line, typing && typing.parentNode === body ? typing : null);
+      /* v111z77 · 第三种情况：老卡，但副本里只剩「刚刚 / 10:05」这类显示文案，还原不出真实时间。
+         这类卡以前走末尾兜底 —— 每次进房间都顶在最新一条消息后面（用户报的
+         「之前的特殊卡片反复出现在最新的消息点」）。现在按「比眼前这一屏都老」处理：
+         插到这一屏最上面，并给它一个落在最前面的时间戳，位置从此稳定、不再被搬来搬去。
+         ⚠ 只有「从数据副本补出来的老卡」才带 oldCard 标记 —— 用户此刻新发起的卡片
+           （比如新查岗）依然按老规矩落到末尾。 */
+      if (options.oldCard === true && rows.length) {
+        const earliest = Math.min(...rows.map(node => Number(node.dataset.createdAt) || Infinity));
+        if (Number.isFinite(earliest)) line.dataset.createdAt = String(Math.max(1, earliest - 1));
+        body.insertBefore(line, rows[0]);
+        return;
+      }
+      appendAtEnd();
     }
     window.insertChatLineByTime = insertChatLineByTime;
 
@@ -26572,8 +26685,12 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       return 0;
     }
     /* 副本里只剩一个「显示时间」时还能救回多少：
-       10月03日 10:05 / 2024/10/03 10:05 → 直接是绝对时间；
-       昨天 10:05 → 昨天的那个钟点；光一个 10:05 → 最近的、还没过去的那个钟点。 */
+       10月03日 10:05 / 2024/10/03 10:05 / 昨天 10:05 → 明确知道是哪一天，直接是绝对时间 ✔；
+       光一个 10:05 → **不知道是哪一天，一律当「没有可用时间」**。
+       ⚠ v111z77 修正：旧实现把光一个钟点猜成「今天（或昨天）的那个钟点」，
+       于是很久以前的老卡片会被写上「今天 10:05」的时间戳，直接跳到时间轴最新一端 ——
+       这正是用户报的「之前的特殊卡片反复出现在最新的消息点」。宁可少定位一张卡
+       （位置保持原样、不再被搬动），也不能把它猜到最新一端。 */
     function chatRecordTimeValue(record) {
       const trusted = chatRecordTrustedTime(record);
       if (trusted > 0) return trusted;
@@ -26584,16 +26701,18 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       const minutes = Number(clock[2]);
       const full = /(?:^|[^\d])(\d{4})\/(\d{1,2})\/(\d{1,2})/.exec(text);
       const short = /(?:^|[^\d])(\d{1,2})月(\d{1,2})日/.exec(text);
-      if (full || short) {
-        const year = full ? Number(full[1]) : new Date().getFullYear();
-        const month = Number((full || short)[full ? 2 : 1]) - 1;
-        const day = Number((full || short)[full ? 3 : 2]);
-        const date = new Date(year, month, day, hours, minutes, 0, 0);
-        if (date.getTime() <= Date.now()) return date.getTime();
-      }
-      const date = new Date();
-      date.setHours(hours, minutes, 0, 0);
-      if (text.includes('昨天') || text.includes('昨日') || date.getTime() > Date.now()) date.setDate(date.getDate() - 1);
+      const yesterday = /昨天|昨日/.test(text);
+      if (!full && !short && !yesterday) return 0;
+      const now = new Date();
+      let year = now.getFullYear();
+      let month = now.getMonth();
+      let day = now.getDate();
+      if (full) { year = Number(full[1]); month = Number(full[2]) - 1; day = Number(full[3]); }
+      else if (short) { month = Number(short[1]) - 1; day = Number(short[2]); }
+      const date = new Date(year, month, day, hours, minutes, 0, 0);
+      if (yesterday && !full && !short) date.setDate(date.getDate() - 1);
+      /* 解析出来落在未来（多半是跨年/跨月的旧副本）→ 不定位，绝不往「最新一端」猜。 */
+      if (!Number.isFinite(date.getTime()) || date.getTime() > Date.now()) return 0;
       return date.getTime();
     }
     /* 每张特殊卡一行信息：
@@ -26714,6 +26833,32 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
             if (!joined.includes(`data-created-at="${at}"`)) { needRepair = true; break; }
           }
         }
+        if (!needRepair) {
+          /* v111z77 · 快扫也要认「整段复制」。
+             z75 时代复制出来的副本**全都带时间戳**，光看「有没有缺时间戳的行」「卡片身份
+             有没有重复」是抓不到的（实测：这种房间 changed=0，坏数据永远留在原地，用户
+             反复看到老消息贴在最新一条消息前面）。这里用纯字符串指纹再快扫一遍：
+             方向 + 消息种类 + 气泡文字，连续两行的指纹在这一段历史里出现过第二次 = 可疑。
+             只做「要不要细修」的判断 —— 宁可多报（多跑一次幂等修复，改动仍是 0），
+             不能漏报。 */
+          const fastPrint = text => {
+            const raw = String(text || '');
+            if (!/\bchat-bubble\b/.test(raw)) return '';
+            if (/data-(?:red|transfer|check|invite|decision|komo|batch|pending-incoming|group-v2-message)-/.test(raw)) return '';
+            const kind = (raw.match(/data-message-kind="([^"]*)"/) || [])[1] || '';
+            const dir = /chat-message-line[^"]*\boutgoing\b/.test(raw) ? 'out' : /chat-message-line[^"]*\bincoming\b/.test(raw) ? 'in' : 'sys';
+            const bubble = (raw.match(/<div[^>]*class="[^"]*\bchat-bubble\b[^"]*"[^>]*>([\s\S]*?)<\/div>/) || [])[1] || '';
+            return `${dir}|${kind}|${bubble.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()}`;
+          };
+          const prints = snapshot.lines.map(fastPrint);
+          const pairSeen = new Set();
+          for (let i = 0; i + 1 < prints.length; i += 1) {
+            if (!prints[i] || !prints[i + 1]) continue;
+            const pair = `${prints[i]}\u0001${prints[i + 1]}`;
+            if (pairSeen.has(pair)) { needRepair = true; break; }
+            pairSeen.add(pair);
+          }
+        }
         if (!needRepair) return 0;
       }
       let changed = 0;
@@ -26747,10 +26892,13 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       const rows = lines.map((html, index) => {
         const line = parse(html);
         const identity = line ? chatSpecialIdentityFromLine(line) : '';
+        const msgLine = Boolean(line?.classList?.contains?.('chat-message-line'));
         return {
           html: String(html),
           index,
           identity,
+          msgLine,
+          komo: msgLine && isKomoCardChatLine(line),
           hasAt: hasStamp(html),
           plain: !identity && chatLineIsPlainBubble(line),
           key: identity ? `id:${identity}` : chatPlainLineRepeatKey(line)
@@ -26784,13 +26932,59 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         if (keep < 0) return;
         indices.forEach(index => { if (index !== keep) drops.add(index); });
       });
+      /* ②b · 折叠「整段复制」（v111z77）。
+         z75 时代「恢复历史时给老行补 Date.now()」的写法，会把同一段老消息**整段**复制到
+         时间轴里：数组里于是出现两段（或多段）逐行完全相同、顺序也相同的连续老消息 ——
+         用户报的「之前的特殊卡片反复出现在最新的消息点」「12 条变 36 条」正是这个形状。
+         上一版修复只认「有副本缺时间戳」的那种，副本全都带上时间戳之后就再也认不出来
+         （返回 changed=0，坏数据永远留在原地）—— 这里补上「整段一字不差重复」的判定。
+         ⚠⚠ 判据必须比「内容重复」更硬：真人也可能一来一回说同样的话
+           （TA『嗯』你『好』，来回两轮就是 4 行一字不差），那种**绝不能**折叠。
+           复制品有一个真身不可能有的指纹：它们是在**同一次渲染循环**里被同一段代码
+           打上时间戳的 —— 相邻两行的盖章间隔只有几毫秒；而人手发的消息，哪怕再快，
+           也隔着几百毫秒以上。所以只有当「后出现的那一段」内部相邻盖章间隔都极小
+           （≤30ms、且时间不倒流）时，才认定它是复制品。
+         ⚠ 只动「纯消息」行（有身份的卡片走上面的身份折叠），且要求连续 ≥2 行 ——
+           用户明确说过「先后发两条一样的『好』」不许合并，那只是单行重复。 */
+      if (rows.length >= 4) {
+        const runKeyAt = rows.map(row => (row.plain ? row.key : '\u0000'));
+        const stampAt = rows.map(row => Number((String(row.html).match(/data-created-at="(\d+)"/) || [])[1]) || 0);
+        const starts = [];
+        for (let i = 0; i < runKeyAt.length; i += 1) { if (runKeyAt[i] !== '\u0000') starts.push(i); }
+        for (let si = 1; si < starts.length; si += 1) {
+          const later = starts[si];
+          if (drops.has(later)) continue;
+          for (let sj = 0; sj < si; sj += 1) {
+            const earlier = starts[sj];
+            if (drops.has(earlier)) continue;
+            let length = 0;
+            while (earlier + length < later && later + length < runKeyAt.length
+              && runKeyAt[earlier + length] !== '\u0000'
+              && runKeyAt[earlier + length] === runKeyAt[later + length]) length += 1;
+            if (length < 2) continue;
+            let clustered = true;
+            for (let k = 1; k < length; k += 1) {
+              const before = stampAt[later + k - 1];
+              const after = stampAt[later + k];
+              if (!before || !after || after < before || after - before > 30) { clustered = false; break; }
+            }
+            if (!clustered) continue;
+            for (let k = 0; k < length; k += 1) drops.add(later + k);
+            break;
+          }
+        }
+      }
       if (drops.size) changed += drops.size;
       const survivors = rows.filter(row => !drops.has(row.index));
 
-      /* ③ 剩下的老消息：整体前移，并给一个早于所有真实时间戳的时间 */
+      /* ③ 剩下的老行（没有时间戳）：整体前移，并给一个早于所有真实时间戳的时间。
+            v111z77：判定从「只认纯文字行（plain）」放宽到「所有没有时间戳的消息行」——
+            卡片行（记录里没有可用时间、或记录早就不在了）以前被落在原地，写盘时位置
+            被改来改去，用户看到的就是「之前的特殊卡片反复出现在最新的消息点」。
+            KOMO 卡片生来就没有时间戳（下卡时就抹掉），与老数据无关，必须排除。 */
       const known = survivors.map(row => Number((row.html.match(/data-created-at="(\d+)"/) || [])[1]) || 0).filter(value => value > 0);
       const floor = known.length ? Math.min(...known) : 0;
-      const legacy = survivors.filter(row => !row.hasAt && row.plain);
+      const legacy = survivors.filter(row => !row.hasAt && row.msgLine && !row.komo);
       if (floor > 0 && legacy.length) {
         const legacySet = new Set(legacy);
         const moved = legacy.map((row, index) => chatHistoryLineStampHTML(row.html, floor - (legacy.length - index)));
@@ -37101,8 +37295,8 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
      所以不会再出现「指过去是 404 → 系统给一枚默认黑图标」。
      v111z3：这七个文件换成**用户自己的真 logo**（浅蓝灰底 + 深墨「∞」，由用户提供，原样交付）；
      并统一加 `?v=v111z3` —— 手机上可能还留着上一版占位图的 HTTP 缓存，换个 URL 才保证抓到新图。 */
-  const NOTIF_ICON_FALLBACK_URL = new URL('./icons/icon-192.png?v=v111z76', location.href).href;
-  const NOTIF_BADGE_URL = new URL('./icons/badge-96.png?v=v111z76', location.href).href;
+  const NOTIF_ICON_FALLBACK_URL = new URL('./icons/icon-192.png?v=v111z77', location.href).href;
+  const NOTIF_BADGE_URL = new URL('./icons/badge-96.png?v=v111z77', location.href).href;
   async function resolveNotificationAvatarIcon(routeData, opts) {
 
 
