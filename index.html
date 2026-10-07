@@ -13,9 +13,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Möbius">
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png?v=v111z75">
-  <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon-180.png?v=v111z75">
-  <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png?v=v111z75">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png?v=v111z76">
+  <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon-180.png?v=v111z76">
+  <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png?v=v111z76">
   <!-- 填写后端 Web Push 配置后，页面关闭或系统锁屏时也可由推送服务器唤醒 SW。 -->
   <meta name="dream-push-vapid-public-key" content="">
   <meta name="dream-push-subscribe-endpoint" content="">
@@ -18993,7 +18993,8 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       const lines = [...document.querySelectorAll('#chatThreadBody .chat-message-line.outgoing')];
       const line = lines[lines.length - 1];
       if (line) {
-        if (!Number(line.dataset.createdAt)) line.dataset.createdAt = String(Date.now());
+        /* v111z76：这里原本给「没有时间戳的那条」补 Date.now() —— 房间最后一条正好是老行时，
+           一补就与磁盘上那份身份错开，下次合并又多出一份。回执只改显示，不动时间戳。 */
         updateChatLineReceipt(line, status);
         scheduleSaveChatHistory();
       }
@@ -19010,7 +19011,8 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       document.querySelectorAll('#chatThreadBody .chat-message-line').forEach(line => {
         if (line.dataset.groupV2 === 'true' && window.GroupChatV2?.refreshReceiptLine) window.GroupChatV2.refreshReceiptLine(line);
         else if (line.classList.contains('outgoing')) updateChatLineReceipt(line, line.dataset.receiptStatus || 'delivered');
-        else stampChatMessageLine(line);
+        /* v111z76 · 这里是「重绘回执」，不是「发送」。老行没有时间戳就不能补 —— 补了它就变成刚发的。 */
+        else stampChatMessageLine(line, 0);
       });
     }
 
@@ -24458,8 +24460,11 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       if (incoming) setChatAvatarVisual(avatar, currentPartnerInitials, currentPartnerVisual);
       else setSelfChatAvatarVisual(avatar);
       if (incoming) line.append(avatar, content); else line.append(content, avatar);
-      const typing = document.getElementById('chatTyping');
-      body.insertBefore(line, typing && typing.parentNode === body ? typing : null);
+      /* v111z76 · 按数据副本补出来的老转账卡：带上它当年那一笔的时间，并插回原来的位置，
+         否则它会一直顶着「最新一条消息」出现（用户报的「旧卡片反复出现在最新消息点」）。 */
+      const cardAt = chatRecordTimeValue(record);
+      if (cardAt > 0) line.dataset.createdAt = String(cardAt);
+      insertChatLineByTime(line, cardAt);
       if (!incoming) {
         line.dataset.receiptStatus = 'unread';
         stampChatMessageLine(line);
@@ -24502,8 +24507,10 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       if (incoming) setChatAvatarVisual(avatar, currentPartnerInitials, currentPartnerVisual);
       else setSelfChatAvatarVisual(avatar);
       if (incoming) line.append(avatar, content); else line.append(content, avatar);
-      const typing = document.getElementById('chatTyping');
-      body.insertBefore(line, typing && typing.parentNode === body ? typing : null);
+      /* v111z76 · 同转账卡：老红包卡按副本时间落位，不再被补成「刚刚」顶到末尾。 */
+      const cardAt = chatRecordTimeValue(record);
+      if (cardAt > 0) line.dataset.createdAt = String(cardAt);
+      insertChatLineByTime(line, cardAt);
       if (!incoming) {
         line.dataset.receiptStatus = 'unread';
         stampChatMessageLine(line);
@@ -24597,6 +24604,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         direction: 'out',
         status: 'pending',
         direction: 'out',
+        createdAt: now,
         time: new Date(now).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
         expiresAt: now + 24 * 60 * 60 * 1000,
         autoClaim,
@@ -24716,7 +24724,8 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       const buriedChecks = new Set((settings.deletedSpecialMessageIds || []).map(String));
       (settings.checkHistory || []).forEach(record => {
         if (buriedChecks.has(`check:${record.id}`)) return;
-        if (!existingIds.has(record.id)) sendChatCheckCard(record.text, record.direction, { id: record.id, time: record.time, kind: record.kind || (record.direction === 'out' && record.status === 'replied' ? 'reply' : ''), status: record.status, answered: record.direction === 'out' && record.kind === 'question' && record.status === 'replied', persist: false });
+        // v111z76：把记录自己的时间带进去 —— 补出来的老查岗卡会落回当年那一行，而不是被补成「刚刚」。
+        if (!existingIds.has(record.id)) sendChatCheckCard(record.text, record.direction, { id: record.id, time: record.time, createdAt: chatRecordTimeValue(record), kind: record.kind || (record.direction === 'out' && record.status === 'replied' ? 'reply' : ''), status: record.status, answered: record.direction === 'out' && record.kind === 'question' && record.status === 'replied', persist: false });
         if (record.direction === 'out' && (record.kind || 'question') === 'question' && record.status !== 'replied') scheduleDirectCheckReply(record, handle);
       });
       if (settings.pendingCheck && currentPartnerHandle === handle) {
@@ -24891,8 +24900,11 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       else setSelfChatAvatarVisual(avatar);
       if (incoming) line.append(avatar, content);
       else line.append(content, avatar);
-      const typing = document.getElementById('chatTyping');
-      body.insertBefore(line, typing && typing.parentNode === body ? typing : null);
+      /* v111z76 · 从查岗记录补出来的老卡片带自己的真实时间（restoreCheckRecords 传 options.createdAt），
+         并插回原来的位置；新发起的查岗没有 options.createdAt，行为与以前一致（追加到末尾）。 */
+      const cardAt = Number(options.createdAt) || 0;
+      if (cardAt > 0) line.dataset.createdAt = String(cardAt);
+      insertChatLineByTime(line, cardAt);
       if (!incoming) {
         line.dataset.receiptStatus = 'unread';
         stampChatMessageLine(line);
@@ -25625,7 +25637,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
     /* v111z36：本版实际包含 —— 引用只在所属房间取（不再串房）/ 房间切换不再抛
        insertBefore / 回到前台不再补发到点的主动来电 / 表情包上传压图·失败说清·失效占位。
        换壳时用同一个版本号比对离线壳，改完记得和 sw.js 的 CACHE_VERSION 一起动。 */
-    window.MOBIUS_SHELL_EXPECT = 'v111z75';
+    window.MOBIUS_SHELL_EXPECT = 'v111z76';
     function comboDebug(msg) {
       try {
         if (localStorage.getItem('mobius:combo-debug') !== '1') return;
@@ -26172,10 +26184,21 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       return true;
     }
 
-    function stampChatMessageLine(line) {
+    /* inheritedAt 的三种用法（v111z76）：
+       ① 不传      —— 「这是一条刚插进来的新行」，没有时间戳就补 Date.now()（老行为，实时插入路径照旧）；
+       ② 传具体时间 —— 用这个时间（从数据副本补出来的老卡片带自己当年那一笔的时间）；
+       ③ 传 0      —— 「正在恢复历史」，**绝不补时间戳**。这是本次修复的关键：
+          以前恢复历史时也给没有时间戳的老行补 Date.now()，等于把这条老消息宣告成「刚刚发的」，
+          写回历史后它排到最新一条旁边（用户看到的「之前发的信息跑到最新一条消息前面」），
+          而磁盘上那一份没有时间戳 —— 两份身份对不上，于是每进一次房间就多复制一份
+          （实测：12 条老消息进出几次变成 36 条，全挤在最新消息那一端）。 */
+    function stampChatMessageLine(line, inheritedAt) {
       if (!line?.classList.contains('chat-message-line')) return;
       if (isKomoCardChatLine(line)) { stripKomoCardMeta(line); return; }
-      if (!Number(line.dataset.createdAt)) line.dataset.createdAt = String(Date.now());
+      if (!Number(line.dataset.createdAt) && inheritedAt !== 0) {
+        const at = Number(inheritedAt);
+        line.dataset.createdAt = String(at > 0 ? at : Date.now());
+      }
       const meta = line.querySelector('.chat-message-meta');
       if (!meta) return;
       if (line.classList.contains('outgoing')) {
@@ -26223,6 +26246,22 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       const keys = chatLineIdentityKeys(html);
       return keys.length ? keys[0] : '';
     }
+    /* ⚠ v111z76 · 「弱身份」：只由不随时间变的东西组成 —— 卡片身份，或「方向 + 气泡正文」。
+       用途单一：磁盘上那份没有 data-created-at，渲染出来的那份被补了一个时间戳，
+       两边的强身份（at: / msg: / sp:）全都对不上，同一行于是被存成两份。
+       只在「一边缺时间戳」时启用，且必须落在很近的位置上 —— 否则「你先后发了两条一样的
+       『好』」会被合掉一条（用户明确要求过不能这样）。 */
+    function chatLineWeakKey(html) {
+      const text = String(html || '');
+      if (!text) return '';
+      const special = chatSpecialIdentityAttrs(text);
+      if (special) return 'sp:' + special;
+      const bubble = chatBubbleTextOf(text);
+      if (!bubble) return '';
+      const direction = /class="[^"]*\bchat-message-line\b[^"]*\boutgoing\b/.test(text) ? 'out'
+        : /class="[^"]*\bchat-message-line\b[^"]*\bincoming\b/.test(text) ? 'in' : 'sys';
+      return `${direction}#${bubble}`;
+    }
     /* 删除时要不要留身份：行上没有明确时间点、也没有卡片身份的老记录不留 —— 免得删一句「好」
        之后，将来重新发出同样的「好」被一起挡掉。 */
     /* 删除要留「强身份」：只有正文的老记录不留 —— 免得删一句「好」之后，将来重新发出的「好」被一起挡掉 */
@@ -26249,6 +26288,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       const skip = deletedKeys instanceof Set ? deletedKeys : new Set();
       const out = [];
       const slotOf = new Map();
+      const weakSlots = new Map();
       const push = (html) => {
         const text = String(html || '');
         if (!text) return;
@@ -26256,6 +26296,17 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         if (keys.length && keys.some(key => skip.has(key))) return;
         let slot = -1;
         for (const key of keys) { if (slotOf.has(key)) { slot = slotOf.get(key); break; } }
+        if (slot < 0) {
+          /* v111z76 · 弱身份兜底：两份内容一样、但只有一边带时间戳（= 老行与它被补过
+             时间戳的副本）。距离超过 40 行就当两条独立消息，绝不合并。 */
+          const weak = chatLineWeakKey(text);
+          const candidate = weak ? weakSlots.get(weak) : undefined;
+          if (candidate !== undefined && out.length - candidate <= 40) {
+            const candidateHasAt = /\bdata-created-at="\d+"/.test(String(out[candidate]));
+            const hasAt = /\bdata-created-at="\d+"/.test(text);
+            if (candidateHasAt !== hasAt) slot = candidate;
+          }
+        }
         if (slot >= 0) {
           /* 同一行出现两次：留后写的那份（DOM 里的通常已经洗过引用块/字卡提示、回执也更新），
              并把这行新长出来的身份也登记上。 */
@@ -26266,17 +26317,25 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         const index = out.length;
         out.push(text);
         keys.forEach(key => slotOf.set(key, index));
+        const weak = chatLineWeakKey(text);
+        if (weak && !weakSlots.has(weak)) weakSlots.set(weak, index);
       };
       (Array.isArray(baseLines) ? baseLines : []).forEach(push);
       (Array.isArray(incomingLines) ? incomingLines : []).forEach(push);
+      /* ⚠ v111z76 · 没有 data-created-at 的行**不许再沉底**。
+         旧实现把「缺时间戳」当成 at = 0：排序时一律被甩到列表最末尾 —— 而进房间只渲染
+         尾部 N 行，于是老版本写进历史的老消息 / 老卡片就贴在「最新一条消息」那一端
+         （用户报的「之前发的信息跑到最新消息边上」「老卡片反复出现在最新消息点」）。
+         现在改成：没有时间戳的行沿用「它左边最近一条有时间戳的行」的时间，等同于原地不动；
+         只有真正带时间戳的行参与排序。 */
+      let inheritAt = 0;
       return out
-        .map((html, index) => ({ html, index, at: Number((String(html).match(/data-created-at="(\d+)"/) || [])[1]) || 0 }))
-        .sort((a, b) => {
-          if (a.at && b.at && a.at !== b.at) return a.at - b.at;
-          if (a.at && !b.at) return -1;
-          if (!a.at && b.at) return 1;
-          return a.index - b.index;
+        .map((html, index) => {
+          const raw = Number((String(html).match(/data-created-at="(\d+)"/) || [])[1]) || 0;
+          if (raw) inheritAt = raw;
+          return { html, index, at: raw || inheritAt };
         })
+        .sort((a, b) => (a.at - b.at) || (a.index - b.index))
         .map(item => item.html);
     }
 
@@ -26396,7 +26455,12 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         // 不登记身份的老病根与转账卡相同：历史清洗去重 / 删除记忆 / DOM 兜底去重三套机制同时失效，
         // 卡会重复出现（用户实测过 count:2），删掉也记不住、下次进房间又回来。
         ['komo-pay-request', line.querySelector('.chat-komo-pay-request') ? line.dataset.komoPayRequestId : ''],
-        ['komo-pay-result', line.querySelector('.chat-komo-pay-result') ? line.dataset.komoPayRequestId : '']
+        ['komo-pay-result', line.querySelector('.chat-komo-pay-result') ? line.dataset.komoPayRequestId : ''],
+        // ⚠ v111z76：KOMO / ORDER 流水卡（点单 / 配送 / 送达 / 里程碑 …）此前没在这里登记身份，
+        // 「历史清洗去重 / 删除记忆 / DOM 兜底去重」三套机制对它全部失效 ——
+        // 于是同一张流水卡能在历史里存好几份、每次进房间又往末尾补一张。
+        // cardId 各自唯一（order:<id> / ack:<id> / milestone:<id>），登记身份不会误合并。
+        ['komo-flow', line.dataset.komoFlowId || line.querySelector('[data-komo-flow-id]')?.dataset.komoFlowId]
       ];
       const found = candidates.find(([, id]) => String(id || '').trim());
       return found ? `${found[0]}:${String(found[1])}` : '';
@@ -26470,6 +26534,295 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       return removed;
     }
     window.dedupeChatSpecialCardsInDom = dedupeChatSpecialCardsInDom;
+
+    /* v111z76 · 按时间把一行插进它该在的位置。
+       实时插入（时间就是现在）走的还是「追加到末尾」——和以前一模一样；
+       只有「按数据副本补出来的老卡片」才会被放回它当年那一行旁边，
+       不再顶着最新一条消息出现。 */
+    function insertChatLineByTime(line, at) {
+      const body = document.getElementById('chatThreadBody');
+      if (!body || !line) return;
+      const typing = document.getElementById('chatTyping');
+      const when = Number(at) || 0;
+      /* 比「现在」新 90 秒以内的（刚发出去 / 刚补出来的新卡）永远落在末尾 ——
+         副本里的时间只精确到分钟（10:45），同分钟内插回「10:45:00」会把刚发的那条挤到后面。
+         只有真正的老卡才按时间插回原位。 */
+      if (when > Date.now() - 90000) {
+        body.insertBefore(line, typing && typing.parentNode === body ? typing : null);
+        return;
+      }
+      if (when > 0) {
+        const rows = [...body.querySelectorAll(':scope > .chat-message-line, :scope > .chat-call-system-message')];
+        const anchor = rows.find(node => Number(node.dataset.createdAt) > when);
+        if (anchor) { body.insertBefore(line, anchor); return; }
+      }
+      body.insertBefore(line, typing && typing.parentNode === body ? typing : null);
+    }
+    window.insertChatLineByTime = insertChatLineByTime;
+
+    /* v111z76 · 数据副本里「这张卡当时是什么时候发的」。
+       副本字段不全（老转账记录只有显示用的 10:05），所以按可靠度依次退化：
+       真实时间戳 → 红包的 24 小时有效期 → 领取计划时间 → 显示时间按「最近的过去」还原。 */
+    function chatRecordTrustedTime(record) {
+      if (!record || typeof record !== 'object') return 0;
+      const direct = Number(record.createdAt || record.createdAtMs || record.occurredAt || record.at || 0);
+      if (direct > 0) return direct;
+      if (Number(record.expiresAt) > 0) return Math.max(1, Number(record.expiresAt) - 24 * 60 * 60 * 1000);
+      if (Number(record.claimPlannedAt) > 0) return Math.max(1, Number(record.claimPlannedAt) - 6000);
+      return 0;
+    }
+    /* 副本里只剩一个「显示时间」时还能救回多少：
+       10月03日 10:05 / 2024/10/03 10:05 → 直接是绝对时间；
+       昨天 10:05 → 昨天的那个钟点；光一个 10:05 → 最近的、还没过去的那个钟点。 */
+    function chatRecordTimeValue(record) {
+      const trusted = chatRecordTrustedTime(record);
+      if (trusted > 0) return trusted;
+      const text = String(record?.time || record?.sentTime || '').trim();
+      const clock = /(\d{1,2}):(\d{2})/.exec(text);
+      if (!clock) return 0;
+      const hours = Number(clock[1]);
+      const minutes = Number(clock[2]);
+      const full = /(?:^|[^\d])(\d{4})\/(\d{1,2})\/(\d{1,2})/.exec(text);
+      const short = /(?:^|[^\d])(\d{1,2})月(\d{1,2})日/.exec(text);
+      if (full || short) {
+        const year = full ? Number(full[1]) : new Date().getFullYear();
+        const month = Number((full || short)[full ? 2 : 1]) - 1;
+        const day = Number((full || short)[full ? 3 : 2]);
+        const date = new Date(year, month, day, hours, minutes, 0, 0);
+        if (date.getTime() <= Date.now()) return date.getTime();
+      }
+      const date = new Date();
+      date.setHours(hours, minutes, 0, 0);
+      if (text.includes('昨天') || text.includes('昨日') || date.getTime() > Date.now()) date.setDate(date.getDate() - 1);
+      return date.getTime();
+    }
+    /* 每张特殊卡一行信息：
+       trusted  副本里有真实时间字段 —— 无条件采信，连「渲染时补错的时间戳」也一并纠正；
+       fallback 只有显示时间 —— 仅当行上没有时间戳，或行上的钟点与记录显示的钟点对不上时才用；
+       clock    记录显示出来的钟点（HH:MM），用来判断行上那个时间戳可不可信；
+       text     原始显示串，用来判断它有没有明确日期。 */
+    function chatSpecialCardTimeInfo(handle) {
+      const settings = getChatSettings(handle);
+      const map = new Map();
+      const put = (kind, id, record, override) => {
+        const key = `${kind}:${String(id || '').trim()}`;
+        if (key.endsWith(':') || map.has(key)) return;
+        const trusted = override !== undefined ? Number(override) || 0 : chatRecordTrustedTime(record);
+        const fallback = trusted > 0 ? trusted : chatRecordTimeValue(record);
+        if (!trusted && !fallback) return;
+        const text = String(record?.time || record?.sentTime || '').trim();
+        const clock = /(\d{1,2}):(\d{2})/.exec(text);
+        map.set(key, { trusted, fallback, clock: clock ? `${String(Number(clock[1])).padStart(2, '0')}:${clock[2]}` : '', text });
+      };
+      (settings.redEnvelopes || []).forEach(record => put('red', record?.id, record));
+      (settings.transferRecords || []).forEach(record => put('transfer', record?.id, record));
+      (settings.checkHistory || []).forEach(record => {
+        put('check', record?.id, record);
+        put('check-reply', record?.id, record, Number(record?.repliedAt));
+      });
+      (settings.decisionRecords || []).forEach(record => put('decision', record?.id, record));
+      (settings.inviteHistory || []).forEach(record => put('invite', record?.id, record));
+      return map;
+    }
+    function chatClockText(at) {
+      const date = new Date(Number(at) || 0);
+      return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+    }
+
+    function chatHistoryLineStampHTML(html, at) {
+      const text = String(html || '');
+      const value = Number(at) || 0;
+      if (!text || value <= 0) return text;
+      if (/\bdata-created-at="\d+"/.test(text)) return text;
+      return text.replace(/^(\s*<div\b)/, `$1 data-created-at="${value}"`);
+    }
+
+    /* 行内容指纹：卡片用身份，普通消息用「方向 + 气泡正文」；认不出来就不参与去重。 */
+    function chatPlainLineRepeatKey(line) {
+      if (!line?.classList?.contains?.('chat-message-line')) return '';
+      const bubble = line.querySelector('.chat-bubble');
+      if (!bubble) return '';
+      const direction = line.classList.contains('outgoing') ? 'out' : line.classList.contains('incoming') ? 'in' : 'sys';
+      return `${direction}|${String(line.dataset.messageKind || '')}|${String(bubble.innerHTML || '')}`;
+    }
+    /* 纯消息（不带任何卡片身份）：只有这种老行才允许被「按老消息整体前移」重排。 */
+    function chatLineIsPlainBubble(line) {
+      if (!line?.classList?.contains?.('chat-message-line')) return false;
+      if (chatSpecialIdentityFromLine(line)) return false;
+      if (isKomoCardChatLine(line)) return false;
+      return !line.querySelector('.chat-red-envelope-bubble,.chat-transfer-bubble,.chat-check-bubble,.chat-decision-bubble,.chat-invite-bubble,.chat-komo-pay-request,.chat-komo-pay-result,.chat-komo-flow-bubble,.chat-komo-gift-bubble,.chat-komo-request-bubble,.group-v2-special-bubble');
+    }
+
+    /* ═══ v111z76 · 聊天记录位置修复（幂等）═══
+       老版本写进历史的行没有 data-created-at（时间戳是后来才有的功能），
+       而 v111z75 的合并逻辑把「缺时间戳」当成 at = 0 一律排到最末尾，
+       渲染时又给它补一个 Date.now() —— 磁盘上没有、DOM 上有，两份身份对不上；
+       于是出现两个用户直接看得见的症状：
+         ① 老消息 / 老卡片被搬到「最新一条消息」那一端（进房间只渲染尾部 N 行）；
+         ② 每进一次房间就多复制一份（实测 12 条老消息进出几次变成 36 条）。
+       这里做一次可反复执行的修复：
+         ① 老卡片按数据副本（红包 / 转账 / 查岗 / 决策 / 邀请）里的真实时间落位；
+         ② 折叠「同一行被存成好几份」的复制 —— 只折叠「有副本缺时间戳」或卡片同身份的情况，
+            两句话都带时间戳的普通消息（你先后发了两条一样的「好」）绝不合并；
+         ③ 剩下的无时间戳纯消息 = 时间戳上线前的老消息：按原有相对顺序整体前移，
+            并给一个早于所有时间戳的真实时间，从此位置稳定、身份稳定，不再被搬来搬去。
+       跑第二遍不会再改任何东西。 */
+    function repairStoredChatHistoryLayout(handle = activeChatHandle) {
+      const key = String(handle || '').trim();
+      if (!key) return 0;
+      const snapshot = getChatHistorySnapshot(key);
+      if (!snapshot || !Array.isArray(snapshot.lines) || snapshot.lines.length < 2) return 0;
+      const parse = html => { const holder = document.createElement('div'); holder.innerHTML = String(html || ''); return holder.firstElementChild; };
+      const hasStamp = html => /\bdata-created-at="\d+"/.test(String(html || ''));
+      const cardTimes = chatSpecialCardTimeInfo(key);
+      /* 健康房间直接跳过 —— 修复是幂等的，跑过一次之后这里每天的代价就只剩字符串扫描，
+         不会再逐行解析 DOM（几千行的房间也不该因为「检查要不要修」而卡一下）。 */
+      {
+        const idScan = /data-(red|transfer|decision|check-reply|check|invite|komo-order|komo-request|komo-pay-request|komo-flow)-id="([^"]*)"/g;
+        const seen = new Set();
+        let suspicious = false;
+        let allStamped = true;
+        for (const html of snapshot.lines) {
+          const text = String(html || '');
+          if (!hasStamp(text)) { allStamped = false; break; }
+          idScan.lastIndex = 0;
+          const local = new Set();
+          let hit;
+          let duplicated = false;
+          while ((hit = idScan.exec(text))) {
+            if (!hit[2]) continue;
+            /* 代付请求卡与代付结果卡共用同一个 data-komo-pay-request-id（task id），
+               它们是两张卡、不是重复，按气泡类型分开算身份。 */
+            const side = hit[1] === 'komo-pay-request' ? (text.includes('chat-komo-pay-result') ? '|result' : '|request') : '';
+            const token = `${hit[1]}|${hit[2]}${side}`;
+            if (local.has(token)) continue;          /* 同一行里写了两遍（气泡 + 行）不算重复 */
+            local.add(token);
+            if (seen.has(token)) duplicated = true;   /* 另一行也带着同一个身份 → 确实存了好几份 */
+          }
+          local.forEach(token => seen.add(token));
+          if (duplicated) { suspicious = true; break; }
+        }
+        /* allStamped = 每行都有时间戳（否则可能有老行要挪）；suspicious = 同一张卡存了好几份 */
+        let needRepair = !allStamped || suspicious;
+        if (!needRepair && cardTimes.size) {
+          /* 就算每行都有时间戳，只要某张卡的时间戳与副本记录对不上，仍然要修 */
+          const joined = snapshot.lines.join('\n');
+          for (const [identity, info] of cardTimes) {
+            const at = info.trusted || info.fallback;
+            const id = identity.slice(identity.indexOf(':') + 1);
+            if (!at || !id || !joined.includes(String(id))) continue;
+            if (!joined.includes(`data-created-at="${at}"`)) { needRepair = true; break; }
+          }
+        }
+        if (!needRepair) return 0;
+      }
+      let changed = 0;
+
+      /* ① 老卡片按数据副本落位。
+            有真实时间字段 → 连「渲染时补错的时间戳」一并纠正（那张卡在历史里的时间本来就是错的，
+            所以钟点对不上就换掉；只替换属性的值，行本身一个字符都不动）。
+            只有显示时间的副本 → 行上没有时间戳时补上；有时间戳但钟点对不上时也换掉。 */
+      let lines = snapshot.lines.map(html => {
+        const text = String(html || '');
+        if (!text || !cardTimes.size) return text;
+        const line = parse(text);
+        const identity = line ? chatSpecialIdentityFromLine(line) : '';
+        if (!identity) return text;
+        const info = cardTimes.get(identity);
+        if (!info) return text;
+        const stampMatch = text.match(/\bdata-created-at="(\d+)"/);
+        const stamp = stampMatch ? Number(stampMatch[1]) || 0 : 0;
+        let target = 0;
+        if (info.trusted > 0) target = stamp === info.trusted ? 0 : info.trusted;
+        else if (!stamp) target = info.fallback || 0;
+        else if (info.clock && chatClockText(stamp) !== info.clock) target = info.fallback || 0;
+        if (!target) return text;
+        const fixed = stampMatch ? text.replace(/\bdata-created-at="\d+"/, `data-created-at="${target}"`) : chatHistoryLineStampHTML(text, target);
+        if (fixed !== text) changed += 1;
+        return fixed;
+      });
+
+      /* ② 折叠复制：同一内容出现多份时，只留「没有时间戳的那一份」（真身），
+            其余都是渲染时补过时间戳的副本。窗口 120 行，避免误伤相隔很远的相同消息。 */
+      const rows = lines.map((html, index) => {
+        const line = parse(html);
+        const identity = line ? chatSpecialIdentityFromLine(line) : '';
+        return {
+          html: String(html),
+          index,
+          identity,
+          hasAt: hasStamp(html),
+          plain: !identity && chatLineIsPlainBubble(line),
+          key: identity ? `id:${identity}` : chatPlainLineRepeatKey(line)
+        };
+      });
+      const drops = new Set();
+      const groups = new Map();
+      rows.forEach(row => {
+        if (!row.key) return;
+        const list = groups.get(row.key) || [];
+        list.push(row.index);
+        groups.set(row.key, list);
+      });
+      groups.forEach((indices, groupKey) => {
+        if (indices.length < 2) return;
+        const isCardKey = groupKey.startsWith('id:');
+        const unstamped = indices.filter(index => !rows[index].hasAt);
+        if (!unstamped.length && !isCardKey) return;
+        if (!isCardKey && indices[indices.length - 1] - indices[0] > 120) return;
+        let keep = -1;
+        if (unstamped.length) {
+          const first = unstamped[0];
+          let block = 1;
+          for (let i = first - 1; i >= 0 && !rows[i].hasAt && rows[i].plain; i -= 1) block += 1;
+          for (let i = first + 1; i < rows.length && !rows[i].hasAt && rows[i].plain; i += 1) block += 1;
+          /* 成片的老行（≥2 条连在一起）或同一内容 ≥3 份，才认定是「复制」；
+             孤零零一条无时间戳消息不动，宁可留一份也不误删你正常发的话。 */
+          if (unstamped.length >= 2 || block >= 2 || indices.length >= 3) keep = first;
+        }
+        if (keep < 0 && isCardKey) keep = indices[0];
+        if (keep < 0) return;
+        indices.forEach(index => { if (index !== keep) drops.add(index); });
+      });
+      if (drops.size) changed += drops.size;
+      const survivors = rows.filter(row => !drops.has(row.index));
+
+      /* ③ 剩下的老消息：整体前移，并给一个早于所有真实时间戳的时间 */
+      const known = survivors.map(row => Number((row.html.match(/data-created-at="(\d+)"/) || [])[1]) || 0).filter(value => value > 0);
+      const floor = known.length ? Math.min(...known) : 0;
+      const legacy = survivors.filter(row => !row.hasAt && row.plain);
+      if (floor > 0 && legacy.length) {
+        const legacySet = new Set(legacy);
+        const moved = legacy.map((row, index) => chatHistoryLineStampHTML(row.html, floor - (legacy.length - index)));
+        changed += legacy.length;
+        lines = [...moved, ...survivors.filter(row => !legacySet.has(row)).map(row => row.html)];
+      } else {
+        lines = survivors.map(row => row.html);
+      }
+
+      if (!changed) return 0;
+      /* 时间改对了，顺序也要跟着回到时间轴上：
+         与 writeback 合并用的是同一套规则（没有时间戳的行沿用左边最近的时间，原地不动）。 */
+      let inheritAt = 0;
+      lines = lines
+        .map((html, index) => {
+          const raw = Number((String(html).match(/data-created-at="(\d+)"/) || [])[1]) || 0;
+          if (raw) inheritAt = raw;
+          return { html, index, at: raw || inheritAt };
+        })
+        .sort((a, b) => (a.at - b.at) || (a.index - b.index))
+        .map(item => item.html);
+      if (lines.length === snapshot.lines.length && lines.every((html, index) => html === snapshot.lines[index])) return 0;
+      snapshot.lines = lines;
+      snapshot.updatedAt = Date.now();
+      snapshot.storageVersion = Math.max(4, Number(snapshot.storageVersion) || 0);
+      const state = loadChatHistoryState();
+      state[key] = snapshot;
+      try { persistChatHistoryState(key); } catch (_) {}
+      try { window.persistChatMessagesIndividually?.(key, lines); } catch (_) {}
+      return changed;
+    }
+    window.repairStoredChatHistoryLayout = repairStoredChatHistoryLayout;
 
     /* v75 · 特殊卡片入场动效（拼贴 E3）
        新卡片出现时加 .cc-in，播一次「纸片落下并回弹」。
@@ -26574,10 +26927,13 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
     }
     function restoreChatHistory(handle, options = {}) {
       const key = String(handle || '').trim();
-      const snapshot = getChatHistorySnapshot(key);
+      let snapshot = getChatHistorySnapshot(key);
       const body = document.getElementById('chatThreadBody');
       const typing = document.getElementById('chatTyping');
       if (!key || !body || !snapshot || !Array.isArray(snapshot.lines) || !snapshot.lines.length) return;
+      /* v111z76 · 先修一次位置与重复（幂等）：老消息不再被搬到最新一条那一端、
+         老卡片不再每进一次房间就多出一份。改动会立即落盘，下面按修好的那份渲染。 */
+      try { if (repairStoredChatHistoryLayout(key) > 0) snapshot = getChatHistorySnapshot(key) || snapshot; } catch (_) {}
       const normalizedLines = normalizeStoredChatSpecialLines(key, snapshot.lines);
       if (normalizedLines.length !== snapshot.lines.length || normalizedLines.some((html,index)=>html!==snapshot.lines[index])) {
         snapshot.lines = normalizedLines; snapshot.storageVersion = Math.max(4, Number(snapshot.storageVersion)||0); snapshot.updatedAt = Date.now();
@@ -26619,7 +26975,8 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
               }
             }
             body.insertBefore(line, typing && typing.parentNode === body ? typing : null);
-            if (line.classList.contains('chat-message-line')) stampChatMessageLine(line);
+            /* v111z76 · 从快照重建 DOM —— 恢复历史，不补时间戳（老行原来就没有，补了会漂到最新一端）。 */
+            if (line.classList.contains('chat-message-line')) stampChatMessageLine(line, 0);
           }
         }
         holder.replaceChildren();
@@ -26716,7 +27073,9 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         const newIncoming = [];
         records.forEach(record => record.addedNodes?.forEach(node => {
           if (node.nodeType !== 1 || !node.classList.contains('chat-message-line')) return;
-          stampChatMessageLine(node);
+          /* v111z76：只有「此刻真的插进来」的新行才配 Date.now()。
+             恢复历史（重建旧行）时绝不能补 —— 那会把老行谎报成刚刚发的，见 stampChatMessageLine。 */
+          stampChatMessageLine(node, restoringChatHistory ? 0 : Date.now());
           node.querySelectorAll('.chat-image-stack-bubble').forEach(syncChatImageStack);
            if (node.classList.contains('incoming') && node.dataset.chatUnreadObserved !== 'true') {
             node.dataset.chatUnreadObserved = 'true';
@@ -36742,8 +37101,8 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
      所以不会再出现「指过去是 404 → 系统给一枚默认黑图标」。
      v111z3：这七个文件换成**用户自己的真 logo**（浅蓝灰底 + 深墨「∞」，由用户提供，原样交付）；
      并统一加 `?v=v111z3` —— 手机上可能还留着上一版占位图的 HTTP 缓存，换个 URL 才保证抓到新图。 */
-  const NOTIF_ICON_FALLBACK_URL = new URL('./icons/icon-192.png?v=v111z75', location.href).href;
-  const NOTIF_BADGE_URL = new URL('./icons/badge-96.png?v=v111z75', location.href).href;
+  const NOTIF_ICON_FALLBACK_URL = new URL('./icons/icon-192.png?v=v111z76', location.href).href;
+  const NOTIF_BADGE_URL = new URL('./icons/badge-96.png?v=v111z76', location.href).href;
   async function resolveNotificationAvatarIcon(routeData, opts) {
 
 
@@ -42901,7 +43260,7 @@ window.saveKomoWalletPrivacy=async function(roleId){const state=loadKomoState(),
 function appendKomoChatLine(role,line,options={}){line.dataset.createdAt=String(line.dataset.createdAt||Date.now());/* ⚠ v109：判据从「聊天室在前台」换成「#chatThreadBody 的 DOM 归属这个房间」。
    聊天室退到后台（返回列表、切到 KOMO/相册）时 DOM 依然属于该房间，若只写快照，
    重进房间看到的就是缺了这张卡的旧 DOM —— 代付请求卡「要等对方下一步动作才出现」的根因。
-   声音 / Toast / 滚动这类前台反馈仍然只在聊天室可见时给。 */if(isChatThreadDomForHandle(role.id)){const visible=isChatConversationLoaded(role.id);const body=document.getElementById('chatThreadBody'),typing=document.getElementById('chatTyping');body?.insertBefore(line,typing||null);if(line.classList.contains('outgoing')){line.dataset.receiptStatus='unread';stampChatMessageLine(line);scheduleChatUnreadReceipt(line);}else stampChatMessageLine(line);if(body&&visible)body.scrollTop=body.scrollHeight;if(line.classList.contains('incoming')){if(visible&&!options.silent){try{playGlobalSound('message');showChatToast(options.toast||`${getRoleDisplayNameForApp(role)} 发来一条 KOMO 消息`);}catch(_){}}else if(!visible){/* v109：卡片补进了 DOM 但用户没在看，未读角标照旧。 */try{incrementChatUnreadCount(role.id,1,options.unreadLabel||'[KOMO]');}catch(_){}}}saveChatHistoryForHandle(activeChatHandle,{reason:'komo-card'});return;}const snapshot=getChatHistorySnapshot(role.id)||{storageVersion:3,updatedAt:0,lines:[]};snapshot.lines=[...(snapshot.lines||[]),line.outerHTML];snapshot.updatedAt=Date.now();snapshot.storageVersion=3;const history=loadChatHistoryState();history[role.id]=snapshot;persistChatHistoryState(role.id);if(line.classList.contains('incoming')){try{incrementChatUnreadCount(role.id,1,options.unreadLabel||'[KOMO]');}catch(_){}}}
+   声音 / Toast / 滚动这类前台反馈仍然只在聊天室可见时给。 */if(isChatThreadDomForHandle(role.id)){const visible=isChatConversationLoaded(role.id);const body=document.getElementById('chatThreadBody'),typing=document.getElementById('chatTyping');/* v111z76 · 卡上带的是旧时间（按记录补出来的老卡）就插回原位；实时卡时间=现在，照旧落到末尾。 */if(typeof insertChatLineByTime==='function')insertChatLineByTime(line,Number(line.dataset.createdAt)||0);else body?.insertBefore(line,typing||null);if(line.classList.contains('outgoing')){line.dataset.receiptStatus='unread';stampChatMessageLine(line);scheduleChatUnreadReceipt(line);}else stampChatMessageLine(line);if(body&&visible)body.scrollTop=body.scrollHeight;if(line.classList.contains('incoming')){if(visible&&!options.silent){try{playGlobalSound('message');showChatToast(options.toast||`${getRoleDisplayNameForApp(role)} 发来一条 KOMO 消息`);}catch(_){}}else if(!visible){/* v109：卡片补进了 DOM 但用户没在看，未读角标照旧。 */try{incrementChatUnreadCount(role.id,1,options.unreadLabel||'[KOMO]');}catch(_){}}}saveChatHistoryForHandle(activeChatHandle,{reason:'komo-card'});return;}const snapshot=getChatHistorySnapshot(role.id)||{storageVersion:3,updatedAt:0,lines:[]};snapshot.lines=[...(snapshot.lines||[]),line.outerHTML];snapshot.updatedAt=Date.now();snapshot.storageVersion=3;const history=loadChatHistoryState();history[role.id]=snapshot;persistChatHistoryState(role.id);if(line.classList.contains('incoming')){try{incrementChatUnreadCount(role.id,1,options.unreadLabel||'[KOMO]');}catch(_){}}}
 /* 判断某张卡是否已经写进该聊天室的历史快照 —— 防止重复补卡。
    用属性字符串直接在序列化 HTML 里查，比反序列化整个快照便宜得多。 */
 function komoSnapshotHasCard(roleId,attr,id){if(!id)return false;const needle=`${attr}="${id}"`;
@@ -43065,7 +43424,9 @@ window.komoRefundOutgoingRedEnvelope=async function(record){const state=loadKomo
    于是「纯文字」成了常态，且回到聊天室后 restoreKomoRequestCards 又补一张卡，
    造成「文字 + 卡片」同时出现（实测 ["CARD","PLAIN-TEXT"]）。
    现在统一走 appendKomoChatLine：开着就插 DOM，没开着就写进历史快照。 */
-function appendKomoRequestCard(role,request,product){if(isRoleTemporarilyAway(role))return;const body=document.getElementById('chatThreadBody');const existing=body?.querySelector(`[data-komo-request-id="${request.id}"]`);if(existing){existing.querySelectorAll('[data-action]').forEach(button=>button.onclick=()=>handleKomoRequestAction(request.id,button.dataset.action));return;}if(!isChatConversationLoaded(role.id)&&komoSnapshotHasCard(role.id,'data-komo-request-id',request.id))return;const line=document.createElement('div');line.className='chat-message-line incoming';line.dataset.messageKind='komo-request';line.dataset.komoRequestId=request.id;line.innerHTML=`<div class="chat-message-avatar partner-avatar"></div><div class="chat-message-content"><div class="chat-bubble chat-komo-request-bubble"><div class="chat-komo-gift-head"><span>KOMO REQUEST</span><b>24H</b></div><div class="chat-komo-gift-body"><i>${product.icon}</i><div><strong>${product.name}</strong><small>${getRoleDisplayNameForApp(role)} 想请你帮忙带一件</small></div></div><div class="komo-request-actions"><button data-action="accept">帮 TA 带</button><button data-action="later">稍后</button><button data-action="decline">拒绝</button></div></div><div class="chat-message-meta">刚刚</div></div>`;setChatAvatarVisual(line.querySelector('.partner-avatar'),role.initials,role.avatarImage?{type:'image',src:role.avatarImage}:`linear-gradient(135deg,${role.color1},${role.color2})`);line.querySelectorAll('[data-action]').forEach(button=>button.onclick=()=>handleKomoRequestAction(request.id,button.dataset.action));appendKomoChatLine(role,line,{unreadLabel:'[KOMO 代买请求]',toast:`${getRoleDisplayNameForApp(role)} 想请你带一件东西`});}
+function appendKomoRequestCard(role,request,product){if(isRoleTemporarilyAway(role))return;const body=document.getElementById('chatThreadBody');const existing=body?.querySelector(`[data-komo-request-id="${request.id}"]`);if(existing){existing.querySelectorAll('[data-action]').forEach(button=>button.onclick=()=>handleKomoRequestAction(request.id,button.dataset.action));return;}/* ⚠ v111z76：这里原本只在「房间不在前台」时才查历史快照 —— 房间开着但那张卡落在分页窗口外（>100 行）时，
+   DOM 里找不到就当没有，于是每进一次房间都在末尾补一张新的（用户报的「之前的特殊卡片反复出现在最新消息点」）。
+   快照判定与前台无关，必须无条件执行（komoSnapshotHasCard 内部同时查 DOM 与完整历史）。 */if(komoSnapshotHasCard(role.id,'data-komo-request-id',request.id))return;const line=document.createElement('div');line.className='chat-message-line incoming';line.dataset.messageKind='komo-request';line.dataset.komoRequestId=request.id;line.innerHTML=`<div class="chat-message-avatar partner-avatar"></div><div class="chat-message-content"><div class="chat-bubble chat-komo-request-bubble"><div class="chat-komo-gift-head"><span>KOMO REQUEST</span><b>24H</b></div><div class="chat-komo-gift-body"><i>${product.icon}</i><div><strong>${product.name}</strong><small>${getRoleDisplayNameForApp(role)} 想请你帮忙带一件</small></div></div><div class="komo-request-actions"><button data-action="accept">帮 TA 带</button><button data-action="later">稍后</button><button data-action="decline">拒绝</button></div></div><div class="chat-message-meta">刚刚</div></div>`;setChatAvatarVisual(line.querySelector('.partner-avatar'),role.initials,role.avatarImage?{type:'image',src:role.avatarImage}:`linear-gradient(135deg,${role.color1},${role.color2})`);line.querySelectorAll('[data-action]').forEach(button=>button.onclick=()=>handleKomoRequestAction(request.id,button.dataset.action));/* v111z76 · 带上请求自己的时间：从记录补出来的老代买卡落回当年那一行。 */line.dataset.createdAt=String(Number(line.dataset.createdAt)||Number(request.createdAt)||Number(request.sentAt)||Date.now());appendKomoChatLine(role,line,{unreadLabel:'[KOMO 代买请求]',toast:`${getRoleDisplayNameForApp(role)} 想请你带一件东西`});}
 /* v82：点「稍后」后按钮被整段抹掉，重开聊天室也不恢复（实测 buttons 0→0），
    这条代买请求从此没有任何入口，等于死局。
    现在 later 状态保留一个「现在去带」主按钮，其余状态才收成纯文案。 */
@@ -45258,7 +45619,7 @@ if(currentLines.length&&snapshotStale){
   try{body.innerHTML=defaultChatThreadMarkup;body.dataset.loadedChatHandle=key;restoreChatHistory(key,{preserveRestoreFlag:true});applyChatHistoryState();}finally{restoringChatHistory=false;}
   return;
 }const deleted=new Set((getChatSettings(key).deletedSpecialMessageIds||[]).map(String)),seen=new Map(),recovered=[];records.forEach(record=>{const holder=document.createElement('div');holder.innerHTML=String(record.html||'');const identity=chatSpecialIdentityFromLine(holder.firstElementChild);if(identity&&deleted.has(identity))return;if(identity&&seen.has(identity)){recovered[seen.get(identity)]=record.html;return;}if(identity)seen.set(identity,recovered.length);recovered.push(record.html);});if(!recovered.length)return;const state=loadChatHistoryState();state[key]={storageVersion:4,updatedAt:Date.now(),lines:recovered,source:'individual-message-store-recovery'};persistChatHistoryState(key);const body=document.getElementById('chatThreadBody');if(!body||String(activeChatHandle)!==key)return;chatHistoryMutationIgnoreUntil=Date.now()+400;restoringChatHistory=true;try{body.innerHTML=defaultChatThreadMarkup;body.dataset.loadedChatHandle=key;restoreChatHistory(key,{preserveRestoreFlag:true});applyChatHistoryState();}finally{restoringChatHistory=false;}};
-function insertEarlierLines(handle,lines){const body=document.getElementById('chatThreadBody'),typing=document.getElementById('chatTyping');if(!body||!lines.length)return;const oldHeight=body.scrollHeight,anchor=body.querySelector(':scope > .chat-message-line, :scope > .chat-call-system-message')||typing,holder=document.createElement('div'),fragment=document.createDocumentFragment();lines.forEach(html=>{holder.innerHTML=String(html||'');const line=holder.firstElementChild;if(line&&(line.classList.contains('chat-message-line')||line.classList.contains('chat-call-system-message'))){if(line.classList.contains('chat-message-line'))stampChatMessageLine(line);fragment.appendChild(line);}holder.replaceChildren();});body.insertBefore(fragment,anchor||null);hydrateDreamMediaTree(body);window.rehydrateStoredChatAvatars?.(body,handle);body.querySelectorAll('.chat-voice-bubble').forEach(bindChatVoiceBubbleInteractions);window.dedupeChatSpecialCardsInDom?.(body);lucide.createIcons();body.scrollTop+=body.scrollHeight-oldHeight;}
+function insertEarlierLines(handle,lines){const body=document.getElementById('chatThreadBody'),typing=document.getElementById('chatTyping');if(!body||!lines.length)return;const oldHeight=body.scrollHeight,anchor=body.querySelector(':scope > .chat-message-line, :scope > .chat-call-system-message')||typing,holder=document.createElement('div'),fragment=document.createDocumentFragment();lines.forEach(html=>{holder.innerHTML=String(html||'');const line=holder.firstElementChild;if(line&&(line.classList.contains('chat-message-line')||line.classList.contains('chat-call-system-message'))){/* ⚠ v111z76：加载更早记录 = 恢复历史，不是发送。以前这里给老行补 Date.now()，翻页一次就把几十条老消息改成「刚刚发的」，写回后全漂到最新一端 —— 必须传 0。 */if(line.classList.contains('chat-message-line'))stampChatMessageLine(line,0);fragment.appendChild(line);}holder.replaceChildren();});body.insertBefore(fragment,anchor||null);hydrateDreamMediaTree(body);window.rehydrateStoredChatAvatars?.(body,handle);body.querySelectorAll('.chat-voice-bubble').forEach(bindChatVoiceBubbleInteractions);window.dedupeChatSpecialCardsInDom?.(body);lucide.createIcons();body.scrollTop+=body.scrollHeight-oldHeight;}
 window.ensureChatHistoryLoadEarlierButton=function(handle){const body=document.getElementById('chatThreadBody');if(!body)return;body.querySelector(':scope > .chat-load-earlier-v4')?.remove();const start=Math.max(0,Number(body.dataset.historyLoadedStart)||0);if(start<=0)return;const button=document.createElement('button');button.type='button';button.className='chat-load-earlier-v4';button.textContent=`加载更早记录（还有 ${start} 条）`;button.onclick=()=>window.loadEarlierChatHistoryPage(handle,button);body.insertBefore(button,body.firstChild);};
 window.loadEarlierChatHistoryPage=async function(handle,button){const body=document.getElementById('chatThreadBody'),snapshot=getChatHistorySnapshot(handle);if(!body||!Array.isArray(snapshot?.lines))return;button.disabled=true;button.textContent='正在加载…';const end=Math.max(0,Number(body.dataset.historyLoadedStart)||0),start=Math.max(0,end-CHAT_V4_PAGE_SIZE);chatHistoryMutationIgnoreUntil=Date.now()+350;restoringChatHistory=true;try{insertEarlierLines(handle,snapshot.lines.slice(start,end));body.dataset.historyLoadedStart=String(start);rememberChatViewWindow(handle,snapshot.lines.length-start);}finally{restoringChatHistory=false;}window.ensureChatHistoryLoadEarlierButton(handle);};
 function backupHashUpdate(hash,text){let h=hash>>>0;for(let i=0;i<text.length;i++){h^=text.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
@@ -47089,17 +47450,20 @@ window.sendChatTransfer=function(yuan,noteText){
     wallet.updatedAt=Date.now();
     state.ledger=Array.isArray(state.ledger)?state.ledger:[];
     // id 带随机后缀：同毫秒连发两笔会撞 id，卡片会被去重逻辑吞掉一张
+    // v111z76：时间戳也写进副本 —— 只有「10:45」这种显示时间的话，进房间重建卡片时只能猜，
+    // 猜出来的钟点可能把刚发的消息挤到卡片前面（用户报的「信息跑到最新一条前面」同理）。
     const txId=`transfer-${handle}-${Date.now()}-${Math.random().toString(16).slice(2,8)}`;
+    const txAt=Date.now();
     state.ledger.push({id:txId,walletId:handle,type:'transfer',
       sourceType:'transfer',direction:'income',amountCents:amount,
       balanceAfterCents:wallet.balanceCents,title:note||'收到转账',category:'转账',
-      occurredAt:Date.now(),createdAt:Date.now()});
+      occurredAt:txAt,createdAt:txAt});
     komoSave(state,'chat-transfer');
     if(typeof closeChatAttachmentPanel==='function')closeChatAttachmentPanel();
     // 在会话里留一张卡片，而不是只弹一句 toast 就没了
     if(typeof window.appendTransferCard==='function'){
       window.appendTransferCard({id:txId,direction:'out',
-        amount:(amount/100).toFixed(2),note,
+        amount:(amount/100).toFixed(2),note,createdAt:txAt,
         time:new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})});
     }
     if(typeof recordUserChatActivity==='function')recordUserChatActivity(handle);
