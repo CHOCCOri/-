@@ -11,7 +11,7 @@ const STORE = 'state';
  * 应用自身的 mobius-image-resilience-v1（媒体韧性缓存，最多 64MB 用户媒体）
  * 由页面代码管理，本 SW 绝不可删除或拦截。
  * ------------------------------------------------------------------ */
-const CACHE_VERSION = 'v111z84';
+const CACHE_VERSION = 'v111z75';
 const SHELL_CACHE = `mobius-shell-${CACHE_VERSION}`;
 const SHELL_CACHE_PREFIX = 'mobius-shell-';
 const APP_MEDIA_CACHE = 'mobius-image-resilience-v1'; // 应用私有，永不触碰
@@ -40,7 +40,6 @@ const PRECACHE_URLS = [
   './icons/icon-maskable-512.png?v=v111z62',
   './icons/apple-touch-icon-180.png?v=v111z62',
   './icons/badge-96.png?v=v111z62',
-  './icons/mail-192.png?v=v111z83',
   './icons/favicon-32.png?v=v111z62',
   './icons/favicon-64.png?v=v111z62'
 ];
