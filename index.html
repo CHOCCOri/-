@@ -51676,5 +51676,885 @@ body #chatApp[data-card-skin] .chat-decision-bubble.is-answered .chat-decision-s
 #appScreen .mail-app .mail-reader-avatar,
 #appScreen .mail-app .mail-sender-avatar { background-repeat: no-repeat !important; background-position: center !important; background-size: cover !important; }
 </style>
+
+<!-- ==================== Möbius v111z75 修复块（2026-10-08）====================
+   用户报三件事，逐条给根因与修法：
+
+   ①「之前发的信息会跑到最新一条消息的位置」
+   ②「之前的特殊卡片反复出现在最新的消息点」
+   ③「切换到每一页每一个界面时，字体都会渐进放大然后停止」
+
+   ①② 是同一条因果链：
+     · 老版本写下的行没有 data-created-at（时间点）。它存进历史时的身份是 `tx:<正文>`。
+     · 每次「进房间 → 写盘」，saveChatHistoryForHandle 都会对 DOM 里每一行调用
+       stampChatMessageLine —— 那行发现没有时间戳，就补一个 Date.now()。
+       于是这一行在 DOM 里的身份变成 `at:<现在>#<正文>`，和存储里那份 `tx:<正文>` 对不上，
+       并集（mergeChatHistoryLineLists）把它们当成两条：老行留在原处，另生一份「现在」的副本。
+     · 并集之后按 data-created-at 排序，没有时间戳的行被排在最后 ——
+       副本带着「现在」贴在最新消息位置，老行被挤到全表末尾。反复进出就反复复制。
+     · 字卡请求卡（data-glyph-request-id）与 KOMO 流水卡（data-komo-flow-id）没有登记身份，
+       三套去重（历史清洗 / 删除记忆 / DOM 兜底）同时对它们失效，副本清不掉。
+
+     修法（都在存储层，不改任何一条旧逻辑的入口）：
+       a. 补登记身份：字卡请求卡 / KOMO 流水卡，并补进 DOM 兜底去重的选择器。
+       b. 并集排序：没有时间戳的行不再沉底，按左右邻居插值，留在原位。
+       c. 存盘前把「没有时间戳的行」补上一个**稳定的**时间戳（由邻居插值算出来，写进存档），
+          行从此有了固定身份和固定位置，再进出也不会长出新副本。
+       d. 已经复制出来的副本：同一内容的多份合并成一份（保留最早的位置）；卡片则用它自己的
+          记录（settings.redEnvelopes / checkHistory / …）里的 createdAt 回到原来那一格。
+
+   ③ 是另一条：
+     applyGlobalFontScaleToTree 以 7ms/帧的 rAF 分片走整棵 DOM —— 页面切进来的头几帧
+     CSS 原字号（实测 9px / 11px）和放大后的字号同屏，随后一批批补到目标字号，
+     肉眼就是「字号渐进放大然后停止」（慢机器上要几百毫秒）。
+     修法：新增/新渲染的节点在同一帧里同步补完（只处理没处理过的那批），
+     超大一批（>2500 个元素）才回退原来的分片走法；切页/回前台时再兜一次底。
+
+   ── 2026-10-08 · 批二（用户第二次报修） ──
+   报修①「对方忽略我设置的回复节奏和主动发消息的节奏一直连发消息」
+   报修②「反复出现的特殊卡片不止红包，还有查岗 / 查岗回复 / 决策 / 决策回复的卡片」
+
+   ①「普通消息」这一侧（用户口径：对方忽略我设的回复节奏和主动发消息节奏、一直连发）
+     实测拿到四条路径，逐条修掉（详见第六节）：
+     a. 卡片链自有硬编码延迟：查岗报备 5~60 秒、决策卡选择 10 秒（面板 600~900 秒时实测 25.7 / 10.1 秒就到）。
+     b. 待收队列在进房间时「一次性倒出来」：面板主动节奏 60 分~24 小时、错过 4 条 → 进房 2 秒内 4 条全出现。
+     c. **主动消息的「第一拍」没有节拍**：状态里还没有任何主动说话记录时（新装 / 清过数据 /
+        旧数据缺 __gate），排期直接用「现在 + 0~15 秒抖动」⇒ 面板写着 60 分~24 小时，
+        进房 3~13 秒对方就主动开口（两版都实测到）。
+     d. **连发批次是机关枪**：开了「连发」后，一轮 1~5 句之间的间隔写死 1.2~5.4 秒，
+        完全不读面板（面板回复设 40~60 秒也一样）。
+     对照：**回复链本身是守节奏的**（面板 40~60 秒时实测 43.5 / 58.6 / 41.2 秒各一条），
+     这一侧不需要改，只把多轮排队的量按同一口径记在报告里。
+
+   ② 与批一的 ①② 是同一条因果链，只是这四个卡型各自还漏在不同的缺口上（详见第五节）：
+     · 存档里那份卡片行没有 data-created-at（老版本写的卡；appendDirectCheckReply /
+       appendIncomingFeatureDecision 追加的新行也不写戳）。渲染进 DOM 时
+       stampChatMessageLine 才补「现在」⇒ 并集里存储那份是 `tx:<正文>`、DOM 那份是
+       `at:<现在>#<正文>`，两组键零交集 ⇒ 一张卡判成两条，副本带「现在」贴着最新消息位置。
+     · 补身份兜底（adoptLegacySpecialCardIdentities）只覆盖 红包/转账/查岗/查岗回复，
+       决策卡与决策回复行没有任何身份可补；查岗回复卡的行级身份键（sp:）也漏登记。
+     修法见第五节：补身份（含决策卡/决策回复行）、放宽副本收口（已带戳的重复卡也合并）、
+     报备卡时间改用 repliedAt（不再跑到问题卡前面）、新追加行当场写戳。
+
+   本块只覆盖 window 上的几个函数、不改动文件里任何旧代码；整块删掉即回到改动前的行为。
+   ========================================================================== -->
+<script id="mobiusFix20261008">
+(function () {
+  'use strict';
+  if (window.__mobiusFix20261008) return;
+  window.__mobiusFix20261008 = true;
+
+  var origMerge = window.mergeChatHistoryLineLists;
+  var origNormalize = window.normalizeStoredChatSpecialLines;
+  var origIdentityAttrs = window.chatSpecialIdentityAttrs;
+  var origIdentityFromLine = window.chatSpecialIdentityFromLine;
+  var origFontWalk = window.applyGlobalFontScaleToTree;
+  var applyFontElement = window.applyGlobalFontScaleToElement;
+  var getSettings = window.getChatSettings;
+  if (typeof origMerge !== 'function' || typeof origNormalize !== 'function'
+    || typeof origIdentityAttrs !== 'function' || typeof origIdentityFromLine !== 'function'
+    || typeof applyFontElement !== 'function' || typeof getSettings !== 'function') return;
+
+  /* ───────────────────────── 基础小工具 ───────────────────────── */
+  function lineOf(html) {
+    var holder = document.createElement('div');
+    holder.innerHTML = String(html || '');
+    return holder.firstElementChild;
+  }
+  function htmlOf(line) {
+    return line ? line.outerHTML : '';
+  }
+  function tsOf(html) {
+    var m = /data-created-at="(\d+)"/.exec(String(html || ''));
+    return m ? Number(m[1]) : 0;
+  }
+
+  /* 内容签名：忽略时间戳、回执、送达状态和字体缩放留下的痕迹，只比「这一行是什么」。
+     用来认「同一条老行被复制出来的那些副本」。 */
+  var STRIP_ATTRS = ['data-created-at', 'data-receipt-status', 'data-message-status', 'data-receipt-base',
+    'data-global-base-font-size', 'data-global-font-multiplier-applied', 'data-global-font-scale-applied',
+    'data-global-font-harmony-base', 'data-global-font-inherited'];
+  function stripStyle(node) {
+    var style = node.getAttribute('style');
+    if (!style) return;
+    var next = style.replace(/font-size\s*:[^;]*;?/gi, '').trim();
+    if (next) node.setAttribute('style', next);
+    else node.removeAttribute('style');
+  }
+  function contentSignature(html) {
+    var line = lineOf(html);
+    if (!line) return String(html || '');
+    STRIP_ATTRS.forEach(function (name) { line.removeAttribute(name); });
+    stripStyle(line);
+    Array.prototype.slice.call(line.querySelectorAll('[style]')).forEach(stripStyle);
+    Array.prototype.slice.call(line.querySelectorAll('.delivery-state')).forEach(function (node) { node.remove(); });
+    var meta = line.querySelector('.chat-message-meta');
+    if (meta) { meta.textContent = ''; meta.removeAttribute('data-receipt-base'); }
+    return line.outerHTML.replace(/\s+/g, ' ').trim();
+  }
+
+  /* 没有时间戳的行怎么定位：按左右邻居插值 —— 位置保持不动，和原来一样。
+     返回一个与 list 等长的「时间键」数组（可能带小数）。 */
+  function derivedKeys(list) {
+    var keys = list.map(tsOf);
+    var i = 0;
+    while (i < list.length) {
+      if (keys[i]) { i += 1; continue; }
+      var j = i;
+      while (j < list.length && !keys[j]) j += 1;      /* [i, j) = 一段没有时间戳的行 */
+      var run = j - i;
+      var prev = i > 0 ? keys[i - 1] : 0;
+      var next = 0;
+      for (var k = j; k < list.length; k += 1) { if (keys[k]) { next = keys[k]; break; } }
+      for (var n = 0; n < run; n += 1) {
+        if (prev && next && next > prev) keys[i + n] = prev + (next - prev) * ((n + 1) / (run + 1));
+        else if (prev) keys[i + n] = prev + 1 + n;
+        else if (next) keys[i + n] = next - (run - n);
+        else keys[i + n] = i + n;                      /* 整段都没时间戳：按原顺序 */
+      }
+      i = j;
+    }
+    return keys;
+  }
+  function orderList(list, keys) {
+    return list
+      .map(function (html, index) { return { html: html, index: index, k: keys ? keys[index] : tsOf(html) }; })
+      .sort(function (a, b) { return (a.k - b.k) || (a.index - b.index); })
+      .map(function (item) { return item.html; });
+  }
+  function setTs(html, ts) {
+    var line = lineOf(html);
+    if (!line) return html;
+    line.setAttribute('data-created-at', String(Math.round(ts)));
+    return htmlOf(line);
+  }
+
+  /* ══════════ 一 · 身份登记：字卡请求卡 / KOMO 流水卡 ══════════
+     没有身份 → 「历史清洗去重」「删除记忆」「DOM 兜底去重」三套机制同时失效，
+     这正是「特殊卡片反复出现」的老病根（转账卡、代付卡都踩过）。 */
+  var EXTRA_ATTR_RE = /data-(?:glyph-request-id|komo-flow-id|check-reply-id|check-reply-for|decision-answer-id)="[^"]*"/g;
+
+  window.chatSpecialIdentityAttrs = function (html) {
+    var base = origIdentityAttrs(html) || '';
+    var extra = (String(html || '').match(EXTRA_ATTR_RE) || []).join('|');
+    if (!extra) return base;
+    return base ? base + '|' + extra : extra;
+  };
+
+  function identityFromLine(line) {
+    var base = origIdentityFromLine(line);
+    if (base) return base;
+    if (!line || !line.querySelector) return '';
+    var glyphNode = line.dataset && line.dataset.glyphRequestId ? line : line.querySelector('[data-glyph-request-id]');
+    var glyph = glyphNode ? (glyphNode.dataset.glyphRequestId || '') : '';
+    if (glyph) return 'glyphreq:' + String(glyph);
+    var flowNode = line.dataset && line.dataset.komoFlowId ? line : line.querySelector('[data-komo-flow-id]');
+    var flow = flowNode ? (flowNode.dataset.komoFlowId || '') : '';
+    if (flow) return 'komo-flow:' + String(flow);
+    /* 批二：决策回复行的身份。原来这行**谁都不认得**——行级并集没有 sp: 键、
+       chatSpecialIdentityFromLine 返回空，于是它只剩「正文」可当身份，
+       正文一变（或补戳）就成两条，副本贴到最新消息位置。 */
+    var answerNode = line.dataset && line.dataset.decisionAnswerId ? line : line.querySelector('[data-decision-answer-id]');
+    var answer = answerNode ? (answerNode.dataset.decisionAnswerId || '') : '';
+    if (answer) return 'decision-answer:' + String(answer);
+    return '';
+  }
+  window.chatSpecialIdentityFromLine = function (line) {
+    return identityFromLine(line);
+  };
+
+  var DEDUPE_SELECTOR = '.chat-red-envelope-bubble,.chat-transfer-bubble,.chat-invite-bubble,'
+    + '.chat-decision-bubble,.chat-check-bubble,.chat-check-reply-bubble,[data-komo-order-id],'
+    + '[data-komo-request-id],.chat-komo-pay-request,.chat-komo-pay-result,'
+    + '[data-glyph-request-id],[data-komo-flow-id]';
+
+  window.dedupeChatSpecialCardsInDom = function (body) {
+    if (!body) body = document.getElementById('chatThreadBody');
+    if (!body) return 0;
+    var seen = new Map();
+    var removed = 0;
+    /* 决策回复行的身份写在「行」上（data-decision-answer-id），气泡本身没有标记 ——
+       状态同步要取 .chat-bubble，否则拿不到节点、副本删了但状态不同步。 */
+    var bubbleOf = function (line, identity) {
+      return identity.indexOf('decision-answer:') === 0 ? line.querySelector('.chat-bubble') : line.querySelector(DEDUPE_SELECTOR);
+    };
+    Array.prototype.slice.call(body.querySelectorAll(':scope > .chat-message-line')).forEach(function (line) {
+      var identity = identityFromLine(line);
+      if (!identity) return;
+      var first = seen.get(identity);
+      if (!first) { seen.set(identity, line); return; }
+      var firstBubble = bubbleOf(first, identity);
+      var dupBubble = bubbleOf(line, identity);
+      if (firstBubble && dupBubble && firstBubble !== dupBubble) {
+        firstBubble.innerHTML = dupBubble.innerHTML;
+        firstBubble.className = dupBubble.className;
+      }
+      line.remove();
+      removed += 1;
+    });
+    return removed;
+  };
+
+  /* ══════════ 二 · 并集排序：没有时间戳的行留在原位 ══════════
+     原实现 `if (!a.at && b.at) return 1` 把没有时间戳的行全部丢到末尾 ——
+     那就是「老消息跑到最新一条消息的位置」。 */
+  window.mergeChatHistoryLineLists = function (baseLines, incomingLines, deletedKeys) {
+    var skip = deletedKeys instanceof Set ? deletedKeys : new Set();
+    var keysOf = typeof window.chatLineIdentityKeys === 'function' ? window.chatLineIdentityKeys : function () { return []; };
+    var out = [];
+    var slotOf = new Map();
+    var push = function (html) {
+      var text = String(html || '');
+      if (!text) return;
+      var keys = keysOf(text) || [];
+      if (keys.length && keys.some(function (key) { return skip.has(key); })) return;
+      var slot = -1;
+      for (var i = 0; i < keys.length; i += 1) { if (slotOf.has(keys[i])) { slot = slotOf.get(keys[i]); break; } }
+      if (slot >= 0) {
+        out[slot] = text;                             /* 同一行写了两遍：留后写的那份（含最新回执/状态） */
+        keys.forEach(function (key) { slotOf.set(key, slot); });
+        return;
+      }
+      var index = out.length;
+      out.push(text);
+      keys.forEach(function (key) { slotOf.set(key, index); });
+    };
+    (Array.isArray(baseLines) ? baseLines : []).forEach(push);
+    (Array.isArray(incomingLines) ? incomingLines : []).forEach(push);
+    return orderList(out, derivedKeys(out));
+  };
+
+  /* ══════════ 三 · 历史清洗：补身份、收副本、卡片回原位 ══════════ */
+  /* 特殊卡片的「权威时间」：这些卡在 settings 里都留了一条记录，卡被 ①② 挪到末尾之后，
+     拿记录里的时间就能把它放回原来那一格。 */
+  function cardTimestampIndex(settings) {
+    var map = new Map();
+    var put = function (prefix, list, timeOf) {
+      (Array.isArray(list) ? list : []).forEach(function (record) {
+        if (!record || !record.id) return;
+        var ts = typeof timeOf === 'function' ? (Number(timeOf(record)) || 0) : (Number(record.createdAt) || 0);
+        /* 有几种记录不写 createdAt，只能从它自己的字段推：
+           发出的红包记录只有 expiresAt（= 发出时间 + 24h）；报备回复记 repliedAt。 */
+        if (!ts && Number(record.expiresAt)) ts = Number(record.expiresAt) - 86400000;
+        if (!ts && Number(record.repliedAt)) ts = Number(record.repliedAt);
+        if (!ts && Number(record.plannedAt)) ts = Number(record.plannedAt);
+        if (ts > 0) map.set(prefix + ':' + String(record.id), ts);
+      });
+    };
+    put('glyphreq', settings.glyphCardRequests);
+    put('red', settings.redEnvelopes);
+    put('transfer', settings.transferRecords);
+    put('check', settings.checkHistory);
+    /* ⚠ 报备卡（查岗回复）必须用 repliedAt。批一这里跟着查岗卡一起取了 createdAt，
+       结果报备卡被「摆回」查岗卡发问的那一刻 —— 直接排到问题卡前面（用户可见的顺序错乱）。
+       老记录没有 repliedAt 时退到 createdAt + 1ms：紧跟在问题卡后面，绝不提前。 */
+    put('check-reply', settings.checkHistory, function (record) {
+      return Number(record.repliedAt) || (Number(record.createdAt) ? Number(record.createdAt) + 1 : 0);
+    });
+    put('decision', settings.decisionRecords);
+    /* 决策回复行用 answeredAt —— 记录里就是 TA 做出选择的那一刻。 */
+    put('decision-answer', settings.decisionRecords, function (record) { return Number(record.answeredAt) || 0; });
+    put('invite', settings.inviteHistory);
+    return map;
+  }
+
+  /* 批二：卡片副本的收口工具。
+     isCardLike —— 这行是不是「卡片行」（或决策回复行）；
+     cardSignature —— 「忽略卡片 id」的内容签名：时间戳、回执、meta、字体残留、以及
+       各种 data-*-id / data-message-id 全部剥掉，只留「这张卡是什么样子」。
+       一份被复制出来的副本，和原件就是这个签名完全相同（区别只在 id 与时间戳）。 */
+  var CARD_LINE_MARK = /class="[^"]*chat-(?:decision|check-reply|check|red-envelope|transfer|invite|board|komo)-bubble|data-komo-|data-glyph-request-id/;
+  var DECISION_ANSWER_TEXT_MARK = /关于「[^」]{1,80}」，我的选择是[:：]/;
+  var CARD_ID_ATTRS = ['data-message-id', 'data-check-id', 'data-check-reply-id', 'data-check-reply-for',
+    'data-decision-id', 'data-decision-answer-id', 'data-red-id', 'data-transfer-id', 'data-invite-id',
+    'data-batch-id', 'data-group-v2-message-id', 'data-komo-order-id', 'data-komo-request-id',
+    'data-komo-pay-request-id', 'data-glyph-request-id', 'data-komo-flow-id', 'data-pending-incoming-id'];
+  function isCardLike(html) {
+    var text = String(html || '');
+    if (!text) return false;
+    return CARD_LINE_MARK.test(text) || DECISION_ANSWER_TEXT_MARK.test(text);
+  }
+  function cardSignature(html) {
+    var sig = contentSignature(html);
+    for (var i = 0; i < CARD_ID_ATTRS.length; i += 1) {
+      sig = sig.replace(new RegExp('\\s*' + CARD_ID_ATTRS[i] + '="[^"]*"', 'g'), '');
+    }
+    return sig;
+  }
+
+  /* 批二新增的第一道收口：**只在卡片行之间**、按「忽略 id 的内容签名」找副本。
+     合并条件（三层收紧，防止误删用户真的重复发送的卡片）：
+       ① 只处理卡片行（红包/转账/INVITE/查岗/查岗回复/决策/决策回复/KOMO/字卡/画板）；
+       ② 同一签名下至少有 2 份，且**至少有一份完全没有身份标记** ——
+          全新版本写下的卡片都带 id，「一份带 id + 一份不带 id」或「都不带 id」才是老 bug 的形态；
+          两份都带 id（各自有主的真实卡）一律不碰；
+       ③ 一组最多 6 份（再多属于异常存档，宁可留给人工处理）。
+     合并方式：位置留最早那份，内容取最后一份（保留最新状态），时间戳取最早那份 ——
+     卡片既不会消失，也不会再「反复贴到最新消息位置」。 */
+  function collapseCardTwins(list) {
+    var groups = new Map();
+    list.forEach(function (html, index) {
+      if (!isCardLike(html)) return;
+      var sig = cardSignature(html);
+      if (!sig) return;
+      if (!groups.has(sig)) groups.set(sig, []);
+      groups.get(sig).push(index);
+    });
+    var drop = new Set();
+    groups.forEach(function (indexes) {
+      if (indexes.length < 2 || indexes.length > 6) return;
+      var hasIdentityLess = indexes.some(function (i) {
+        try { return (chatSpecialIdentityAttrs(list[i]) || '') === ''; } catch (_) { return false; }
+      });
+      if (!hasIdentityLess) return;
+      var keep = indexes[0];
+      var lastHtml = list[indexes[indexes.length - 1]];
+      var keptLine = lineOf(lastHtml);
+      if (keptLine) keptLine.setAttribute('data-created-at', String(tsOf(list[keep]) || tsOf(lastHtml) || Date.now()));
+      list[keep] = keptLine ? htmlOf(keptLine) : lastHtml;
+      indexes.slice(1).forEach(function (i) { drop.add(i); });
+    });
+    if (!drop.size) return list;
+    return list.filter(function (_, index) { return !drop.has(index); });
+  }
+
+  /* 同一条老行被「补时间戳」复制出来的副本合并成一份：
+     条件 = 内容签名一致 + 同组里既有「没时间戳的」又有「有时间戳的」。
+     位置留最早的那一份；内容取最后一份（保留最新状态），但把伪造的时间戳摘掉，
+     由下面的邻居插值重新定位 —— 不会再把老行顶到最新消息位置上。 */
+  function collapseTwins(list) {
+    var groups = new Map();
+    list.forEach(function (html, index) {
+      var sig = contentSignature(html);
+      if (!sig) return;
+      if (!groups.has(sig)) groups.set(sig, []);
+      groups.get(sig).push(index);
+    });
+    var drop = new Set();
+    groups.forEach(function (indexes) {
+      if (indexes.length < 2 || indexes.length > 24) return;
+      var untimed = indexes.filter(function (i) { return !tsOf(list[i]); });
+      var timed = indexes.filter(function (i) { return !!tsOf(list[i]); });
+      var keep = indexes[0];
+      var lastHtml = list[indexes[indexes.length - 1]];
+      if (untimed.length && timed.length) {
+        /* 宽松比对绝不能自己做主删用户的东西：除了「有戳 / 没戳并存」，
+           还要求「副本不止一份」或者「没戳的那条已经落到全表末尾」（复制故障的固定形态）。 */
+        var lastIndex = list.length - 1;
+        var tailShape = untimed.some(function (i) { return i >= lastIndex - 2; });
+        if (timed.length < 2 && !tailShape) return;
+        var line = lineOf(lastHtml);
+        if (line) line.removeAttribute('data-created-at');
+        list[keep] = line ? htmlOf(line) : lastHtml;
+        indexes.slice(1).forEach(function (i) { drop.add(i); });
+        return;
+      }
+      /* 用户手里「已经复制出来的那些副本」每一份都带着时间戳（老 bug 进房一次盖一次），
+         所以「必须有一份没戳」这条判据永远不成立 —— 那种副本改由 collapseCardTwins
+         （在进入这里之前就跑完）按「忽略 id 的卡片内容签名」收口；
+         普通文字行不走那条路：同一个人连着说两句「好」是合法的。 */
+    });
+    if (!drop.size) return list;
+    return list.filter(function (_, index) { return !drop.has(index); });
+  }
+
+  window.normalizeStoredChatSpecialLines = function (handle, lines) {
+    var settings = getSettings(handle) || {};
+    var deleted = new Set((settings.deletedSpecialMessageIds || []).map(String));
+    var authoritative = cardTimestampIndex(settings);
+    var result = [];
+    var firstIndex = new Map();
+    (Array.isArray(lines) ? lines : []).forEach(function (html) {
+      var text = String(html || '');
+      var line = lineOf(text);
+      var identity = line ? identityFromLine(line) : '';
+      if (identity && deleted.has(identity)) return;
+      if (identity && firstIndex.has(identity)) {
+        result[firstIndex.get(identity)] = text;     /* 保留最早的位置，采用最后一份状态 */
+        return;
+      }
+      if (identity) firstIndex.set(identity, result.length);
+      result.push(text);
+    });
+
+    /* 卡片回原位：有权威记录时间的卡片，把时间戳改回记录里的那一个（缺的补上）。 */
+    result = result.map(function (html) {
+      var line = lineOf(html);
+      if (!line) return html;
+      var identity = identityFromLine(line);
+      var ts = identity ? authoritative.get(identity) : 0;
+      if (!ts) return html;
+      var current = tsOf(html);
+      if (current && current <= ts) return html;      /* 正常时间戳一律不动 */
+      line.setAttribute('data-created-at', String(ts));
+      return htmlOf(line);
+    });
+
+    /* 收掉「同一条老行拆成多份」的副本：
+       ① 先按卡片内容签名收卡片副本（批二：用户存档里已经复制出来的那些）；
+       ② 再跑原来的「有戳 / 没戳并存」收口（批一）。 */
+    result = collapseCardTwins(result);
+    result = collapseTwins(result);
+
+    /* 补一个稳定的时间戳：没有时间戳的行按邻居插值补上，写进存档。
+       从此这行有固定身份（不再靠正文当身份）、固定位置 —— 反复进出也不会再长副本。 */
+    var keys = derivedKeys(result);
+    result = result.map(function (html, index) { return tsOf(html) ? html : setTs(html, keys[index]); });
+    return orderList(result, derivedKeys(result));
+  };
+
+  /* ══════════ 五 · 决策卡 / 决策回复行：补身份 + 当场写戳（批二）══════════
+     实测（repro-special-legacy / repro-special-seed2 / repro-special-trace2）：
+       · 存档里的老决策卡没有 data-decision-id、老决策回复行没有任何 id；
+       · 补身份兜底 adoptLegacySpecialCardIdentities 只覆盖 红包/转账/查岗/查岗回复 ——
+         这两类卡在「行级并集」「删除记忆」「DOM 兜底」三套机制里全部无身份可认；
+       · 每进出一次房间，写盘并集就按「正文」把它们再复制一份，副本带「现在」贴着最新消息位置
+         （实测：进出 4 次 → 决策卡 1→5 张、决策回复行 1→5 条，DOM 5→22 行）。
+     这一段：
+       ① 把这两类卡也纳入老卡补身份（与 settings.decisionRecords 配对，写入快照 + 当前 DOM）；
+       ② 新追加的报备卡 / 决策回复行当场写时间戳 —— 从生成那一刻就有稳定身份和固定位置。 */
+  function adoptDecisionIdentities(handle) {
+    var key = String(handle || '');
+    if (!key) return 0;
+    var settings = getSettings(key) || {};
+    var records = Array.isArray(settings.decisionRecords) ? settings.decisionRecords : [];
+    if (!records.length) return 0;
+    var snapshot = window.getChatHistorySnapshot ? window.getChatHistorySnapshot(key) : null;
+    if (!snapshot || !Array.isArray(snapshot.lines) || !snapshot.lines.length) return 0;
+    var body = document.getElementById('chatThreadBody');
+    var isOpen = !!body && String(body.dataset.loadedChatHandle || '') === key;
+    var domLines = isOpen ? Array.prototype.slice.call(body.querySelectorAll(':scope > .chat-message-line')) : [];
+    var lines = snapshot.lines.slice();
+    var domOffset = Math.max(0, lines.length - domLines.length);
+    var deleted = new Set((settings.deletedSpecialMessageIds || []).map(String));
+
+    var claimedCard = new Set();
+    var claimedAnswer = new Set();
+    var inspect = function (line) {
+      if (!line || !line.querySelector) return;
+      var card = line.querySelector('.chat-decision-bubble');
+      if (card && card.dataset.decisionId) claimedCard.add(String(card.dataset.decisionId));
+      if (line.dataset.decisionAnswerId) claimedAnswer.add(String(line.dataset.decisionAnswerId));
+    };
+    lines.forEach(function (html) { inspect(lineOf(html)); });
+    domLines.forEach(inspect);
+
+    var cardSlots = [];
+    var answerSlots = [];
+    lines.forEach(function (html, index) {
+      var line = lineOf(html);
+      if (!line) return;
+      var card = line.querySelector('.chat-decision-bubble');
+      if (card && !card.dataset.decisionId) cardSlots.push(index);
+      if (line.dataset.decisionAnswerId) return;
+      var bubble = line.querySelector('.chat-bubble');
+      var text = bubble ? String(bubble.textContent || '') : '';
+      var hit = text.match(/关于「([^」]{1,80})」/);
+      if (hit) answerSlots.push({ index: index, question: hit[1] });
+    });
+    if (!cardSlots.length && !answerSlots.length) return 0;
+
+    var poolCards = records.filter(function (record) {
+      return record && record.id && !claimedCard.has(String(record.id)) && !deleted.has('decision:' + String(record.id));
+    }).map(function (record) { return String(record.id); }).reverse();          /* 最近的记录先配 */
+    var poolAnswers = records.filter(function (record) {
+      return record && record.id && record.status === 'answered' && !claimedAnswer.has(String(record.id)) && !deleted.has('decision-answer:' + String(record.id));
+    }).map(function (record) { return { id: String(record.id), question: String(record.question || '') }; }).reverse();
+    poolAnswers = poolAnswers.filter(function (item) { item.used = false; return true; });
+
+    var changed = 0;
+    cardSlots.slice().reverse().forEach(function (index, order) {
+      var id = poolCards[order];
+      if (!id) return;
+      var line = lineOf(lines[index]);
+      var card = line && line.querySelector('.chat-decision-bubble');
+      if (!card || card.dataset.decisionId) return;
+      card.dataset.decisionId = id;
+      lines[index] = htmlOf(line);
+      changed += 1;
+      var domLine = domLines[index - domOffset];
+      if (domLine) { var domCard = domLine.querySelector('.chat-decision-bubble'); if (domCard && !domCard.dataset.decisionId) domCard.dataset.decisionId = id; }
+    });
+    answerSlots.slice().reverse().forEach(function (slot) {
+      var line = lineOf(lines[slot.index]);
+      if (!line || line.dataset.decisionAnswerId) return;
+      var match = null;
+      /* 用「关于「问题」，我的选择是…」里的问题文本去认记录 —— 比按顺序配对可靠得多 */
+      for (var i = 0; i < poolAnswers.length; i += 1) {
+        var item = poolAnswers[i];
+        if (item.used || !item.question) continue;
+        if (item.question === slot.question) { match = item; break; }
+      }
+      if (!match) return;
+      match.used = true;
+      line.dataset.decisionAnswerId = match.id;
+      lines[slot.index] = htmlOf(line);
+      changed += 1;
+      var domLine = domLines[slot.index - domOffset];
+      if (domLine && !domLine.dataset.decisionAnswerId) domLine.dataset.decisionAnswerId = match.id;
+    });
+    if (!changed) return 0;
+
+    try {
+      var state = window.loadChatHistoryState ? window.loadChatHistoryState() : null;
+      if (!state || typeof state !== 'object') state = {};
+      if (!state[key] || !Array.isArray(state[key].lines)) state[key] = { storageVersion: 4, updatedAt: Date.now(), lines: lines.slice() };
+      else { state[key].lines = lines; state[key].updatedAt = Date.now(); }
+      if (window.persistChatHistoryState) window.persistChatHistoryState(key);
+    } catch (_) {}
+    return changed;
+  }
+
+  /* adoptLegacySpecialCardIdentities 是每次进房的补身份入口，挂在它后面一起跑 */
+  var origAdopt = window.adoptLegacySpecialCardIdentities;
+  if (typeof origAdopt === 'function') {
+    window.adoptLegacySpecialCardIdentities = function (handle) {
+      var out = origAdopt.apply(this, arguments);
+      try { adoptDecisionIdentities(handle); } catch (_) {}
+      return out;
+    };
+  }
+
+  /* 报备卡（appendDirectCheckReply）与决策回复行（appendIncomingFeatureDecision）原来都不写
+     data-created-at：渲染进 DOM 时才被补「现在」，于是并集里和存档那份对不上（tx: vs at:）。
+     这里包一层，生成完当场补戳 —— 新行从此一开始就有稳定身份和固定位置。 */
+  function escapeForSelector(value) {
+    var text = String(value || '');
+    try { if (window.CSS && typeof window.CSS.escape === 'function') return window.CSS.escape(text); } catch (_) {}
+    return text.replace(/["\\]/g, '');
+  }
+  ['appendDirectCheckReply', 'appendIncomingFeatureDecision'].forEach(function (name) {
+    var fn = window[name];
+    if (typeof fn !== 'function' || fn.__mobiusStamped) return;
+    var selectorFor = name === 'appendDirectCheckReply' ? '[data-check-reply-for="' : '[data-decision-answer-id="';
+    var wrapped = function (record) {
+      var out = fn.apply(this, arguments);
+      try {
+        var id = record && record.id ? String(record.id) : '';
+        if (id) {
+          var line = document.querySelector(selectorFor + escapeForSelector(id) + '"]');
+          if (line && typeof window.stampChatMessageLine === 'function') window.stampChatMessageLine(line);
+        }
+      } catch (_) {}
+      return out;
+    };
+    wrapped.__mobiusStamped = true;
+    try { window[name] = wrapped; } catch (_) {}
+  });
+
+  /* ══════════ 六 · 任何通道都不得比面板设的节奏更快（批二 ①）══════════
+     用户报修：「对方忽略我设置的回复节奏和主动发消息的节奏一直连发消息」。
+     实测（repro-pace-bypass / repro-pace-queue）：
+       · 面板回复节奏设 600~900 秒时，普通文字回复的 pendingReply.plannedAt = +673 秒（守规矩），
+         但查岗报备 25.7 秒就到了、决策卡的选择 10.1 秒就到了 —— 这两条链各自硬编码了
+         「发出后 5~60 秒」「10 秒（立即）/ 1~6 分钟（稍后）」，根本没读面板。
+       · 待收队列（错过时攒下的主动消息）在进房间时一次性全部揭示：
+         面板主动节奏设 60 分~24 小时，错过 4 条 → 进房 2 秒内 4 条全出现。
+     修法：
+       ① 卡片链（查岗报备 / 决策卡选择）的延迟 = max(它自己的硬编码值, 面板抽到的回复间隔) ——
+          面板更快时保持原样（默认 3~60 秒），面板更慢时跟着面板走，绝不会比面板更快。
+          每个记录只调整一次（记 rhythmAdjustedAt），反复进出房间不会再往后推。
+       ② 待收队列：第一条（最早那条）照旧立刻揭示（避免「进房间什么都没有」），
+          其余的按面板「主动消息最快间隔」逐条揭示，单条间隔最多 5 分钟封顶。 */
+  function panelReplyDelayMs() {
+    try {
+      var value = Number(typeof window.roleReplyDelay === 'function' ? window.roleReplyDelay() : 0);
+      if (Number.isFinite(value) && value > 0) return value;
+    } catch (_) {}
+    return 0;
+  }
+
+  /* ① 查岗：scheduleDirectCheckReply 原来写 createdAt + 5~60 秒；这里在它之前补一次「面板口径」。 */
+  var origScheduleCheckReply = window.scheduleDirectCheckReply;
+  if (typeof origScheduleCheckReply === 'function') {
+    window.scheduleDirectCheckReply = function (record, handle) {
+      try {
+        if (record && record.id && !Number(record.plannedReplyAt)) {
+          var panel = panelReplyDelayMs();
+          var own = 5000 + Math.floor(Math.random() * 55001);
+          var want = Math.max(own, panel || 0);
+          if (want > own) {
+            var key = String(handle || '');
+            var settings = getSettings(key) || {};
+            var saved = (settings.checkHistory || []).find(function (item) { return String(item.id) === String(record.id); });
+            if (saved && !Number(saved.plannedReplyAt)) {
+              saved.plannedReplyAt = (Number(saved.createdAt) || Date.now()) + want;
+              saved.rhythmAdjustedAt = Date.now();
+              settings.checkHistory = settings.checkHistory.map(function (item) { return String(item.id) === String(saved.id) ? saved : item; });
+              if (window.saveChatSettings) window.saveChatSettings(settings, key);
+              record.plannedReplyAt = saved.plannedReplyAt;
+            }
+          }
+        }
+      } catch (_) {}
+      return origScheduleCheckReply.apply(this, arguments);
+    };
+  }
+
+  /* ② 决策卡：createFeatureDecision 写 10 秒 / 1~6 分钟；这里在排程时按面板往后推（只推一次）。 */
+  var origScheduleDecision = window.scheduleFeatureDecision;
+  if (typeof origScheduleDecision === 'function') {
+    window.scheduleFeatureDecision = function (record, handle) {
+      try {
+        var key = String(handle || '');
+        var panel = panelReplyDelayMs();
+        if (record && record.id && panel > 0 && !Number(record.rhythmAdjustedAt)) {
+          var planned = Number(record.plannedAnswerAt) || 0;
+          var wait = planned - Date.now();
+          if (wait < panel) {
+            var settings = getSettings(key) || {};
+            var saved = (settings.decisionRecords || []).find(function (item) { return String(item.id) === String(record.id); });
+            var target = Date.now() + panel;
+            record.plannedAnswerAt = target;
+            record.rhythmAdjustedAt = Date.now();
+            if (saved) {
+              saved.plannedAnswerAt = target;
+              saved.rhythmAdjustedAt = record.rhythmAdjustedAt;
+              settings.decisionRecords = settings.decisionRecords.map(function (item) { return String(item.id) === String(saved.id) ? saved : item; });
+              if (window.saveChatSettings) window.saveChatSettings(settings, key);
+            }
+          }
+        }
+      } catch (_) {}
+      return origScheduleDecision.apply(this, arguments);
+    };
+  }
+
+  /* ③ 主动消息的「第一拍」必须真的是一条节拍（批二 c）
+     —— 状态里没有任何主动说话记录时，排期不允许用「现在 + 抖动」：
+     那样面板写着 60 分~24 小时，进房十几秒对方就主动开口。
+     做法：把 ensureProactiveBeat / ensureProactiveBeatForType 包一层，
+     永远返回一条真的节拍（没有就现抽一条并落盘），于是
+       · scheduleProactiveEvent 的 anchor 落在节拍上；
+       · 心跳里的「还没到下一拍就只重排、不说」也一定生效（nextBeat 不再为 0 而被跳过）。 */
+  var origEnsureBeat = window.ensureProactiveBeat;
+  if (typeof origEnsureBeat === 'function') {
+    window.ensureProactiveBeat = function () {
+      var value = Number(origEnsureBeat.apply(this, arguments)) || 0;
+      if (value > 0) return value;
+      try {
+        var state = window.loadProactiveEventState ? window.loadProactiveEventState() : null;
+        if (!state || typeof state !== 'object') return value;
+        var gate = state.__gate && typeof state.__gate === 'object' ? state.__gate : (state.__gate = {});
+        var from = Number(gate.messageAt) || Date.now();       /* 有过说话记录就从那一刻接着算，否则从现在算 */
+        var next = Date.now() + (function () {
+          try {
+            var range = window.proactiveEventRange ? window.proactiveEventRange('message') : null;
+            if (!range) return 0;
+            return range.minMs + Math.floor(Math.random() * Math.max(1, range.maxMs - range.minMs));
+          } catch (_) { return 0; }
+        })();
+        /* 有说话记录时按正常抽法（可能落在过去＝真错过，让它照常补）；没有记录时从现在起算 */
+        if (Number(gate.messageAt)) {
+          try { next = window.drawProactiveBeat ? window.drawProactiveBeat(from) : next; } catch (_) { next = from + 60000; }
+        }
+        gate.nextMessageAt = next;
+        try { window.persistProactiveEventState && window.persistProactiveEventState(); } catch (_) {}
+        return next;
+      } catch (_) { return value; }
+    };
+  }
+  var origEnsureBeatOf = window.ensureProactiveBeatForType;
+  if (typeof origEnsureBeatOf === 'function') {
+    window.ensureProactiveBeatForType = function (type) {
+      var value = Number(origEnsureBeatOf.apply(this, arguments)) || 0;
+      if (value > 0) return value;
+      try {
+        var next = Date.now() + 60000;                        /* 兜底：至少一分钟之后，别再「现在」就说 */
+        try {
+          var range = window.proactiveEventRange ? window.proactiveEventRange(type) : null;
+          if (range) next = Date.now() + range.minMs + Math.floor(Math.random() * Math.max(1, range.maxMs - range.minMs));
+        } catch (_) {}
+        if (typeof window.rebaseProactiveBeatOf === 'function') {
+          var drawn = Number(window.rebaseProactiveBeatOf(type, Date.now())) || 0;
+          if (drawn > 0) next = drawn;
+        }
+        return next;
+      } catch (_) { return value; }
+    };
+  }
+
+  /* ④ 连发批次：句与句之间不得快于面板（批二 d）
+     —— 原来写死 1.2~5.4 秒，面板设 40~60 秒也一样，看着就是机关枪。
+     现在每一句的等待 = max(原有的小停顿, 面板「回复节奏」抽一次)：
+     面板快（默认 3~60 秒）时保持原来那种「连说」手感，面板慢时跟着面板走。 */
+  var origTextBatch = window.triggerProactiveTextBatch;
+  if (typeof origTextBatch === 'function') {
+    window.triggerProactiveTextBatch = function (role, total, forcedText) {
+      var count = Math.max(1, Math.min(5, Number(total) || 1));
+      var clean = String(forcedText || '').replace(/[\u200B\u2063]/g, '').trim();
+      if (clean || count < 2) return origTextBatch.apply(this, arguments);
+      var self = this;
+      var args = arguments;
+      /* 先把「第一句」按原样发出去（保留原函数的所有分支：队列 / 直接插入 / 声音），
+         其余几句由这里按面板节奏排下去 —— 只在这条链上生效，别处一行不动。 */
+      var texts = [];
+      try {
+        var used = [];
+        for (var i = 0; i < count; i += 1) {
+          var text = window.pickRoleReplyText ? window.pickRoleReplyText(role, used) : '';
+          if (!text) break;
+          texts.push(text); used.push(text);
+        }
+      } catch (_) { return origTextBatch.apply(this, arguments); }
+      if (texts.length < 2) return origTextBatch.apply(this, arguments);
+      var first = texts.shift();
+      var out = origTextBatch.call(self, role, 1, first);
+      var gapOf = function () {
+        var base = 1200 + Math.floor(Math.random() * 4200);
+        var panel = 0;
+        try { panel = Number(window.roleReplyDelay ? window.roleReplyDelay() : 0) || 0; } catch (_) { panel = 0; }
+        return Math.max(base, panel);
+      };
+      var queueRest = function () {
+        try {
+          var settings = getSettings(role.id) || {};
+          var now = Date.now();
+          var cursor = now;
+          var rest = texts.map(function (text) {
+            cursor += gapOf();
+            return { id: 'proactive-' + now + '-' + Math.random().toString(16).slice(2, 6), text: text, createdAt: cursor };
+          });
+          settings.pendingProactiveMessages = [].concat(settings.pendingProactiveMessages || [], rest).slice(-20);
+          if (window.saveChatSettings) window.saveChatSettings(settings, role.id);
+        } catch (_) {}
+      };
+      var next = function (index) {
+        if (index >= texts.length) return;
+        try {
+          var open = typeof window.isChatConversationLoaded === 'function' && window.isChatConversationLoaded(role.id);
+          if (!open) { queueRest(); return; }                  /* 房间关着：剩下的整批按节奏排进待收队列 */
+          window.appendProactiveIncomingMessage(role, texts[index]);
+        } catch (_) {}
+        if (index + 1 < texts.length) window.setTimeout(function () { next(index + 1); }, gapOf());
+      };
+      if (texts.length) window.setTimeout(function () { next(0); }, gapOf());
+      return out;
+    };
+  }
+
+  /* ⑤ 面板文案同步（只改运行期 DOM 文本，不动源文件）
+     —— 面板上那句小字写着「连发时句与句之间是主动消息自己的小停顿，与「全局回复节奏」无关」，
+     而上面 ④ 已经把行为改成「跟着回复节奏、不会更快」。说明必须跟着一起改，否则面板在骗人。 */
+  function syncProactiveBurstHint() {
+    try {
+      var nodes = document.querySelectorAll('#globalSettingsApp small, #globalScheduler small, .dashboard-section small');
+      for (var i = 0; i < nodes.length; i += 1) {
+        var text = String(nodes[i].textContent || '');
+        if (text.indexOf('连发') >= 0 && text.indexOf('无关') >= 0 && nodes[i].dataset.mobiusBurstHint !== 'fixed') {
+          nodes[i].textContent = '对方一次到点说 1 句，还是连发 1~N 句（连发时句与句之间跟着你设的「回复节奏」来，不会比它更快）。';
+          nodes[i].dataset.mobiusBurstHint = 'fixed';
+        }
+      }
+    } catch (_) {}
+  }
+  try {
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', syncProactiveBurstHint);
+    else window.setTimeout(syncProactiveBurstHint, 0);
+    window.setTimeout(syncProactiveBurstHint, 1200);
+    window.setTimeout(syncProactiveBurstHint, 4000);
+    document.addEventListener('click', syncProactiveBurstHint, true);
+  } catch (_) {}
+
+  /* ③ 待收队列：第一条立刻揭示，其余按面板「主动消息最快间隔」逐条来（单条最多等 5 分钟）。 */
+  var origRestorePending = window.restorePendingProactiveMessages;
+  var pendingRestoreTimer = 0;
+  function proactiveGapMs() {
+    var seconds = 300;
+    try {
+      var global = window.loadGlobalAppSettings ? window.loadGlobalAppSettings() : null;
+      if (global && Number(global.proactiveMessageMinSeconds) > 0) seconds = Number(global.proactiveMessageMinSeconds);
+    } catch (_) {}
+    return Math.min(Math.max(1000, seconds * 1000), 5 * 60 * 1000);
+  }
+  if (typeof origRestorePending === 'function') {
+    window.restorePendingProactiveMessages = function (handle) {
+      var key = String(handle || '');
+      var out = false;
+      var queue = [];
+      try {
+        var settings = getSettings(key) || {};
+        queue = Array.isArray(settings.pendingProactiveMessages) ? settings.pendingProactiveMessages.slice() : [];
+      } catch (_) {}
+      if (!key || queue.length < 2 || !window.saveChatSettings) return origRestorePending.apply(this, arguments);
+
+      var sorted = queue.slice().sort(function (a, b) {
+        var diff = (Number(a && a.createdAt) || 0) - (Number(b && b.createdAt) || 0);
+        return diff || 0;
+      });
+      var head = sorted[0];
+      var tail = sorted.slice(1);
+      try {
+        var trimmed = getSettings(key) || {};
+        trimmed.pendingProactiveMessages = [head];
+        window.saveChatSettings(trimmed, key);
+        out = origRestorePending.apply(this, arguments);
+        var latest = getSettings(key) || {};
+        latest.pendingProactiveMessages = (latest.pendingProactiveMessages || []).concat(tail).slice(-20);
+        window.saveChatSettings(latest, key);
+      } catch (_) {
+        return origRestorePending.apply(this, arguments);
+      }
+      /* 到点自己叫回来揭示下一条（房间还开着才揭示；关着就等下次进房间接着按节奏来） */
+      try {
+        window.clearTimeout(pendingRestoreTimer);
+        pendingRestoreTimer = window.setTimeout(function () {
+          try {
+            if (typeof window.isChatConversationLoaded === 'function' && window.isChatConversationLoaded(key)) {
+              window.restorePendingProactiveMessages(key);
+            }
+          } catch (_) {}
+        }, proactiveGapMs());
+      } catch (_) {}
+      return out;
+    };
+  }
+
+  /* ══════════ 四 · 字体缩放：同一帧里补完，不再一帧一帧长大 ══════════ */
+  var FONT_SELECTOR = 'button,input,textarea,select,option,label,a,span,strong,small,p,h1,h2,h3,h4,h5,h6,'
+    + 'li,time,code,output,legend,summary,section,article,header,footer,main,aside,nav,div';
+
+  window.applyGlobalFontScaleToTree = function (root, scale) {
+    if (!root) return;
+    var numeric = Number(scale);
+    if (!Number.isFinite(numeric) || Math.abs(numeric - 1) < 0.001) return;
+    if (typeof origFontWalk !== 'function') return;
+    var marker = String(scale);
+    var elements;
+    try {
+      elements = [root].concat(Array.prototype.slice.call(root.querySelectorAll ? root.querySelectorAll(FONT_SELECTOR) : []));
+    } catch (_) { return origFontWalk(root, scale); }
+    var pending = [];
+    for (var i = 0; i < elements.length; i += 1) {
+      var el = elements[i];
+      if (!el || el.nodeType !== 1 || !el.dataset) continue;
+      /* 已经按这个档位处理过、并且身上带着缩放后的字号 —— 跳过（父子继承的字号会自己跟着走） */
+      if (el.dataset.globalFontScaleApplied === marker && el.style && el.style.fontSize) continue;
+      pending.push(el);
+    }
+    if (!pending.length) return;
+    if (pending.length > 2500) return origFontWalk(root, scale);   /* 极大一批才回退分片，避免长任务 */
+    for (var n = 0; n < pending.length; n += 1) {
+      try { applyFontElement(pending[n], scale); } catch (_) {}
+    }
+  };
+
+  /* 页面切进来时先把已经排好队的那一批补一遍（DOM 重建会触发 MutationObserver，
+     这里只是兜个底，保证切页那一帧就是最终字号）。 */
+  window.__mobiusSettleFontScale = function () {
+    try {
+      var screen = document.getElementById('appScreen');
+      var settings = window.loadGlobalAppSettings ? window.loadGlobalAppSettings() : null;
+      var scale = Math.max(0.8, Math.min(1.5, Number(settings && settings.fontScale) / 100 || 1));
+      if (screen) window.applyGlobalFontScaleToTree(screen, scale);
+    } catch (_) {}
+  };
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) window.__mobiusSettleFontScale(); }, false);
+  document.addEventListener('pageshow', window.__mobiusSettleFontScale, false);
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', window.__mobiusSettleFontScale);
+  else window.setTimeout(window.__mobiusSettleFontScale, 0);
+})();
+</script>
+
 </body>
 </html>
