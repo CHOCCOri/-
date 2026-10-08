@@ -20,6 +20,90 @@
   <meta name="dream-push-vapid-public-key" content="">
   <meta name="dream-push-subscribe-endpoint" content="">
   <title>Möbius</title>
+<!-- ==================== Möbius v111z75 · 预置哨兵（2026-10-08 · 批二 ④ 补遗）====================
+   位置要求：必须放在 <head> 里（比主脚本更早执行）。它是「主动消息节奏」补丁的第一道闸。
+
+   为什么需要它（实测 repro-proactive-long / probe-loadfire）：
+     · 应用在**主脚本刚跑起来的时候**就会处理一次主动事件。那时本文件末尾的补丁块还没装上，
+       所以「两条主动消息之间至少『最快』」这道闸对这一次点火无效 —— 实测：上一条主动消息
+       才过了 10 秒（面板最快 5 分钟），打开 App 1~2 秒内又放出来一条。
+     · 另外，到点已经过去很久的那些（App 关着的时候错过的）会被当成「现在刚到」，
+       时间显示「刚刚」—— 看着就是「TA 刚刚又开始发消息了」，其实那是半小时前该到的。
+
+   这个哨兵只做三件小事（纯读改 localStorage，不碰任何 DOM、不改任何函数）：
+     ① 地板：距上一条「真的说出口」的主动消息不足「最快」时，把还没兑现的过期排期往后推
+        （推到「上一条 + 最快」那一格）；
+     ② 记账：如果确实有「合法但迟到」的排期（离开超过 1 分钟），把它的真实到点记在
+        window.__mobiusLateDueAt 上，交给页尾的补丁块，让那条消息显示它本来的时间；
+     ③ 全程 try/catch，出任何问题都不影响 App 启动。
+
+   ⚠ 这一段与页尾的 <script id="mobiusFix20261008"> 是一套：回退时两段一起删。
+   ============================================================================== -->
+<script id="mobiusFixPrologue20261008">
+(function () {
+  'use strict';
+  window.__mobiusFixPrologue20261008 = true;
+  try {
+    var EVENTS_KEY = 'dream-messenger:proactive-events:v1';
+    var GLOBAL_KEY = 'dream-messenger:global-settings:v1';
+    var rawState = localStorage.getItem(EVENTS_KEY);
+    if (!rawState) return;
+    var state = JSON.parse(rawState);
+    if (!state || typeof state !== 'object') return;
+    var global = {};
+    try { global = JSON.parse(localStorage.getItem(GLOBAL_KEY) || '{}') || {}; } catch (_) { global = {}; }
+    /* 面板那一格的最小单位是「秒」（内部口径），下限 60 秒（与 loadGlobalAppSettings 的兜底一致） */
+    var minSeconds = Number(global.proactiveMessageMinSeconds);
+    if (!(minSeconds >= 60)) minSeconds = 300;
+    var minMs = minSeconds * 1000;
+    /* 主动消息开关关掉就不管了 */
+    if (global.proactiveMessageEnabled === false) return;
+
+    var gate = state.__gate && typeof state.__gate === 'object' ? state.__gate : (state.__gate = {});
+    var lastSent = Number(gate.messageAt) || 0;
+    var now = Date.now();
+    var changed = false;
+    var dueKeys = [];
+    Object.keys(state).forEach(function (key) {
+      if (key === '__gate') return;
+      var roleState = state[key];
+      if (!roleState || typeof roleState !== 'object') return;
+      var due = Number(roleState.messageAt) || 0;
+      if (!due || due > now) return;
+      dueKeys.push({ key: key, due: due });
+    });
+    /* ① 先按时间排队：最早的（往往就是「最该先说话」的那位）排在最前面 */
+    dueKeys.sort(function (a, b) { return a.due - b.due; });
+    /* ② 地板：一次只有一位能开口，且任何一条不得早于「上一条 + 最快」
+       —— 这样「好几位梦角同时到点」不会再变成一串连发（用户口径：
+         主动设 5~10 分钟，就不该半分钟/一分钟连着来）。 */
+    var openAt = 0;
+    for (var i = 0; i < dueKeys.length; i += 1) {
+      var item = dueKeys[i];
+      var roleState = state[item.key];
+      var allowedAt = Math.max(openAt, lastSent > 0 ? lastSent + minMs : 0);
+      if (i === 0 && allowedAt <= now) {
+        /* 第一位：如果上一条已经够久（≥ 最快），就让它按原样兑现（这是「到点就算收到」的补话） */
+        openAt = now;
+        continue;
+      }
+      roleState.messageAt = allowedAt + 1000 + Math.floor(Math.random() * 9000);
+      changed = true;
+      openAt = roleState.messageAt;
+    }
+    var earliestDue = dueKeys.length ? dueKeys[0].due : 0;
+    /* ② 有一次合法的迟到（离开超过 1 分钟）：把真实到点留给页尾补丁块用 */
+    if (earliestDue > 0 && now - earliestDue > 60000) {
+      window.__mobiusLateDueAt = earliestDue;
+    }
+    if (changed) {
+      try { localStorage.setItem(EVENTS_KEY, JSON.stringify(state)); } catch (_) {}
+      window.__mobiusProloguePushed = true;
+    }
+  } catch (_) { /* 哨兵失败绝不影响启动 */ }
+})();
+</script>
+
   <script>
   /* iOS Safari / 主屏幕模式：使用真实视觉视口高度，避免键盘、地址栏和 Home Indicator 推动整页。 */
   (function(){
@@ -51743,6 +51827,8 @@ body #chatApp[data-card-skin] .chat-decision-bubble.is-answered .chat-decision-s
   'use strict';
   if (window.__mobiusFix20261008) return;
   window.__mobiusFix20261008 = true;
+  /* 运行痕迹：面板 → 排查用。记录补丁什么时候装上、各包装器被内部调用点走了几次。 */
+  var __trace = window.__mobiusFixTrace = { installedAt: Date.now(), process: 0, floorPushed: 0, catchupStamped: 0, beatDrawn: 0, burstPaced: 0, queuePaced: 0 };
 
   var origMerge = window.mergeChatHistoryLineLists;
   var origNormalize = window.normalizeStoredChatSpecialLines;
@@ -52208,7 +52294,7 @@ body #chatApp[data-card-skin] .chat-decision-bubble.is-answered .chat-decision-s
   /* adoptLegacySpecialCardIdentities 是每次进房的补身份入口，挂在它后面一起跑 */
   var origAdopt = window.adoptLegacySpecialCardIdentities;
   if (typeof origAdopt === 'function') {
-    window.adoptLegacySpecialCardIdentities = function (handle) {
+    window.adoptLegacySpecialCardIdentities = function (handle) { /*__mobiusWrap:adopt*/
       var out = origAdopt.apply(this, arguments);
       try { adoptDecisionIdentities(handle); } catch (_) {}
       return out;
@@ -52242,6 +52328,12 @@ body #chatApp[data-card-skin] .chat-decision-bubble.is-answered .chat-decision-s
     try { window[name] = wrapped; } catch (_) {}
   });
 
+  /* 所有包装器都带一个可探测标记：方便验证脚本确认「内部调用点确实走到补丁版」 */
+  ['processProactiveEvents', 'scheduleDirectCheckReply', 'scheduleFeatureDecision', 'restorePendingProactiveMessages',
+   'triggerProactiveTextBatch', 'ensureProactiveBeat', 'adoptLegacySpecialCardIdentities'].forEach(function (name) {
+    try { if (typeof window[name] === 'function') window[name].__mobiusWrap = name; } catch (_) {}
+  });
+
   /* ══════════ 六 · 任何通道都不得比面板设的节奏更快（批二 ①）══════════
      用户报修：「对方忽略我设置的回复节奏和主动发消息的节奏一直连发消息」。
      实测（repro-pace-bypass / repro-pace-queue）：
@@ -52267,7 +52359,7 @@ body #chatApp[data-card-skin] .chat-decision-bubble.is-answered .chat-decision-s
   /* ① 查岗：scheduleDirectCheckReply 原来写 createdAt + 5~60 秒；这里在它之前补一次「面板口径」。 */
   var origScheduleCheckReply = window.scheduleDirectCheckReply;
   if (typeof origScheduleCheckReply === 'function') {
-    window.scheduleDirectCheckReply = function (record, handle) {
+    window.scheduleDirectCheckReply = function (record, handle) { /*__mobiusWrap:checkReply*/
       try {
         if (record && record.id && !Number(record.plannedReplyAt)) {
           var panel = panelReplyDelayMs();
@@ -52294,7 +52386,7 @@ body #chatApp[data-card-skin] .chat-decision-bubble.is-answered .chat-decision-s
   /* ② 决策卡：createFeatureDecision 写 10 秒 / 1~6 分钟；这里在排程时按面板往后推（只推一次）。 */
   var origScheduleDecision = window.scheduleFeatureDecision;
   if (typeof origScheduleDecision === 'function') {
-    window.scheduleFeatureDecision = function (record, handle) {
+    window.scheduleFeatureDecision = function (record, handle) { /*__mobiusWrap:decision*/
       try {
         var key = String(handle || '');
         var panel = panelReplyDelayMs();
@@ -52329,7 +52421,7 @@ body #chatApp[data-card-skin] .chat-decision-bubble.is-answered .chat-decision-s
        · 心跳里的「还没到下一拍就只重排、不说」也一定生效（nextBeat 不再为 0 而被跳过）。 */
   var origEnsureBeat = window.ensureProactiveBeat;
   if (typeof origEnsureBeat === 'function') {
-    window.ensureProactiveBeat = function () {
+    window.ensureProactiveBeat = function () { /*__mobiusWrap:beat*/
       var value = Number(origEnsureBeat.apply(this, arguments)) || 0;
       if (value > 0) return value;
       try {
@@ -52374,13 +52466,14 @@ body #chatApp[data-card-skin] .chat-decision-bubble.is-answered .chat-decision-s
     };
   }
 
-  /* ④ 连发批次：句与句之间不得快于面板（批二 d）
-     —— 原来写死 1.2~5.4 秒，面板设 40~60 秒也一样，看着就是机关枪。
-     现在每一句的等待 = max(原有的小停顿, 面板「回复节奏」抽一次)：
-     面板快（默认 3~60 秒）时保持原来那种「连说」手感，面板慢时跟着面板走。 */
+  /* ④ 连发批次：句与句之间必须服从「主动发送消息」的面板（批二 d）
+     —— 原来写死 1.2~5.4 秒；上一版改成跟「回复节奏」，但那还是错的：
+        主动通道的节奏只能由「主动发送消息」那两格管（用户口径：
+        我把主动设成 5~10 分钟，就不该在 30~60 秒里连发）。
+     现在每一句的等待 = 面板主动节奏抽一次（最快~最慢），和真正的节拍同一个口径。 */
   var origTextBatch = window.triggerProactiveTextBatch;
   if (typeof origTextBatch === 'function') {
-    window.triggerProactiveTextBatch = function (role, total, forcedText) {
+    window.triggerProactiveTextBatch = function (role, total, forcedText) { /*__mobiusWrap:burst*/
       var count = Math.max(1, Math.min(5, Number(total) || 1));
       var clean = String(forcedText || '').replace(/[\u200B\u2063]/g, '').trim();
       if (clean || count < 2) return origTextBatch.apply(this, arguments);
@@ -52401,10 +52494,18 @@ body #chatApp[data-card-skin] .chat-decision-bubble.is-answered .chat-decision-s
       var first = texts.shift();
       var out = origTextBatch.call(self, role, 1, first);
       var gapOf = function () {
-        var base = 1200 + Math.floor(Math.random() * 4200);
-        var panel = 0;
-        try { panel = Number(window.roleReplyDelay ? window.roleReplyDelay() : 0) || 0; } catch (_) { panel = 0; }
-        return Math.max(base, panel);
+        /* 句与句的等待 = 「主动发送消息」那两格抽一次（最快~最慢），与真正的节拍同一个口径。
+           —— 面板设 5~10 分钟，这里就是 5~10 分钟；原来写死的 1.2~5.4 秒机关枪不再有。
+           下面的 1.2 秒只是「面板万一被改成 1 秒级」时的兜底，正常永远用不到。 */
+        try {
+          var range = window.proactiveEventRange ? window.proactiveEventRange('message') : null;
+          if (range && Number(range.minMs) > 0) {
+            var minMs = Math.max(1200, Number(range.minMs));
+            var maxMs = Math.max(minMs, Number(range.maxMs) || minMs);
+            return minMs + Math.floor(Math.random() * Math.max(1, maxMs - minMs));
+          }
+        } catch (_) {}
+        return 1200 + Math.floor(Math.random() * 4200);
       };
       var queueRest = function () {
         try {
@@ -52413,7 +52514,7 @@ body #chatApp[data-card-skin] .chat-decision-bubble.is-answered .chat-decision-s
           var cursor = now;
           var rest = texts.map(function (text) {
             cursor += gapOf();
-            return { id: 'proactive-' + now + '-' + Math.random().toString(16).slice(2, 6), text: text, createdAt: cursor };
+            return { id: 'proactive-' + now + '-' + Math.random().toString(16).slice(2, 6), text: text, createdAt: cursor, channel: 'proactive' };
           });
           settings.pendingProactiveMessages = [].concat(settings.pendingProactiveMessages || [], rest).slice(-20);
           if (window.saveChatSettings) window.saveChatSettings(settings, role.id);
@@ -52433,7 +52534,198 @@ body #chatApp[data-card-skin] .chat-decision-bubble.is-answered .chat-decision-s
     };
   }
 
-  /* ⑤ 面板文案同步（只改运行期 DOM 文本，不动源文件）
+  /* ⑤ 主动消息的「两次之间至少『最快』」硬地板 + 迟到消息说实话
+     ---------------------------------------------------------------
+     用户口径：「主动发消息设成最快 5 分钟，就不该半分钟/一分钟就来，还连着来。」
+     实测（repro-proactive-long，原版）：
+       · 到点已经过去 30 分钟的那种「错过」，进房 3.3 秒就把消息放出来，而且时间戳写成「刚刚」
+         ——看着就是「TA 刚刚又来找我」，其实那是半小时前该到的；
+       · 「每位梦角各自」口径下没有任何人群地板：N 位梦角各自 5~10 分钟，合起来就是每 1~2 分钟一条。
+     这一段加两道（都只在 window.processProactiveEvents 外面做前置整理，不动它内部）：
+       a. 硬地板：距上一条「真的说出口」的主动消息不足「最快」时，任何到点的排期一律往后推
+          （不再分「合计 / 每位各自」——面板上那格叫「最快」，就是最快的上限）。
+       b. 说实话：到点已经过去超过 60 秒的消息，用它**本来的到达时间**显示（data-created-at + 时间文案），
+          不再冒充「刚刚」。 */
+  var origProcessProactive = window.processProactiveEvents;
+  if (typeof origProcessProactive === 'function') {
+    window.processProactiveEvents = function () { /*__mobiusWrap:process*/
+      try { __trace.process += 1; } catch (_) {}
+      var catchupRestore = null;
+      try {
+        var state = window.loadProactiveEventState ? window.loadProactiveEventState() : null;
+        if (state && typeof state === 'object') {
+          var nowMs = Date.now();
+          var gate = state.__gate && typeof state.__gate === 'object' ? state.__gate : (state.__gate = {});
+          var lastSent = Number(gate.messageAt) || 0;
+          var range = null;
+          try { range = window.proactiveEventRange ? window.proactiveEventRange('message') : null; } catch (_) {}
+          var minMs = range && Number(range.minMs) > 0 ? Number(range.minMs) : 0;
+          var jitter = 0;
+          try { jitter = window.proactiveBeatJitterMs ? Number(window.proactiveBeatJitterMs('message')) || 0 : 0; } catch (_) {}
+          var changed = false;
+          var earliestDue = 0;
+          var dueRoles = [];
+          Object.keys(state).forEach(function (key) {
+            if (key === '__gate') return;
+            var roleState = state[key];
+            if (!roleState || typeof roleState !== 'object') return;
+            var due = Number(roleState.messageAt) || 0;
+            if (!due || due > nowMs) return;
+            dueRoles.push({ key: key, due: due });
+            if (earliestDue === 0 || due < earliestDue) earliestDue = due;
+          });
+          /* 同一时刻「到点」的往往不止一位（老数据 / 关站期间错过 / 每位梦角各自的口径）。
+             以前这会在同一次心跳里挨个兑现 —— 用户看到的就是「连着来」。
+             现在：一次只放行最早那一位（前提是它已经过了「最快」这道地板），其余按「最快」往后排。 */
+          if (dueRoles.length > 1) {
+            dueRoles.sort(function (a, b) { return a.due - b.due; });
+            for (var i = 1; i < dueRoles.length; i += 1) {
+              state[dueRoles[i].key].messageAt = dueRoles[i - 1].due + minMs + Math.floor(Math.random() * Math.max(1, jitter || 1000));
+              changed = true;
+              try { __trace.floorPushed += 1; } catch (_) {}
+            }
+          }
+          if (lastSent > 0 && minMs > 0 && nowMs < lastSent + minMs) {
+            dueRoles.forEach(function (item) {
+              var roleState = state[item.key];
+              if (!roleState) return;
+              roleState.messageAt = lastSent + minMs + Math.floor(Math.random() * Math.max(1, jitter || 1000));
+              changed = true;
+              try { __trace.floorPushed += 1; } catch (_) {}
+            });
+          }
+          /* 迟到的那些：让它们在本次处理里带上真实到达时间 */
+          if (earliestDue > 0 && nowMs - earliestDue > 60000) {
+            try {
+              if (typeof proactiveCatchupAt === 'number') {
+                catchupRestore = proactiveCatchupAt;
+                proactiveCatchupAt = earliestDue;
+                try { __trace.catchupStamped += 1; } catch (_) {}
+              }
+            } catch (_) {}
+          }
+          if (changed) { try { window.persistProactiveEventState && window.persistProactiveEventState(); } catch (_) {} }
+        }
+      } catch (_) {}
+      var result;
+      try { result = origProcessProactive.apply(this, arguments); }
+      finally {
+        if (catchupRestore !== null) { try { proactiveCatchupAt = catchupRestore; } catch (_) {} }
+        try { if (typeof window.__mobiusStampLateProactiveLine === 'function') window.__mobiusStampLateProactiveLine(); } catch (_) {}
+        try {
+          if (typeof window.__mobiusMarkProactiveQueueChannel === 'function') {
+            var roles = (typeof window.getProactiveContactRoles === 'function') ? window.getProactiveContactRoles() : null;
+            if (roles && roles.length) roles.forEach(function (r) { window.__mobiusMarkProactiveQueueChannel(String(r && r.id || '')); });
+            else if (typeof currentPartnerHandle !== 'undefined' && currentPartnerHandle) window.__mobiusMarkProactiveQueueChannel(String(currentPartnerHandle));
+          }
+        } catch (_) {}
+      }
+      return result;
+    };
+  }
+
+  /* ⑥ 把「合法但迟到」的那条消息的时间显示改回它本来的到达时间
+     ---------------------------------------------------------------
+     <head> 里的预置哨兵会在主脚本之前把真实到点记在 window.__mobiusLateDueAt 上
+     （因为主脚本可能在第一帧就把它放出来，那时本块还没装上）。
+     这里做两件小事：
+       · 每次 processProactiveEvents 之后，以及进房间后几毫秒/几秒，检查当前房间里
+         「刚刚被插进来、又没有 data-created-at 的 incoming 行」——只有主动频道插的行是这个形状
+         （回复链插的行一定带 data-created-at）——把它的时间改成真实到点，并写进存档。
+       · 时间戳一旦补上就只做一次（data-mobius-late-stamped）。 */
+  function stampLateProactiveLine() {
+    try {
+      var due = Number(window.__mobiusLateDueAt) || 0;
+      if (!due || Date.now() - due < 60000) return;
+      var body = document.getElementById('chatThreadBody');
+      if (!body) return;
+      var lines = body.querySelectorAll(':scope > .chat-message-line.incoming:not([data-created-at])');
+      var line = lines[lines.length - 1];
+      if (!line || line.dataset.mobiusLateStamped === '1') return;
+      line.dataset.createdAt = String(due);
+      line.dataset.mobiusLateStamped = '1';
+      var meta = line.querySelector('.chat-message-meta');
+      if (meta && typeof window.formatChatMessageTimestamp === 'function') meta.textContent = window.formatChatMessageTimestamp(due);
+      try { if (typeof window.stampChatMessageLine === 'function') window.stampChatMessageLine(line); } catch (_) {}
+      try { window.scheduleSaveChatHistory && window.scheduleSaveChatHistory(); } catch (_) {}
+    } catch (_) {}
+  }
+  window.__mobiusStampLateProactiveLine = stampLateProactiveLine;
+  [200, 1200, 4000, 9000].forEach(function (delay) { window.setTimeout(stampLateProactiveLine, delay); });
+  try {
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) window.setTimeout(stampLateProactiveLine, 300); }, false);
+  } catch (_) {}
+
+  /* ⑧ 主动链的待收条目必须带 channel:'proactive'（批二 · 第三条漏网路径）
+     ---------------------------------------------------------------
+     原版里往待收队列写条目的地方有七处，只有 appendProactiveIncomingMessage 一处带了
+     channel 标记；其余六处（整批连发、表情/颜文字、语音、语音卡、拍一拍、字卡）都没带。
+     而进房间时的「迟到重排」判据是：item.channel !== 'proactive' 就**当成回复**
+     —— 于是这些主动消息被当成回复通道的迟到条目，重排到「回来之后 40~60 秒」
+     （roleReplyDelay 抽值），并在那一刻冒出来。
+     用户看到的就是：**主动消息面板明明设了 5~10 分钟，进房间一会儿（半分钟到一分钟）
+     又冒出来一条，而且时间显示是当下** —— 那不是新消息，是这条通道串了。
+     这里把「主动链的条目」认出来补上标记（id 前缀 proactive- 是本版主动链的写法；
+     老版本可能写进来的回复类条目 id 不同，保持原样不动），补完就走「到点就算收到」：
+     进房间立刻显示、带它本来的时间。
+     —— 顺带：这一道也接住了「房间没开时到点的那一批」，它们不再被推后 40~60 秒。 */
+  function markProactiveQueueChannel(handle) {
+    try {
+      var store = window.getChatSettings ? window.getChatSettings(handle) : null;
+      var list = store && store.pendingProactiveMessages;
+      if (!Array.isArray(list) || !list.length) return 0;
+      var fixed = 0;
+      list.forEach(function (item) {
+        if (!item || typeof item !== 'object' || item.channel) return;
+        if (String(item.kind || '') === 'glyphcard') return;      /* 字卡在回放里有自己的分支 */
+        if (!/^proactive-/.test(String(item.id || ''))) return;
+        item.channel = 'proactive';
+        fixed += 1;
+      });
+      /* ② 队列里的主动条目也按「最快」排开。
+         ---------------------------------------------------------------
+         为什么必须在这儿做：**启动时的那一次心跳（startProactiveHeartbeat → processProactiveEvents）
+         是主脚本末尾同步跑掉的** —— 那一刻补丁块与预置哨兵都还没机会包住任何函数，
+         所以那一整批（开「连发」时 1~5 句）会带着原始的「小停顿 1.2~5.4 秒」时间戳直接进队列。
+         实测（面板 1~1 分钟、5 句）：进队列的时刻是 -0.2 / 1.5 / 3.3 / 7.3 / 11.1 秒 —— 机关枪。
+         现在从第一个之后每一条都按面板「最快」往后排（加最多 15 秒抖动），
+         这样无论它被谁倒出来，时间与间隔都是「主动发送消息」那两格说的算。 */
+      try {
+        var minMs = 0;
+        try { var range = window.proactiveEventRange ? window.proactiveEventRange('message') : null; minMs = range && Number(range.minMs) > 0 ? Number(range.minMs) : 0; } catch (_) {}
+        if (minMs > 0) {
+          var channelled = list.filter(function (item) { return item && item.channel === 'proactive' && !String(item.kind || ''); });
+          channelled.sort(function (a, b) { return (Number(a.createdAt) || 0) - (Number(b.createdAt) || 0); });
+          for (var k = 1; k < channelled.length; k += 1) {
+            var prevAt = Number(channelled[k - 1].createdAt) || 0;
+            var at = Number(channelled[k].createdAt) || 0;
+            if (prevAt && at < prevAt + minMs) {
+              channelled[k].createdAt = prevAt + minMs + Math.floor(Math.random() * 15000);
+              fixed += 1;
+            }
+          }
+        }
+      } catch (_) {}
+      if (fixed) { try { window.saveChatSettings(store, handle); } catch (_) {} }
+      return fixed;
+    } catch (_) { return 0; }
+  }
+  window.__mobiusMarkProactiveQueueChannel = markProactiveQueueChannel;
+  try {
+    /* ⚠ 这里必须用闭包参数接住「上一个版本」——不能用 var 暂存：
+       同一块补丁里别的地方也包过 restorePendingProactiveMessages（待收队列倒出那道），
+       两个 var 同名会共用一个绑定，后包的会把「原函数」覆盖成前一个包装器，
+       于是自己调自己、栈溢出。 */
+    (function (prevRestorePending) {
+      if (typeof prevRestorePending !== 'function') return;
+      window.restorePendingProactiveMessages = function (handle) {  /*__mobiusWrap:restorePending*/
+        try { markProactiveQueueChannel(handle); } catch (_) {}
+        return prevRestorePending.apply(this, arguments);
+      };
+    })(window.restorePendingProactiveMessages);
+  } catch (_) {}
+
+  /* ⑦ 面板文案同步（只改运行期 DOM 文本，不动源文件）
      —— 面板上那句小字写着「连发时句与句之间是主动消息自己的小停顿，与「全局回复节奏」无关」，
      而上面 ④ 已经把行为改成「跟着回复节奏、不会更快」。说明必须跟着一起改，否则面板在骗人。 */
   function syncProactiveBurstHint() {
@@ -52460,15 +52752,21 @@ body #chatApp[data-card-skin] .chat-decision-bubble.is-answered .chat-decision-s
   var origRestorePending = window.restorePendingProactiveMessages;
   var pendingRestoreTimer = 0;
   function proactiveGapMs() {
-    var seconds = 300;
+    /* 口径与真正的节拍一致：在「最快~最慢」之间抽一次（不再人为压到 5 分钟上限 ——
+       面板设 5~10 分钟时，压到 5 分钟并不算错，但设 30 分钟~2 小时时压到 5 分钟就是错的）。 */
+    var minMs = 300 * 1000, maxMs = 36 * 60 * 1000;
     try {
-      var global = window.loadGlobalAppSettings ? window.loadGlobalAppSettings() : null;
-      if (global && Number(global.proactiveMessageMinSeconds) > 0) seconds = Number(global.proactiveMessageMinSeconds);
+      var range = window.proactiveEventRange ? window.proactiveEventRange('message') : null;
+      if (range && Number(range.minMs) > 0) {
+        minMs = Number(range.minMs);
+        maxMs = Math.max(minMs, Number(range.maxMs) || minMs);
+      }
     } catch (_) {}
-    return Math.min(Math.max(1000, seconds * 1000), 5 * 60 * 1000);
+    var gap = minMs + Math.floor(Math.random() * Math.max(1, maxMs - minMs));
+    return Math.min(Math.max(1000, gap), 30 * 60 * 1000);          /* 30 分钟封顶，避免夸张的等待 */
   }
   if (typeof origRestorePending === 'function') {
-    window.restorePendingProactiveMessages = function (handle) {
+    window.restorePendingProactiveMessages = function (handle) { /*__mobiusWrap:queue*/
       var key = String(handle || '');
       var out = false;
       var queue = [];
