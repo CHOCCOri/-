@@ -12679,9 +12679,8 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       // 主动消息从我方最后一次 CHAT 活动重新开始计算，避免刚聊完又立刻主动打扰。
       scheduleProactiveEvent(roleId, 'message', true);
       /* v111z75：口径＝所有梦角合计时，我方一说话就把全局闸门一起推到现在 ——
-         「最快 X 分钟」从这句话重新开始算（以前只有排期那一瞬间读它，之后就不再管了，
-         所以刚聊完不到一分钟，另一个梦角（或本梦角迟到的补话）就又能开口）。 */
-      try { if (proactiveMessageRhythmCombined()) markProactiveMessageSent(Date.now()); } catch (_) {}
+         11-fix: 只推 nextMessageAt，不改 messageAt（后者语义是对方上一条主动消息） */
+      try { if (proactiveMessageRhythmCombined()) rebaseProactiveBeat(Date.now()); } catch (_) {}
       persistProactiveEventState();
     }
 
@@ -12721,9 +12720,15 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
     /* v111z75：我方「安静线」—— 我方最后一次在聊天里说话 + 主动消息的「最快」值。
        在这条线之前，任何梦角都不许主动开口（包括迟到补话）。
        这是用户口径的直接翻译：主动消息是「我没说话的时候，到点了 TA 才来找我」。 */
-    function proactiveUserQuietUntil() {
+    function proactiveUserQuietUntil(handle) {
       try {
         const state = loadProactiveEventState();
+        const h = String(handle || (typeof currentPartnerHandle !== 'undefined' ? currentPartnerHandle : '') || '').trim();
+        if (h) {
+          const rs = state[h];
+          const at = Number(rs && rs.lastUserActivityAt) || 0;
+          if (at) return at + proactiveEventRange('message').minMs;
+        }
         let latest = 0;
         Object.keys(state).forEach(key => {
           if (key === '__gate') return;
@@ -12776,13 +12781,13 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       try {
         const { map, last } = proactiveBeatMap();
         let next = Number(map[type]) || 0;
-        if (next > 0) return next;
+        if (next > Date.now()) return next;
         const at = Number(last[type]) || 0;
-        if (!at) return 0;
-        next = drawProactiveBeat(at, type);
+        const base = at ? at : Date.now();
+        next = drawProactiveBeat(base, type);
         map[type] = next;
         return next;
-      } catch (_) { return 0; }
+      } catch (_) { return Date.now() + 60000; }
     }
     function rebaseProactiveBeatOf(type, fromAt) {
       if (type === 'message') return rebaseProactiveBeat(fromAt);
@@ -12815,13 +12820,13 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         const state = loadProactiveEventState();
         const gate = state.__gate && typeof state.__gate === 'object' ? state.__gate : (state.__gate = {});
         let next = Number(gate.nextMessageAt) || 0;
-        if (next > 0) return next;
+        if (next > Date.now()) return next;
         const last = Number(gate.messageAt) || 0;
-        if (!last) return 0;
-        next = drawProactiveBeat(last);
+        const base = last ? last : Date.now();
+        next = drawProactiveBeat(base);
         gate.nextMessageAt = next;
         return next;
-      } catch (_) { return 0; }
+      } catch (_) { return Date.now() + 60000; }
     }
     /* 换设置 / 刚开口之后：把「下一拍」从某个时刻重新抽一次 */
     function rebaseProactiveBeat(fromAt) {
@@ -12840,7 +12845,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         const stamp = Number(at) || Date.now();
         state.__gate.messageAt = stamp;
         /* v111z75：合计口径下，说出口的这一刻就把「下一拍」定下来（整个人群共用） */
-        if (proactiveMessageRhythmCombined()) state.__gate.nextMessageAt = drawProactiveBeat(stamp);
+        try { state.__gate.nextMessageAt = drawProactiveBeat(stamp); } catch(_){ state.__gate.nextMessageAt = stamp + 60000; } // 11-fix
         persistProactiveEventState();
       } catch (_) { /* 调度不该因为记账失败而中断 */ }
     }
@@ -12903,7 +12908,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       settings.pendingProactiveMessages = [...(settings.pendingProactiveMessages || []), { id: `proactive-${Date.now()}-${Math.random().toString(16).slice(2)}`, text, createdAt: arrivalAt, channel: String(arguments[2] || 'proactive') }].slice(-20);
       /* v111z75：对方把话放进了待收队列 —— 这一局同样是"欠着回复"。
          （回复通道的落地会另外调 armProactiveClockFromPeerMoment，两条路都覆盖。） */
-      try { const st = loadProactiveEventState(); st[role.id] = st[role.id] || {}; st[role.id].awaitingUserReply = true; st[role.id].awaitingSince = arrivalAt; } catch (_) {}
+      try { const st = loadProactiveEventState(); st[role.id] = st[role.id] || {}; st[role.id].awaitingUserReply = true; st[role.id].awaitingSince = arrivalAt; persistProactiveEventState(); } catch (_) {}
       return saveChatSettings(settings, role.id) === true;
     }
 
@@ -13069,7 +13074,12 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         if (proactiveMessageRhythmCombined()) {
           const gate = state.__gate && typeof state.__gate === 'object' ? state.__gate : (state.__gate = {});
           const floor = now + proactiveEventRange('message').minMs;   // 人群节拍不早于「现在 + 最快」
-          gate.nextMessageAt = Math.max(Number(gate.nextMessageAt) || 0, floor);
+          const cur = Number(gate.nextMessageAt) || 0;
+          if (!cur || cur < now) {
+            try { gate.nextMessageAt = drawProactiveBeat(now); } catch(_){ gate.nextMessageAt = floor; }
+          } else {
+            gate.nextMessageAt = Math.max(cur, floor);
+          }
         }
         persistProactiveEventState();
         return state[handle].messageAt;
@@ -14444,9 +14454,9 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       }
       proactiveRoles.forEach(role => {
         const roleState = state[role.id] || (state[role.id] = {});
+        if (isRoleTemporarilyAway(role)) return;
         processRoleMoodStatusRotation(role, now);
         processRoleNicknameRotation(role, roleState, now);
-        if (isRoleTemporarilyAway(role)) return;
         [['message', 'Message', triggerProactiveMessage], ['contact', 'Contact', triggerProactiveContact], ['letter', 'Letter', triggerProactiveLetter], ['circle', 'Circle', triggerProactiveCircle], ['visitor', 'CircleVisitor', triggerProactiveVisitor], ['glyphcard', 'Glyphcard', triggerProactiveGlyphRequest]].forEach(([type, settingName, trigger]) => {
           const settingKey = type === 'visitor' ? 'circleVisitorEnabled' : `proactive${settingName}Enabled`;
           if (!settings[settingKey]) {
@@ -14511,7 +14521,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
               return;
             }
             if (type === 'message') {
-              const quietUntil = proactiveUserQuietUntil();
+              const quietUntil = proactiveUserQuietUntil(role.id);
               if (quietUntil > now) {
                 /* v111z75：被安静线拦下的人排到 max(安静线, 下一拍) —— 原先「安静线 + 一整个随机间隔」
                    最长能把这条推到 20 多小时以后，用户会以为「她再也不理我了」。 */
@@ -14546,16 +14556,6 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
               noteGlyphRequestFired();
             }
             if (type === 'message') {
-              /* v111z75：这一位真的开口了 ⇒ 「自续」记一次（全体共用），并把下一次冷静期重新抽好。
-                 我一旦说话就清零 + 解除冷静期（见 recordUserChatActivity），
-                 所以这里数的是「我没接话期间，对方一共连说了几次」。 */
-              {
-                const gateState = state.__gate && typeof state.__gate === 'object' ? state.__gate : (state.__gate = {});
-                gateState.selfStreak = (Number(gateState.selfStreak) || 0) + 1;
-                const coldMin = Math.max(proactiveEventRange('message').minMs, PROACTIVE_COLD_MIN_MS);
-                const coldMax = Math.max(coldMin + 3600000, Math.min(proactiveEventRange('message').maxMs, PROACTIVE_COLD_MAX_MS));
-                gateState.selfColdUntil = now + coldMin + Math.floor(Math.random() * (coldMax - coldMin));
-              }
               /* v111j5：网页没在跑的那段时间（关掉 / 被浏览器冻住），对方本该说的话要补出来 ——
                  按面板节奏把错过的时刻一个个补上，各带自己的时间点；
                  只在最后弹一次汇总横幅，而不是逐条炸一串通知。 */
@@ -14575,7 +14575,16 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
                 }
               } else delivered = trigger(role) !== false;
               /* v111z59：真的说出口了才动全局闸门 —— 被规则拦下（没补、没发）的不占位 */
-              if (delivered) markProactiveMessageSent(Date.now());
+              if (delivered) {
+                try {
+                  const gateState = state.__gate && typeof state.__gate === 'object' ? state.__gate : (state.__gate = {});
+                  gateState.selfStreak = (Number(gateState.selfStreak) || 0) + 1;
+                  const coldMin = Math.max(proactiveEventRange('message').minMs, PROACTIVE_COLD_MIN_MS);
+                  const coldMax = Math.max(coldMin + 3600000, Math.min(proactiveEventRange('message').maxMs, PROACTIVE_COLD_MAX_MS));
+                  gateState.selfColdUntil = now + coldMin + Math.floor(Math.random() * (coldMax - coldMin));
+                } catch(_){}
+                markProactiveMessageSent(Date.now());
+              }
             } else {
               /* v111z75：关站 / 挂后台期间错过的「来信 / 朋友圈动态 / 访客」，不再在打开 App 的那一下补发。
                  判据与主动来电（v111z36）一致：到点却已经过期很久 = 那会儿 App 根本没在跑，
@@ -14752,7 +14761,10 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       const before = pendingProactiveQueueLength(handle);
       /* 待收队列上限 20 条：先算好这次能补多少，别让后补的把先补的挤掉 */
       const budget = Math.max(0, Math.min(PROACTIVE_CATCHUP_MAX, 20 - before));
-      if (!budget) return false;
+      if (!budget) {
+        try { scheduleProactiveEvent(handle, 'message', true, true); } catch(_){}
+        return false;
+      }
       chatArrivalNotificationsMuted = true;
       try {
         for (const slot of slots) {
@@ -14764,7 +14776,14 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       } finally {
         proactiveCatchupAt = 0;
         proactiveCatchupQuiet = false;
-        chatArrivalNotificationsMuted = false;
+        try {
+          const isOpen = typeof isChatConversationLoaded === 'function' && isChatConversationLoaded(handle);
+          if (isOpen) {
+            setTimeout(()=>{ try{ chatArrivalNotificationsMuted=false; }catch(_){} }, 30000);
+          } else {
+            chatArrivalNotificationsMuted = false;
+          }
+        } catch(_){ chatArrivalNotificationsMuted = false; }
       }
       const added = pendingProactiveQueueLength(handle) - before;
       if (added <= 0) return false;
@@ -20382,6 +20401,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
               changed = true;
             });
           });
+          try { if (Number(loadProactiveEventState().__gate.nextMessageAt) > 0) changed = true; } catch(_){}
           if (changed) persistProactiveEventState();
         }
       } catch (_) { /* 设置面板不该因为调度失败而中断 */ }
@@ -52423,7 +52443,7 @@ body #chatApp[data-card-skin] .chat-decision-bubble.is-answered .chat-decision-s
   if (typeof origEnsureBeat === 'function') {
     window.ensureProactiveBeat = function () { /*__mobiusWrap:beat*/
       var value = Number(origEnsureBeat.apply(this, arguments)) || 0;
-      if (value > 0) return value;
+      if (value > Date.now()) return value;
       try {
         var state = window.loadProactiveEventState ? window.loadProactiveEventState() : null;
         if (!state || typeof state !== 'object') return value;
@@ -52450,7 +52470,7 @@ body #chatApp[data-card-skin] .chat-decision-bubble.is-answered .chat-decision-s
   if (typeof origEnsureBeatOf === 'function') {
     window.ensureProactiveBeatForType = function (type) {
       var value = Number(origEnsureBeatOf.apply(this, arguments)) || 0;
-      if (value > 0) return value;
+      if (value > Date.now()) return value;
       try {
         var next = Date.now() + 60000;                        /* 兜底：至少一分钟之后，别再「现在」就说 */
         try {
