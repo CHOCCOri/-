@@ -52477,6 +52477,23 @@ body #chatApp[data-card-skin] .chat-decision-bubble.is-answered .chat-decision-s
       var count = Math.max(1, Math.min(5, Number(total) || 1));
       var clean = String(forcedText || '').replace(/[\u200B\u2063]/g, '').trim();
       if (clean || count < 2) return origTextBatch.apply(this, arguments);
+      // 房间开着时：清掉待收队列里未来的主动消息，避免与本批连发的 append 重叠（各 60s 一条会 1 秒交错）
+      try {
+        var __isOpenForClear = typeof window.isChatConversationLoaded === 'function' && window.isChatConversationLoaded(role.id);
+        if (__isOpenForClear) {
+          var __sClear = getSettings(role.id) || {};
+          if (Array.isArray(__sClear.pendingProactiveMessages) && __sClear.pendingProactiveMessages.length) {
+            var __nowC = Date.now();
+            var __beforeLen = __sClear.pendingProactiveMessages.length;
+            // 仅保留已到点的（createdAt <= now），未来的那几条由本批的 append 按同样节奏发出，不再经队列二次揭示
+            var __kept = __sClear.pendingProactiveMessages.filter(function(it){ return Number(it.createdAt||0) <= __nowC; });
+            if (__kept.length !== __beforeLen) {
+              __sClear.pendingProactiveMessages = __kept;
+              if (window.saveChatSettings) window.saveChatSettings(__sClear, role.id);
+            }
+          }
+        }
+      } catch(_){}
       var self = this;
       var args = arguments;
       /* 先把「第一句」按原样发出去（保留原函数的所有分支：队列 / 直接插入 / 声音），
@@ -52520,12 +52537,61 @@ body #chatApp[data-card-skin] .chat-decision-bubble.is-answered .chat-decision-s
           if (window.saveChatSettings) window.saveChatSettings(settings, role.id);
         } catch (_) {}
       };
+      var bumpGateAfterBurst = function(){
+        try {
+          var st = window.loadProactiveEventState ? window.loadProactiveEventState() : null;
+          if (!st) return;
+          if (!st.__gate || typeof st.__gate !== 'object') st.__gate = {};
+          var now2 = Date.now();
+          st.__gate.messageAt = now2;
+          try {
+            if (typeof window.drawProactiveBeat === 'function') st.__gate.nextMessageAt = window.drawProactiveBeat(now2);
+            else st.__gate.nextMessageAt = now2 + (function(){ try{ var r=window.proactiveEventRange?window.proactiveEventRange('message'):null; return r&&r.minMs?r.minMs:60000;}catch(_){return 60000;}})();
+          } catch(_){}
+          // 同时把该角色的下一拍也推到人群下一拍之后，避免“每位各自”口径下立刻又触发
+          try {
+            var rs = st[role.id] || (st[role.id]={});
+            var nxt = Number(st.__gate.nextMessageAt) || (now2 + 60000);
+            var jitter = 0; try{ jitter = window.proactiveBeatJitterMs ? Number(window.proactiveBeatJitterMs('message'))||0 : 0; }catch(_){}
+            rs.messageAt = nxt + Math.floor(Math.random()*Math.max(1, jitter||1000));
+          } catch(_){}
+          if (window.persistProactiveEventState) window.persistProactiveEventState();
+        } catch(_){}
+      };
+      var queueRest = function () {
+        try {
+          var settings = getSettings(role.id) || {};
+          var now = Date.now();
+          var cursor = now;
+          var rest = texts.map(function (text) {
+            cursor += gapOf();
+            return { id: 'proactive-' + now + '-' + Math.random().toString(16).slice(2, 6), text: text, createdAt: cursor, channel: 'proactive' };
+          });
+          settings.pendingProactiveMessages = [].concat(settings.pendingProactiveMessages || [], rest).slice(-20);
+          if (window.saveChatSettings) window.saveChatSettings(settings, role.id);
+          // 队列里那几条已经排到 cursor，最远一条之后才允许下一拍
+          try {
+            var st2 = window.loadProactiveEventState ? window.loadProactiveEventState() : null;
+            if (st2) {
+              if (!st2.__gate || typeof st2.__gate !== 'object') st2.__gate = {};
+              st2.__gate.messageAt = now;
+              var lastAt = cursor;
+              try{ if(typeof window.drawProactiveBeat==='function') st2.__gate.nextMessageAt = window.drawProactiveBeat(lastAt); else st2.__gate.nextMessageAt = lastAt + 60000; }catch(_){}
+              var rs2 = st2[role.id] || (st2[role.id]={});
+              var jitter2=0; try{ jitter2 = window.proactiveBeatJitterMs ? Number(window.proactiveBeatJitterMs('message'))||0 : 0; }catch(_){}
+              rs2.messageAt = (Number(st2.__gate.nextMessageAt)||lastAt) + Math.floor(Math.random()*Math.max(1,jitter2||1000));
+              if (window.persistProactiveEventState) window.persistProactiveEventState();
+            }
+          } catch(_){}
+        } catch (_) {}
+      };
       var next = function (index) {
         if (index >= texts.length) return;
         try {
           var open = typeof window.isChatConversationLoaded === 'function' && window.isChatConversationLoaded(role.id);
           if (!open) { queueRest(); return; }                  /* 房间关着：剩下的整批按节奏排进待收队列 */
           window.appendProactiveIncomingMessage(role, texts[index]);
+          bumpGateAfterBurst();
         } catch (_) {}
         if (index + 1 < texts.length) window.setTimeout(function () { next(index + 1); }, gapOf());
       };
@@ -52851,6 +52917,372 @@ body #chatApp[data-card-skin] .chat-decision-bubble.is-answered .chat-decision-s
   document.addEventListener('pageshow', window.__mobiusSettleFontScale, false);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', window.__mobiusSettleFontScale);
   else window.setTimeout(window.__mobiusSettleFontScale, 0);
+/* ══════════ 九 · 推送/列表/节奏/打字 批三修复（2026-10-09） ══════════
+   本段与前面的 ①-⑧ 同在一个 script#mobiusFix20261008 里（整块删掉即回退）。
+   解决用户 2026-10-09 报的四件事：
+     1) 推送的消息和实时聊天室的消息不一致
+     2) 联系人列表的消息预览与实时聊天室的消息也不一致
+     3) 对方无视「主动发送消息 / 回复消息」两处节奏一直狂发（无论在不在聊天室）
+     4) 对方正在输入时我发消息会打断他打字（之前不会）
+
+   根因见本段内联注释；修法全部在 window 上包装原函数，不改动源文件任何旧代码。
+*/
+  /* ---------- 1) 预览字符串统一：让待收队列的预览与气泡萃取完全一致 ---------- */
+  try {
+    var origPendingPreviewFn = window.chatPendingItemPreview;
+    if (typeof origPendingPreviewFn === 'function' && !origPendingPreviewFn.__mobiusFix9) {
+      window.chatPendingItemPreview = function(item) {
+        item = item || {};
+        var type = String(item.kind || item.type || 'text');
+        var clean = function(s, len) {
+          try { if (typeof window.cleanChatPreviewText === 'function') return window.cleanChatPreviewText(s, len); } catch(_){}
+          return String(s || '').trim().slice(0, len);
+        };
+        if (type === 'voice' || type === 'voice-card') return '[语音]';
+        if (type === 'sticker') {
+          if (item.src) return '[图片]';
+          var e = String(item.emoji || item.text || '').trim();
+          return e ? clean(e, 10) : '[表情包]';
+        }
+        if (type === 'kaomoji') {
+          var k = String(item.text || item.emoji || '').trim();
+          return k ? clean(k, 24) : '[表情包]';
+        }
+        if (type === 'poke') {
+          // 拍一拍原文已含名字与动作，不要再套一层 “[拍一拍]”
+          return clean(String(item.text || ''), 30) || '[拍一拍]';
+        }
+        if (type === 'glyphcard') return '对方发来一个添加字卡请求';
+        if (type === 'board') return '[画板传讯]';
+        if (type === 'image') return '[图片]';
+        var t = String(item.text || '').trim();
+        if (!t) return '发来一条新消息';
+        return clean(t, 52) || '发来一条消息';
+      };
+      window.chatPendingItemPreview.__mobiusFix9 = true;
+    }
+  } catch(_){}
+
+  try {
+    var origEB = window.extractPreviewFromBubble;
+    if (typeof origEB === 'function' && !origEB.__mobiusFix9) {
+      window.extractPreviewFromBubble = function(bubble) {
+        if (!bubble) return '新的梦角 · 开始一段对话吧';
+        try {
+          if (bubble.classList.contains('chat-board-bubble')) return '[画板传讯]';
+          if (bubble.classList.contains('chat-sticker-bubble')) {
+            var img = bubble.querySelector('img');
+            if (img) return '[图片]';
+            var em = bubble.querySelector('.chat-sticker-emoji');
+            if (em && em.textContent.trim()) return em.textContent.trim().slice(0, 10);
+            var ct = bubble.querySelector('.chat-combo-text');
+            if (ct && ct.textContent.trim()) return ct.textContent.trim().slice(0, 10);
+            return '[表情包]';
+          }
+          if (bubble.classList.contains('chat-voice-bubble')) return '[语音]';
+        } catch(_){}
+        try { return origEB(bubble); } catch(_){ return '一条消息'; }
+      };
+      window.extractPreviewFromBubble.__mobiusFix9 = true;
+    }
+  } catch(_){}
+
+  /* ---------- 2) 联系人列表预览 vs 聊天室：时间戳与未来过滤 ---------- */
+  try {
+    var origGetLast = window.getLastPreviewForHandle;
+    if (typeof origGetLast === 'function' && !origGetLast.__mobiusFix9) {
+      window.getLastPreviewForHandle = function(handle) {
+        if (!handle) return null;
+        try {
+          var s0 = (typeof window.getChatSettings === 'function' ? window.getChatSettings(handle) : null);
+          if (s0 && s0.historyDeleted) return null;
+        } catch(e){}
+        var best = null;
+        var bestTs = -1;
+        var consider = function(preview, time, ts, isOutgoing, isPending) {
+          if (!preview) return;
+          ts = Number(ts) || 0;
+          if (ts > Date.now() + 1000) return; // 未来排程的（连发剩余句）不要当作“最后一条”
+          if (!best || ts > bestTs) {
+            best = { preview: preview, time: time, ts: ts, isOutgoing: !!isOutgoing };
+            if (isPending) best.isPending = true;
+            bestTs = ts;
+          }
+        };
+        // 1) 历史：取最后一条有预览的行，用行上的 data-created-at（不是快照的 updatedAt）
+        try {
+          var state = (typeof window.loadChatHistoryState === 'function' ? window.loadChatHistoryState() : {});
+          var snap = state[handle];
+          if (snap && Array.isArray(snap.lines) && snap.lines.length) {
+            for (var i = snap.lines.length - 1; i >= 0; i--) {
+              var html = snap.lines[i];
+              if (!html || typeof html !== 'string') continue;
+              var tmp = document.createElement('div');
+              tmp.innerHTML = html;
+              var line = tmp.firstElementChild;
+              if (!line) continue;
+              var p = null;
+              try { p = window.extractPreviewFromLine ? window.extractPreviewFromLine(line) : null; } catch(_){}
+              if (!p && line.querySelector) {
+                try {
+                  var b = line.querySelector('.chat-bubble');
+                  if (b) p = window.extractPreviewFromBubble ? window.extractPreviewFromBubble(b) : null;
+                } catch(_){}
+              }
+              if (p) {
+                var ts = Number(line.dataset.createdAt || 0);
+                if (!ts) ts = Number(snap.updatedAt || 0);
+                var meta = line.querySelector('.chat-message-meta');
+                var t = meta ? (meta.textContent.trim().split('·')[0].trim() || '') : '';
+                consider(p, t, ts, line.classList.contains('outgoing'), false);
+                break;
+              }
+            }
+          }
+        } catch(e){}
+        // 2) DOM（当前打开的就是这个 handle）
+        try {
+          if (typeof window.currentPartnerHandle !== 'undefined' && String(window.currentPartnerHandle) === String(handle)) {
+            var body = document.getElementById('chatThreadBody');
+            if (body) {
+              var lines = body.querySelectorAll(':scope > .chat-message-line, :scope > .chat-call-system-message');
+              for (var j = lines.length - 1; j >= 0; j--) {
+                var l = lines[j];
+                var pp = null;
+                try { pp = window.extractPreviewFromLine ? window.extractPreviewFromLine(l) : null; } catch(_){}
+                if (pp) {
+                  var ts2 = Number(l.dataset.createdAt || Date.now());
+                  consider(pp, '刚刚', ts2, l.classList.contains('outgoing'), false);
+                  break;
+                }
+              }
+            }
+          }
+        } catch(e){}
+        // 3) 待收队列：只看已到点的（createdAt <= now），取最晚的一条
+        try {
+          var settings2 = (typeof window.getChatSettings === 'function' ? window.getChatSettings(handle) : null);
+          if (settings2) {
+            var pendings = [];
+            if (Array.isArray(settings2.pendingProactiveMessages)) pendings.push.apply(pendings, settings2.pendingProactiveMessages);
+            if (Array.isArray(settings2.pendingProactiveBoards)) {
+              pendings.push.apply(pendings, settings2.pendingProactiveBoards.map(function(b){ return { kind:'board', text:'[画板传讯]', createdAt: b.createdAt || 0 }; }));
+            }
+            var now = Date.now();
+            var arrived = pendings.filter(function(it){ return Number(it.createdAt || 0) <= now; });
+            if (arrived.length) {
+              arrived.sort(function(a,b){ return (Number(a.createdAt)||0) - (Number(b.createdAt)||0); });
+              var latest = arrived[arrived.length - 1];
+              var txt = typeof window.chatPendingItemPreview === 'function' ? window.chatPendingItemPreview(latest) : ((latest.text || '').trim().slice(0,28) || '[新消息]');
+              consider(txt, '刚刚', Number(latest.createdAt)||0, false, true);
+            }
+            if (settings2.pendingInvite && settings2.pendingInvite.status === 'pending') {
+              var ts4 = Number(settings2.pendingInvite.createdAt || 0);
+              if (ts4 && ts4 <= now) consider('INVITE', '刚刚', ts4, false, false);
+            }
+          }
+        } catch(e){}
+        return best;
+      };
+      window.getLastPreviewForHandle.__mobiusFix9 = true;
+    }
+  } catch(_){}
+
+  try {
+    var origPendingChat = window.pendingChatArrivalPreview;
+    if (typeof origPendingChat === 'function' && !origPendingChat.__mobiusFix9) {
+      window.pendingChatArrivalPreview = function(settings) {
+        var entries = [];
+        try {
+          (Array.isArray(settings && settings.pendingProactiveMessages) ? settings.pendingProactiveMessages : []).forEach(function(item, idx){
+            entries.push({ text: window.chatPendingItemPreview(item), at: Number(item && item.createdAt) || idx });
+          });
+          (Array.isArray(settings && settings.pendingProactiveBoards) ? settings.pendingProactiveBoards : []).forEach(function(item, idx){
+            entries.push({ text: '[画板传讯]', at: Number(item && item.createdAt) || idx });
+          });
+        } catch(_){}
+        var now = Date.now();
+        var arrived = entries.filter(function(e){ return e.at <= now; });
+        // 若全部是未来的（连发剩余句刚排进去），通知不要提前把“未来的那句”说出来
+        var pool = arrived.length ? arrived : [];
+        if (!pool.length) return '发来一条新消息';
+        pool.sort(function(a,b){ return a.at - b.at; });
+        return pool.length ? pool[pool.length-1].text : '发来一条新消息';
+      };
+      window.pendingChatArrivalPreview.__mobiusFix9 = true;
+    }
+  } catch(_){}
+
+  /* ---------- 3) 推送 vs 聊天室：把 SW 交接的 20 秒窗口放宽到 5 分钟 ---------- */
+  try {
+    var origTake = window.takeProactiveWakeScript;
+    if (typeof origTake === 'function' && !origTake.__mobiusFix9) {
+      window.takeProactiveWakeScript = function(handle, dueAt) {
+        var key = String(handle || '');
+        var at = Number(dueAt) || 0;
+        if (!key || !at) return '';
+        try {
+          var r = origTake(key, at);
+          if (r) return r;
+        } catch(_){}
+        // Fallback：5 分钟内最接近的那条
+        try {
+          var list = [];
+          if (typeof window.readDreamJSON === 'function') {
+            list = window.readDreamJSON('dream-messenger:proactive-wake-script:v1', []) || [];
+          } else {
+            var raw = localStorage.getItem('dream-messenger:proactive-wake-script:v1');
+            list = raw ? JSON.parse(raw) : [];
+          }
+          if (!Array.isArray(list)) list = [];
+          var best = null;
+          var bestDelta = Infinity;
+          for (var i = 0; i < list.length; i++) {
+            var it = list[i];
+            if (!it || String(it.handle) !== key) continue;
+            var delta = Math.abs(Number(it.dueAt) - at);
+            if (delta > 300000) continue; // 5 分钟
+            if (delta < bestDelta) { best = it; bestDelta = delta; }
+          }
+          if (!best) return '';
+          // 删掉并落盘（与原函数行为一致：只兑现一次）
+          try {
+            var idx = list.indexOf(best);
+            if (idx >= 0) list.splice(idx, 1);
+            if (typeof window.writeDreamJSON === 'function') window.writeDreamJSON('dream-messenger:proactive-wake-script:v1', list.slice(-12));
+            else localStorage.setItem('dream-messenger:proactive-wake-script:v1', JSON.stringify(list.slice(-12)));
+          } catch(_){}
+          return String(best.text || '');
+        } catch(_){ return ''; }
+      };
+      window.takeProactiveWakeScript.__mobiusFix9 = true;
+    }
+  } catch(_){}
+
+  /* ---------- 4) 节奏失控：强制“合计” + 兜底全局地板（无论在不在房间） ---------- */
+  try {
+    // 4a) 主动消息的节奏口径锁死为“合计”（避免每位梦角各算一条导致 N 倍速）
+    var origCombined = window.proactiveMessageRhythmCombined;
+    if (typeof origCombined === 'function' && !origCombined.__mobiusFix9) {
+      window.proactiveMessageRhythmCombined = function() { return true; };
+      window.proactiveMessageRhythmCombined.__mobiusFix9 = true;
+    }
+  } catch(_){}
+
+  // 4b) 额外兜底：processProactiveEvents 里再做一次“上一条之后未满最快则全员后推”
+  //    （放在批三补丁的 process 包装之后再包一层，确保无论原逻辑怎么走，节奏都生效）
+  try {
+    var origProcess2 = window.processProactiveEvents;
+    if (typeof origProcess2 === 'function' && !origProcess2.__mobiusFix9_2) {
+      window.processProactiveEvents = function() {
+        try {
+          var st = window.loadProactiveEventState ? window.loadProactiveEventState() : null;
+          var gs = window.getGlobalAppSettings ? window.getGlobalAppSettings() : null;
+          if (st && gs && typeof st === 'object') {
+            var nowMs = Date.now();
+            var gate = st.__gate && typeof st.__gate === 'object' ? st.__gate : (st.__gate = {});
+            var lastSent = Number(gate.messageAt) || 0;
+            var minMs = 0;
+            try {
+              var rg = window.proactiveEventRange ? window.proactiveEventRange('message') : null;
+              minMs = rg && Number(rg.minMs) > 0 ? Number(rg.minMs) : 0;
+            } catch(_){}
+            // 若上一条主动消息之后还未满“最快”，把所有已到点的往后推
+            if (lastSent > 0 && minMs > 0 && nowMs < lastSent + minMs) {
+              var changed = false;
+              var jitter = 0;
+              try { jitter = window.proactiveBeatJitterMs ? Number(window.proactiveBeatJitterMs('message')) || 0 : 0; } catch(_){}
+              if (!jitter) jitter = 8000;
+              Object.keys(st).forEach(function(k){
+                if (k === '__gate') return;
+                var rs = st[k];
+                if (!rs || typeof rs !== 'object') return;
+                var due = Number(rs.messageAt) || 0;
+                if (!due || due > nowMs) return;
+                rs.messageAt = lastSent + minMs + Math.floor(Math.random() * Math.max(1, jitter));
+                changed = true;
+              });
+              if (changed) { try { window.persistProactiveEventState && window.persistProactiveEventState(); } catch(_){} }
+            }
+          }
+        } catch(_){}
+        return origProcess2.apply(this, arguments);
+      };
+      window.processProactiveEvents.__mobiusFix9_2 = true;
+    }
+  } catch(_){}
+
+  /* ---------- 5) 打字不被打断：排队时保持“正在输入”常亮 ---------- */
+  try {
+    // 5a) 暴露的兜底：每 2 秒巡检一次，若回复引擎仍在跑，就把圆点重新点亮
+    if (!window.__mobiusTypingKeepAlive9) {
+      window.__mobiusTypingKeepAlive9 = true;
+      window.setInterval(function(){
+        try {
+          var handle = String(window.currentPartnerHandle || '').trim();
+          if (!handle) return;
+          var el = document.getElementById('chatTyping');
+          if (!el) return;
+          var hasEngine = false;
+          try { hasEngine = typeof window.hasActiveReplyEngine === 'function' ? window.hasActiveReplyEngine(handle) : false; } catch(_){}
+          var pending = null;
+          try { pending = window.getChatSettings ? window.getChatSettings(handle).pendingReply : null; } catch(_){}
+          if (hasEngine && pending && Number(pending.remaining) > 0) {
+            if (!el.classList.contains('show')) el.classList.add('show');
+          }
+        } catch(_){}
+      }, 2000);
+    }
+    // 5b) 包装 scheduleCurrentChatReplyEngine：排队时若之前已在输入，排完后立刻恢复显示
+    var origSchedCurr = window.scheduleCurrentChatReplyEngine;
+    if (typeof origSchedCurr === 'function' && !origSchedCurr.__mobiusFix9) {
+      window.scheduleCurrentChatReplyEngine = function(opts){
+        var typingEl = document.getElementById('chatTyping');
+        var wasShown = !!(typingEl && typingEl.classList.contains('show'));
+        var res = origSchedCurr.apply(this, arguments);
+        if (wasShown) {
+          try {
+            var h = String(window.currentPartnerHandle || '').trim();
+            var has = typeof window.hasActiveReplyEngine === 'function' ? window.hasActiveReplyEngine(h) : false;
+            if (has) {
+              var el = document.getElementById('chatTyping');
+              if (el && !el.classList.contains('show')) el.classList.add('show');
+            }
+          } catch(_){}
+        }
+        return res;
+      };
+      window.scheduleCurrentChatReplyEngine.__mobiusFix9 = true;
+    }
+    // 5c) 包装 clearReplyEngine：若仍有 pending 则不灭灯（由上面的巡检兜住）
+    var origClear = window.clearReplyEngine;
+    if (typeof origClear === 'function' && !origClear.__mobiusFix9) {
+      window.clearReplyEngine = function(handle){
+        var key = String(handle || '').trim();
+        var h = key || String(window.currentPartnerHandle || '').trim();
+        var wasShown = false;
+        try {
+          var el0 = document.getElementById('chatTyping');
+          wasShown = !!(el0 && el0.classList.contains('show') && String(window.currentPartnerHandle||'').trim() === h);
+        } catch(_){}
+        var out = origClear.apply(this, arguments);
+        if (wasShown) {
+          try {
+            var st = window.getChatSettings ? window.getChatSettings(h) : null;
+            var pd = st && st.pendingReply;
+            if (pd && String(pd.roleId||'') === h && Number(pd.remaining) > 0) {
+              var el = document.getElementById('chatTyping');
+              if (el) el.classList.add('show');
+            }
+          } catch(_){}
+        }
+        return out;
+      };
+      window.clearReplyEngine.__mobiusFix9 = true;
+    }
+  } catch(_){}
+
+
 })();
 </script>
 
