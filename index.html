@@ -13,9 +13,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Möbius">
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png?v=v114">
-  <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon-180.png?v=v114">
-  <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png?v=v114">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png?v=v115">
+  <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon-180.png?v=v115">
+  <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png?v=v115">
   <!-- 填写后端 Web Push 配置后，页面关闭或系统锁屏时也可由推送服务器唤醒 SW。 -->
   <meta name="dream-push-vapid-public-key" content="">
   <meta name="dream-push-subscribe-endpoint" content="">
@@ -14831,7 +14831,8 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
           if (request.id && request.text && !alreadyRestored(item.id)) {
             const line = createGlyphCardRequestLine(role, request);
             line.dataset.pendingIncomingId = String(item.id || '');
-            body.insertBefore(line, typing && typing.parentNode === body ? typing : null);
+            /* v115：迟到字卡请求也照时刻插，不堆尾巴 */
+            insertChatLineChronologically(body, typing, line, Number(request.createdAt) || Number(item.createdAt) || 0);
             try { markChatMessageForGlyphRequest(handle, request); } catch (_) {}
           }
           if (options.keepInQueue !== true) dropPendingMessage(item.id);
@@ -14879,7 +14880,8 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
           bubble.textContent = item.text || '';
         }
         setChatAvatarVisual(line.querySelector('.partner-avatar'), role.initials, role.avatarImage ? { type: 'image', src: role.avatarImage } : `linear-gradient(135deg,${role.color1},${role.color2})`);
-        body.insertBefore(line, typing && typing.parentNode === body ? typing : null);
+        /* v115：迟到消息按它本该到达的时刻插位 —— 不再一律怼到末尾让旧话压新话 */
+        insertChatLineChronologically(body, typing, line, Number(item.createdAt) || 0);
         if (options.keepInQueue !== true) dropPendingMessage(item.id);
         try { saveChatHistoryForHandle(handle, { reason: 'pending-proactive' }); } catch (_) {}
         /* 迟到的那几条是在你正看着的时候出现的：跟实时消息一样给个声音和提示 */
@@ -14943,7 +14945,8 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         hydrateDreamMediaImage(image, item.src); image.alt = '对方发送的画板传讯';
         line.querySelector('.chat-bubble').appendChild(image);
         setChatAvatarVisual(line.querySelector('.partner-avatar'), role.initials, role.avatarImage ? { type: 'image', src: role.avatarImage } : `linear-gradient(135deg,${role.color1},${role.color2})`);
-        body.insertBefore(line, typing && typing.parentNode === body ? typing : null);
+        /* v115：画板传讯同样按时刻插位 */
+        insertChatLineChronologically(body, typing, line, Number(item.createdAt) || 0);
       });
       body.classList.remove('history-deleted');
       const empty = document.getElementById('chatHistoryEmpty');
@@ -26634,6 +26637,22 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         writeDreamJSON(CHAT_VIEW_WINDOW_KEY, map);
       } catch (_) { /* 记不住窗口不影响聊天本身 */ }
     }
+    /* v115 · 时序插入：迟到的待收消息（createdAt 是「本该到达的那一刻」，可能早于房里已有的消息）
+       以前一律插到末尾 —— 于是 23:43 的消息排在 01:47 后面，顺序永久错乱（还会被存进历史快照）。
+       现在按 data-created-at 找到「第一条更晚的既有行」，插到它前面；找不到才照旧放尾巴。 */
+    function insertChatLineChronologically(body, typing, node, createdAt) {
+      const ts = Number(createdAt) || 0;
+      let anchor = null;
+      if (ts > 0 && body) {
+        const siblings = body.querySelectorAll(':scope > .chat-message-line, :scope > .chat-call-system-message, :scope > .chat-poke-notice');
+        for (const sib of siblings) {
+          const sibTs = Number(sib.dataset && sib.dataset.createdAt) || 0;
+          if (sibTs > ts) { anchor = sib; break; }
+        }
+      }
+      body.insertBefore(node, anchor || (typing && typing.parentNode === body ? typing : null));
+    }
+
     function restoreChatHistory(handle, options = {}) {
       const key = String(handle || '').trim();
       const snapshot = getChatHistorySnapshot(key);
@@ -26646,6 +26665,31 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         const state = loadChatHistoryState(); state[key] = snapshot; persistChatHistoryState(key); window.persistChatMessagesIndividually?.(key, normalizedLines);
       }
       if (!normalizedLines.length) return;
+      /* v115 · 历史快照乱序修复：旧版本曾把「迟到的待收消息」插在末尾再整屋存进快照，
+         顺序已坏且每次进房都会原样渲染。读出时按各行内嵌的 data-created-at 稳定重排，
+         顺序有变就顺手把快照也修好（只变那一次）。没有时间戳的行贴着它前面那行走。 */
+      {
+        let prevTs = 0;
+        const decorated = normalizedLines.map((html, index) => {
+          const match = /data-created-at="(\d{4,})"/.exec(String(html || ''));
+          const ts = match ? Number(match[1]) : prevTs;
+          if (match) prevTs = ts;
+          return { html, ts, index };
+        });
+        const ordered = [...decorated].sort((a, b) => (a.ts - b.ts) || (a.index - b.index));
+        if (ordered.some((entry, index) => entry !== decorated[index])) {
+          const repaired = ordered.map(entry => entry.html);
+          snapshot.lines = repaired;
+          snapshot.storageVersion = Math.max(4, Number(snapshot.storageVersion) || 0);
+          snapshot.updatedAt = Date.now();
+          try {
+            const state = loadChatHistoryState(); state[key] = snapshot; persistChatHistoryState(key);
+            window.persistChatMessagesIndividually?.(key, repaired);
+          } catch (_) {}
+          normalizedLines.length = 0;
+          repaired.forEach(html => normalizedLines.push(html));
+        }
+      }
       const previousRestoreFlag = restoringChatHistory;
       restoringChatHistory = true;
       const holder = document.createElement('div');
@@ -36816,8 +36860,8 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
      所以不会再出现「指过去是 404 → 系统给一枚默认黑图标」。
      v111z3：这七个文件换成**用户自己的真 logo**（浅蓝灰底 + 深墨「∞」，由用户提供，原样交付）；
      并统一加 `?v=v111z3` —— 手机上可能还留着上一版占位图的 HTTP 缓存，换个 URL 才保证抓到新图。 */
-  const NOTIF_ICON_FALLBACK_URL = new URL('./icons/icon-192.png?v=v114', location.href).href;
-  const NOTIF_BADGE_URL = new URL('./icons/badge-96.png?v=v114', location.href).href;
+  const NOTIF_ICON_FALLBACK_URL = new URL('./icons/icon-192.png?v=v115', location.href).href;
+  const NOTIF_BADGE_URL = new URL('./icons/badge-96.png?v=v115', location.href).href;
   async function resolveNotificationAvatarIcon(routeData, opts) {
 
 
