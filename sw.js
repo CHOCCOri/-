@@ -11,7 +11,7 @@ const STORE = 'state';
  * 应用自身的 mobius-image-resilience-v1（媒体韧性缓存，最多 64MB 用户媒体）
  * 由页面代码管理，本 SW 绝不可删除或拦截。
  * ------------------------------------------------------------------ */
-const CACHE_VERSION = 'v113';
+const CACHE_VERSION = 'v114';
 const SHELL_CACHE = `mobius-shell-${CACHE_VERSION}`;
 const SHELL_CACHE_PREFIX = 'mobius-shell-';
 const APP_MEDIA_CACHE = 'mobius-image-resilience-v1'; // 应用私有，永不触碰
@@ -49,6 +49,7 @@ const RUNTIME_ALLOW_HOSTS = ['unpkg.com', 'cdn.jsdelivr.net'];
 
 /* v111u：页面交接过来的「最近到点」唤醒任务（只为观测与去重，真正靠上面的定时器） */
 let wakeJobs = [];
+let wakeJobsGen = 0;   /* v114：交接代次 —— 回前台撤销后，老定时器到点也不许弹 */
 const wakeFiredKeys = new Map();   // v111v：key → 发出时间，避免接力交接时同一条重复发
 /* v111z13：并发交接先占坑，避免同一到点任务被多个 SCHEDULE_WAKE 同时发送。 */
 const v111z13WakeClaimedKeys = new Set();
@@ -401,9 +402,12 @@ self.addEventListener('message', event => {
       return;
     }
     wakeJobs.length = 0;
+    wakeJobsGen += 1;
+    const armedGen = wakeJobsGen;
     jobs.forEach(job => wakeJobs.push(job));
     const hold = new Promise(resolve => {
       const timers = jobs.map(job => setTimeout(async () => {
+        if (armedGen !== wakeJobsGen) return;   /* v114：这批到点已被撤销（回前台 / 新交接盖过），不再弹 */
         let jobDelivered = false, jobSkipped = false;
         try {
           const saved = await getState('preferences', preferences);
@@ -449,6 +453,15 @@ self.addEventListener('message', event => {
     reply({ ok: true, armed: jobs.length, firstDueAt: jobs[0] ? jobs[0].dueAt : 0, horizonMs: HORIZON_MS, maxHoldMs: MAX_HOLD_MS });
     await hold;
     })());
+    return;
+  }
+  if (message.type === 'CANCEL_WAKE') {
+    /* v114：页面回前台 = 页面计时器接管；把 SW 吊着的到点全部撤掉，
+       不然用户在前台说一句话排期就变了，SW 却照旧的到点弹「幽灵通知」。 */
+    wakeJobs.length = 0;
+    wakeJobsGen += 1;
+    v111z13WakeClaimedKeys.clear();
+    reply({ ok: true, cancelled: true });
     return;
   }
   if (message.type === 'GET_WAKE_STATE') {

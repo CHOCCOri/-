@@ -13,9 +13,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Möbius">
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png?v=v113">
-  <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon-180.png?v=v113">
-  <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png?v=v113">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png?v=v114">
+  <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon-180.png?v=v114">
+  <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png?v=v114">
   <!-- 填写后端 Web Push 配置后，页面关闭或系统锁屏时也可由推送服务器唤醒 SW。 -->
   <meta name="dream-push-vapid-public-key" content="">
   <meta name="dream-push-subscribe-endpoint" content="">
@@ -12941,7 +12941,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       const settings = getChatSettings(role.id);
       /* v111z74：待收条目带来源标记。回复（我发消息之后对方回的）与主动消息是两条通道，
          迟到回来的处理也不同：回复按策略 C 重排，主动消息到点就算收到、立刻显示。 */
-      settings.pendingProactiveMessages = [...(settings.pendingProactiveMessages || []), { id: `proactive-${Date.now()}-${Math.random().toString(16).slice(2)}`, text, createdAt: arrivalAt, channel: String(arguments[2] || 'proactive') }].slice(-20);
+      settings.pendingProactiveMessages = [...(settings.pendingProactiveMessages || []), { id: `proactive-${Date.now()}-${Math.random().toString(16).slice(2)}`, text, createdAt: arrivalAt, channel: String(arguments[2] || 'proactive') }].slice(-PROACTIVE_PENDING_CAP);
       return saveChatSettings(settings, role.id) === true;
     }
 
@@ -12955,7 +12955,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
           id: `proactive-${messageKind}-${Date.now()}-${Math.random().toString(16).slice(2)}`,
           kind: messageKind, src: item.src || '', emoji: item.emoji || item.text || '', name: item.name || '',
           caption: item.caption || '', createdAt: (proactiveCatchupAt > 0 ? proactiveCatchupAt : Date.now())
-        }].slice(-20);
+        }].slice(-PROACTIVE_PENDING_CAP);
         saveChatSettings(settings, role.id);
         return true;
       }
@@ -13011,6 +13011,9 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
          · 到点真的生成消息时取出来原样用掉（通知说什么，App 里就是什么）
        仓是持久化的：页面中途刷新也不会说话不算数；超过 30 分钟没用掉就作废。
        ══════════════════════════════════════════════════════════════ */
+    /* v114：待收队列上限 20 → 32。通知是先弹的 —— 队列满了被挤掉的那条，
+       系统通知栏里还挂着它的内容，聊天室却永远不会出现（「幽灵通知」另一来源）。 */
+    const PROACTIVE_PENDING_CAP = 32;
     const PROACTIVE_WAKE_SCRIPT_KEY = 'dream-messenger:proactive-wake-script:v1';
     const PROACTIVE_WAKE_SCRIPT_TTL_MS = 30 * 60 * 1000;
     const PROACTIVE_WAKE_SCRIPT_MATCH_MS = 20 * 1000;   /* 兑现时认多近的到点（防串台） */
@@ -13068,6 +13071,23 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       if (!best) return '';
       writeProactiveWakeScripts(list.filter(item => item !== best.item));
       return String(best.item.text || '');
+    };
+
+    /* v114 · 兜底兑现：通知已经带话弹出去了，但排期中途被重排（我中途说了话 / 安静线 / 回前台），
+       到点 ±20 秒认不出是哪条预排话 —— 那就认「这位梦角还没兑现的最新一句」。
+       原则不变：通知说什么，App 里就是什么（哪怕说得晚了一点）。 */
+    window.takeProactiveWakeScriptForHandle = function (handle) {
+      const key = String(handle || '');
+      if (!key) return '';
+      const list = pruneProactiveWakeScripts();
+      let best = null;
+      list.forEach(item => {
+        if (String(item.handle) !== key) return;
+        if (!best || Number(item.dueAt) > Number(best.dueAt)) best = item;
+      });
+      if (!best) return '';
+      writeProactiveWakeScripts(list.filter(item => item !== best));
+      return String(best.text || '');
     };
 
     /* ═══ v111z74 · 「全局回复」与「主动发送消息」的分工（用户口径） ═══
@@ -13139,7 +13159,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
             if (index) cursor += nextGap();
             return { id: `proactive-${now}-${index}`, text, createdAt: cursor };
           })
-        ].slice(-20);
+        ].slice(-PROACTIVE_PENDING_CAP);
         saveChatSettings(settings, role.id);
         return true;
       }
@@ -13516,7 +13536,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       const isOpen = isChatConversationLoaded(role.id);
       if (!isOpen) {
         const settings = getChatSettings(role.id);
-        settings.pendingProactiveMessages = [...(settings.pendingProactiveMessages || []), { id: `proactive-voice-${Date.now()}-${Math.random().toString(16).slice(2)}`, kind: 'voice', text, duration: seconds, createdAt: (proactiveCatchupAt > 0 ? proactiveCatchupAt : Date.now()) }].slice(-20);
+        settings.pendingProactiveMessages = [...(settings.pendingProactiveMessages || []), { id: `proactive-voice-${Date.now()}-${Math.random().toString(16).slice(2)}`, kind: 'voice', text, duration: seconds, createdAt: (proactiveCatchupAt > 0 ? proactiveCatchupAt : Date.now()) }].slice(-PROACTIVE_PENDING_CAP);
         saveChatSettings(settings, role.id);
         return true;
       }
@@ -13542,7 +13562,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
     function appendProactiveIncomingVoiceCard(role, card) {
       if (isRoleTemporarilyAway(role) || getChatSettings(role?.id).partnerVoiceEnabled === false || !card?.src) return false;
       const isOpen=isChatConversationLoaded(role.id),seconds=Math.max(1,Math.min(3600,Number(card.duration)||1));
-      if(!isOpen){const settings=getChatSettings(role.id);settings.pendingProactiveMessages=[...(settings.pendingProactiveMessages||[]),{id:`proactive-voice-card-${Date.now()}-${Math.random().toString(16).slice(2)}`,kind:'voice-card',audioSrc:card.src,audioName:card.name||'MP3 语音字卡',duration:seconds,createdAt:(proactiveCatchupAt>0?proactiveCatchupAt:Date.now())}].slice(-20);saveChatSettings(settings,role.id);return true;}
+      if(!isOpen){const settings=getChatSettings(role.id);settings.pendingProactiveMessages=[...(settings.pendingProactiveMessages||[]),{id:`proactive-voice-card-${Date.now()}-${Math.random().toString(16).slice(2)}`,kind:'voice-card',audioSrc:card.src,audioName:card.name||'MP3 语音字卡',duration:seconds,createdAt:(proactiveCatchupAt>0?proactiveCatchupAt:Date.now())}].slice(-PROACTIVE_PENDING_CAP);saveChatSettings(settings,role.id);return true;}
       const body=document.getElementById('chatThreadBody'),typing=document.getElementById('chatTyping');if(!body)return false;const line=document.createElement('div');line.className='chat-message-line incoming';line.dataset.messageKind='voice-card';line.dataset.createdAt=String(Date.now());const avatar=document.createElement('div');avatar.className='chat-message-avatar partner-avatar';const content=document.createElement('div');content.className='chat-message-content';content.append(createChatVoiceBubble('',seconds,{audioSource:card.src,audioName:card.name,noTranscript:true}),Object.assign(document.createElement('div'),{className:'chat-message-meta',textContent:'刚刚'}));setChatAvatarVisual(avatar,role.initials,role.avatarImage?{type:'image',src:role.avatarImage}:`linear-gradient(135deg,${role.color1},${role.color2})`);line.append(avatar,content);body.insertBefore(line, typing && typing.parentNode === body ? typing : null);body.scrollTop=body.scrollHeight;playGlobalSound('message');showChatToast(`${getRoleDisplayNameForApp(role)} 发来一条语音`);return true;
     }
 
@@ -13622,7 +13642,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       const isOpen = isChatConversationLoaded(role.id);
       if (!isOpen) {
         const settings = getChatSettings(role.id);
-        settings.pendingProactiveMessages = [...(settings.pendingProactiveMessages || []), { id: `proactive-poke-${Date.now()}-${Math.random().toString(16).slice(2)}`, kind: 'poke', text, createdAt: (proactiveCatchupAt > 0 ? proactiveCatchupAt : Date.now()) }].slice(-20);
+        settings.pendingProactiveMessages = [...(settings.pendingProactiveMessages || []), { id: `proactive-poke-${Date.now()}-${Math.random().toString(16).slice(2)}`, kind: 'poke', text, createdAt: (proactiveCatchupAt > 0 ? proactiveCatchupAt : Date.now()) }].slice(-PROACTIVE_PENDING_CAP);
         saveChatSettings(settings, role.id);
         return true;
       }
@@ -13818,7 +13838,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         const settings = getChatSettings(handle);
         settings.pendingProactiveMessages = [...(settings.pendingProactiveMessages || []), {
           id: request.id, kind: 'glyphcard', text: clean, requestId: request.id, createdAt: request.createdAt
-        }].slice(-20);
+        }].slice(-PROACTIVE_PENDING_CAP);
         saveChatSettings(settings, handle);
         return true;
       }
@@ -14543,8 +14563,12 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
               const missedSlots = collectMissedProactiveMessageSlots(dueAt, now);
               /* v111z6：这条到点早先可能已经交给 SW，通知里已经把「她要说的那句」念给用户了 ——
                  那就必须先兑现原话（通知说什么、App 里就是什么），其余补话规则照旧。 */
+              /* v114：±20 秒认不出（排期被重排过）就退认「这位梦角最新的未兑现预排话」——
+                 宁可按预排话把这句话说掉，也不能让通知里的那句凭空消失 / 换成另一句。 */
               const wakeScript = typeof window.takeProactiveWakeScript === 'function'
-                ? window.takeProactiveWakeScript(role.id, dueAt) : '';
+                ? (window.takeProactiveWakeScript(role.id, dueAt)
+                  || (typeof window.takeProactiveWakeScriptForHandle === 'function' ? window.takeProactiveWakeScriptForHandle(role.id) : ''))
+                : '';
               let delivered = false;
               if (wakeScript) {
                 delivered = triggerProactiveTextBatch(role, 1, wakeScript) !== false;
@@ -14732,7 +14756,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       if (!handle || !Array.isArray(slots) || !slots.length) return false;
       const before = pendingProactiveQueueLength(handle);
       /* 待收队列上限 20 条：先算好这次能补多少，别让后补的把先补的挤掉 */
-      const budget = Math.max(0, Math.min(PROACTIVE_CATCHUP_MAX, 20 - before));
+      const budget = Math.max(0, Math.min(PROACTIVE_CATCHUP_MAX, PROACTIVE_PENDING_CAP - before));
       if (!budget) return false;
       chatArrivalNotificationsMuted = true;
       try {
@@ -21284,7 +21308,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         patTexts: Array.isArray(saved.patTexts) ? saved.patTexts.map(String).filter(text => !PRESET_CARD_TEXTS.has(text.trim())) : defaults.patTexts.slice(),
         pendingCheck: saved.pendingCheck && typeof saved.pendingCheck === 'object' ? saved.pendingCheck : defaults.pendingCheck,
         pendingReply: saved.pendingReply && typeof saved.pendingReply === 'object' ? saved.pendingReply : defaults.pendingReply,
-        pendingProactiveMessages: Array.isArray(saved.pendingProactiveMessages) ? saved.pendingProactiveMessages.slice(-20) : defaults.pendingProactiveMessages.slice(),
+        pendingProactiveMessages: Array.isArray(saved.pendingProactiveMessages) ? saved.pendingProactiveMessages.slice(-PROACTIVE_PENDING_CAP) : defaults.pendingProactiveMessages.slice(),
         pendingProactiveBoards: Array.isArray(saved.pendingProactiveBoards) ? saved.pendingProactiveBoards.slice(-12) : defaults.pendingProactiveBoards.slice(),
         messageKindCooldowns: saved.messageKindCooldowns && typeof saved.messageKindCooldowns === 'object'
           ? Object.fromEntries(Object.entries(saved.messageKindCooldowns).filter(([kind, at]) => SPECIAL_MESSAGE_KINDS.has(kind) && Number.isFinite(Number(at))).map(([kind, at]) => [kind, Math.max(0, Number(at))]))
@@ -27303,6 +27327,8 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       window.__chatUnreadVisibilityBound = true;
       document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'hidden') return;
+        /* v114：页面被冻期间到点的，回前台先静默兑现（横幅补发逻辑用的是真实最新状态） */
+        try { if (typeof processProactiveEvents === 'function') processProactiveEvents(); } catch(_) {}
         /* v111j5：回到前台先把「后台期间错过的那次横幅」补上（切走 / 锁屏时横幅弹不出来） */
         const notice = hiddenArrivalNotice;
         hiddenArrivalNotice = null;
@@ -36642,6 +36668,13 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
     const r = String(route||'home');
     if(r.startsWith('chat:')){
       const handle = r.slice(5) || data.handle || currentPartnerHandle;
+      /* v114 · 点通知先兑现：页面被冻时 SW 已把带内容的通知弹出去了，但待收队列还是空的 ——
+         直接进房就会「通知说有，房间里没有」。先静默扫一遍到点（预排话会原样落队），
+         openConversation 进房时立刻能看见。静默 = 不弹二次横幅，用户马上要看的就是消息本身。 */
+      try {
+        chatArrivalNotificationsMuted = true;
+        try { if (typeof processProactiveEvents === 'function') processProactiveEvents(); } finally { chatArrivalNotificationsMuted = false; }
+      } catch(_) {}
       // if handle present, try to open conversation
       if(handle){
         try {
@@ -36783,8 +36816,8 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
      所以不会再出现「指过去是 404 → 系统给一枚默认黑图标」。
      v111z3：这七个文件换成**用户自己的真 logo**（浅蓝灰底 + 深墨「∞」，由用户提供，原样交付）；
      并统一加 `?v=v111z3` —— 手机上可能还留着上一版占位图的 HTTP 缓存，换个 URL 才保证抓到新图。 */
-  const NOTIF_ICON_FALLBACK_URL = new URL('./icons/icon-192.png?v=v113', location.href).href;
-  const NOTIF_BADGE_URL = new URL('./icons/badge-96.png?v=v113', location.href).href;
+  const NOTIF_ICON_FALLBACK_URL = new URL('./icons/icon-192.png?v=v114', location.href).href;
+  const NOTIF_BADGE_URL = new URL('./icons/badge-96.png?v=v114', location.href).href;
   async function resolveNotificationAvatarIcon(routeData, opts) {
 
 
@@ -37225,11 +37258,22 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
     setInterval(() => { if (!document.hidden) updatePermissionUI(); }, 10000);
     /* v111u：页面隐藏 / 回到前台 / 每分钟：把到点计划交给推送服务与 SW
        —— 手机锁屏时页面能不能叫醒自己全靠这一步的交接。 */
+    /* v114 · 幽灵通知根治：SW 吊着的到点不可撤销、内容已写死 —— 而前台排期会随「我说话」
+       随时重排（主动发送消息从我最后一次说话起算）。前台交接过一条 = 定时埋一颗雷。
+       所以：只在前台→后台那一刻交接；回前台立刻把 SW 吊着的全撤掉（页面计时器自己接管）。 */
     const pushHandoffTick = () => {
-      try { handOffSoonDueToServiceWorker(); } catch(_){}
-      try { uploadPushWakePlan(false); } catch(_){}
+      if (document.hidden) {
+        try { window.__swWakeArmed = true; handOffSoonDueToServiceWorker(); } catch(_){}
+        try { uploadPushWakePlan(false); } catch(_){}
+        return;
+      }
+      if (window.__swWakeArmed) {
+        window.__swWakeArmed = false;
+        try { postToServiceWorker({ type:'CANCEL_WAKE' }, 2000); } catch(_){}
+        try { window.mobiusWakeLedger && window.mobiusWakeLedger.sweep(); } catch(_){}
+      }
     };
-    document.addEventListener('visibilitychange', () => { if(document.hidden) pushHandoffTick(); });
+    document.addEventListener('visibilitychange', pushHandoffTick);
     setInterval(pushHandoffTick, 60000);
     /* v111v：每分钟清一次过期账目 + 重评保活（smart 到点了就自己出声） */
     setInterval(() => { try { window.mobiusWakeLedger && window.mobiusWakeLedger.sweep(); } catch(_){} try { applyBackgroundKeepAlive(); renderWakeLedgerSummary(); } catch(_){} }, 60000);
@@ -38269,6 +38313,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
     }
     previewEl.textContent = data.preview || '一条消息';
     if(timeEl) timeEl.textContent = formatListTime(data.ts, data.time);
+    row.dataset.previewTs = String(Number(data.ts) || 0);
 
     // 置顶：移到列表顶部（保持置顶分组）
     const list = document.getElementById('chatListScroll');
@@ -38435,6 +38480,28 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       return res;
     };
     window.saveChatSettings._previewPatched = true;
+  }
+
+  /* v114 · 预览时间实时化：行的「刚刚 / x 分钟前」只在新消息时才重算，看着就像「预览不更新」。
+     每 30 秒（仅前台）+ 回前台时，只刷新时间标签本身 —— 不重排、不动内容。 */
+  function refreshChatListTimeLabels(){
+    try{
+      document.querySelectorAll('#chatListScroll .chat-row[data-handle]').forEach(row=>{
+        const ts = Number(row.dataset.previewTs) || 0;
+        if(!ts) return;
+        const timeEl = row.querySelector('.chat-row-notification .chat-row-time');
+        if(timeEl) timeEl.textContent = formatListTime(ts, '');
+      });
+    }catch(e){}
+  }
+  if(!window.__chatPreviewRelabelBound){
+    window.__chatPreviewRelabelBound = true;
+    setInterval(()=>{ if(document.hidden) return; refreshChatListTimeLabels(); }, 30000);
+    document.addEventListener('visibilitychange', ()=>{
+      if(document.hidden) return;
+      try { initializeAllChatListPreviews(); } catch(e){}
+      refreshChatListTimeLabels();
+    });
   }
 
   // 打开会话时清除未读
