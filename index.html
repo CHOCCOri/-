@@ -13,9 +13,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Möbius">
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png?v=v111z74">
-  <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon-180.png?v=v111z74">
-  <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png?v=v111z74">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png?v=v113">
+  <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon-180.png?v=v113">
+  <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png?v=v113">
   <!-- 填写后端 Web Push 配置后，页面关闭或系统锁屏时也可由推送服务器唤醒 SW。 -->
   <meta name="dream-push-vapid-public-key" content="">
   <meta name="dream-push-subscribe-endpoint" content="">
@@ -10572,36 +10572,25 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
             <article class="rhythm-card current-role-persona-card" id="globalRolePersonaCard">
               <div class="rhythm-card-head"><div><strong>当前角色回复参数</strong><small>切换聊天室后自动读取该角色的真实人格参数</small></div><b class="current-persona-role" id="rolePersonaName">未选择角色</b><label class="setting-toggle"><input id="globalReplyRhythmEnabledToggle" type="checkbox" checked aria-label="允许所有角色自动回复"><i></i></label></div>
               <div class="role-persona-grid">
-                <label class="wide"><span>回复判定 replyChance（未命中即直接已读不回）</span><input id="rolePersonaReplyChance" type="number" min="0" max="100" step="1" value="99"></label>
+                <label><span>回复判定 replyChance（未命中即直接已读不回）</span><input id="roleReplyChance" type="number" min="0" max="100" step="1" value="99"></label>
+                <label><span>单次最多回复 maxReplies</span><input id="roleMaxReplies" type="number" min="1" max="5" step="1" value="5"></label>
+                <label><span>最短延迟 replyMin（秒）</span><input id="roleReplyMin" type="number" min="1" max="3600" step="1" value="3"></label>
+                <label><span>最长延迟 replyMax（秒）</span><input id="roleReplyMax" type="number" min="1" max="7200" step="1" value="60"></label>
+                <label class="wide"><span>专属字卡组 extraGroup</span><select id="roleExtraGroup"><option value="">跟随该角色的字卡权限</option></select></label>
               </div>
-              <p class="role-persona-help">人格直接沉默 = 100% − replyChance；开启「欲言又止与撤回」后，通过回复判定的轮次另有极小概率输入后取消。「一次回几条」和「多久回」属于全局节奏，在旁边的「全局回复节奏」里调。</p>
-              <button class="save-role-persona" id="saveRolePersonaBtn" type="button">保存当前角色回复参数</button>
-            </article>
-
-            <article class="rhythm-card current-role-persona-card">
-              <div class="rhythm-card-head"><div><strong>全局回复节奏</strong><small>所有角色共用；字卡库有可用字卡时，按以下参数安排回复。</small></div><b class="setting-value-note">全局</b></div>
-              <div class="role-persona-grid">
-                <label><span>私聊单次最多回复（条）</span><input id="globalReplyMaxReplies" type="number" min="1" max="5" step="1"></label>
-                <label><span>群聊首轮参与人数</span><input id="globalGroupReplyMaxMembers" type="number" min="1" max="7" step="1"></label>
-                <label><span>最短延迟（秒）</span><input id="globalReplyMinSeconds" type="number" min="1" max="3600" step="1"></label>
-                <label><span>最长延迟（秒）</span><input id="globalReplyMaxSeconds" type="number" min="1" max="7200" step="1"></label>
-                <label><span>群聊自主接话轮数</span><input id="globalGroupAutonomousRounds" type="number" min="0" max="5" step="1"></label>
-                <label><span>群聊自主接话概率（%）</span><input id="globalGroupAutonomousChance" type="number" min="0" max="100" step="1"></label>
-              </div>
-              <p class="role-persona-help" id="globalReplyRhythmHint">现在 ≈ 你发一条后 3 ~ 60 秒回你，一次最多 5 条。</p>
-              <div class="rhythm-card-option-row"><div><strong>群聊至少一人回复</strong><small>关闭后，无成员通过各自回复概率时允许群聊保持沉默。</small></div><label class="setting-toggle"><input id="globalGroupForceReplyToggle" type="checkbox"><i></i></label></div>
               <div class="reply-weight-block">
                 <div class="reply-weight-head"><strong>各条数出现权重</strong><small>填相对权重即可，不必凑满 100；系统会自动归一化。超出「单次最多回复」的档位不参与。</small></div>
-                <div class="reply-weight-grid" id="globalReplyWeightGrid">
-                  <label><span>1 条</span><input id="globalReplyWeight1" type="number" min="0" max="1000" step="1"></label>
-                  <label><span>2 条</span><input id="globalReplyWeight2" type="number" min="0" max="1000" step="1"></label>
-                  <label><span>3 条</span><input id="globalReplyWeight3" type="number" min="0" max="1000" step="1"></label>
-                  <label><span>4 条</span><input id="globalReplyWeight4" type="number" min="0" max="1000" step="1"></label>
-                  <label><span>5 条</span><input id="globalReplyWeight5" type="number" min="0" max="1000" step="1"></label>
+                <div class="reply-weight-grid" id="replyWeightGrid">
+                  <label><span>1 条</span><input id="roleWeight1" type="number" min="0" max="1000" step="1" value="45"></label>
+                  <label><span>2 条</span><input id="roleWeight2" type="number" min="0" max="1000" step="1" value="32"></label>
+                  <label><span>3 条</span><input id="roleWeight3" type="number" min="0" max="1000" step="1" value="15"></label>
+                  <label><span>4 条</span><input id="roleWeight4" type="number" min="0" max="1000" step="1" value="6"></label>
+                  <label><span>5 条</span><input id="roleWeight5" type="number" min="0" max="1000" step="1" value="2"></label>
                 </div>
-                <p class="reply-weight-preview" id="globalReplyWeightPreview">实际分布：—</p>
+                <p class="reply-weight-preview" id="replyWeightPreview">实际分布：—</p>
               </div>
-              <button class="save-role-persona" type="button" onclick="saveGlobalReplyRhythm()">保存全局回复节奏</button>
+              <p class="role-persona-help">人格直接沉默 = 100% − replyChance；开启「欲言又止与撤回」后，通过回复判定的轮次另有极小概率输入后取消。延迟按 replyMin + random × (replyMax − replyMin) 计算，两者均以秒为单位。</p>
+              <button class="save-role-persona" id="saveRolePersona" type="button">保存当前角色回复参数</button>
             </article>
           </div>
         </section>
@@ -10613,11 +10602,6 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
               <div class="rhythm-card-head"><div><strong>主动发送消息</strong><small>从我最后一次发送 CHAT 消息后计算；3% 查岗 / 5% 画板 / 4% 红包 / 3% 拍一拍 / 85% 普通字卡。对方红包档位：72%≤¥1000、23%≤¥5000、5%≤¥20000。</small></div><label class="setting-toggle"><input id="proactiveMessageEnabledToggle" type="checkbox" checked aria-label="开启主动发送消息"><i></i></label></div>
               <label class="range-control"><span>最快</span><input id="proactiveMessageMinSecondsRange" type="range" min="1" max="3600" step="1" data-unit="秒"><output></output></label>
               <label class="range-control"><span>最慢</span><input id="proactiveMessageMaxMinutesRange" type="range" min="1" max="1440" step="1" data-unit="分钟"><output></output></label>
-              <p class="role-persona-help" id="proactiveMessageRangeHint">最快 / 最慢</p>
-              <div class="rhythm-card-options">
-                <div class="rhythm-card-option-row"><div><strong>节奏口径</strong><small>「最快 / 最慢」是算全部梦角合起来，还是每位梦角各算一条。</small></div><div class="global-theme-options"><button class="global-theme-option" data-proactive-rhythm="combined" type="button">所有梦角合计</button><button class="global-theme-option" data-proactive-rhythm="perRole" type="button">每位梦角各自</button></div></div>
-                <div class="rhythm-card-option-row"><div><strong>一轮说几句</strong><small>对方一次到点说 1 句，还是连发 1~N 句（连发时句与句之间是主动消息自己的小停顿，与「回复节奏」无关）。</small></div><div class="global-theme-options"><button class="global-theme-option" data-proactive-burst="off" type="button">只发 1 句</button><button class="global-theme-option" data-proactive-burst="on" type="button">连发 1~N 句</button></div></div>
-              </div>
             </article>
 
             <article class="rhythm-card" data-scheduler-card="contact">
@@ -12613,10 +12597,13 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       return { max, weights };
     }
 
-    function pickRoleReplyCount() {
+    function pickRoleReplyCount(role) {
+      /* v113 · blue 算法：一次回几条，按「这位角色自己的」maxReplies / replyWeights 抽
+         （blue 的 persona 权重抽条数）。角色缺字段时回落全局默认。 */
       const settings = getGlobalAppSettings();
-      const max = Math.max(1, Math.min(5, Number(settings.replyMaxReplies) || 5));
-      const weights = (settings.replyWeights || [45,32,15,6,2]).slice(0, max).map(value => Math.max(0, Number(value) || 0));
+      const max = Math.max(1, Math.min(5, Number(role?.maxReplies ?? settings.replyMaxReplies) || 5));
+      const raw = Array.isArray(role?.replyWeights) && role.replyWeights.length ? role.replyWeights : (settings.replyWeights || [45,32,15,6,2]);
+      const weights = raw.slice(0, max).map(value => Math.max(0, Number(value) || 0));
       const total = weights.reduce((sum, value) => sum + value, 0) || 1;
       let point = Math.random() * total;
       for (let index = 0; index < weights.length; index += 1) { point -= weights[index]; if (point <= 0) return index + 1; }
@@ -12638,8 +12625,11 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
           }
         }
       } catch (_) {}
-      // 字卡是全局库：不按角色开关、备注或“专属字卡组”切断回复资格。
-      const fullPool = getRoleContentCardPool(role);
+      /* v113 · blue 算法：角色设了「专属字卡组 extraGroup」时优先用它（blue 的 getMemberCardPool）。
+         与 blue 的差异只有一处：专属组为空时回落全局内容池，而不是沉默 ——
+         保留 v111j12「已读之后一定有回复」的兜底承诺，不给用户制造结构性已读不回。 */
+      const extraPool = role && role.extraGroup ? getRoleGroupCardPool(role, role.extraGroup) : [];
+      const fullPool = extraPool.length ? extraPool : getRoleContentCardPool(role);
       let pool = fullPool.filter(text => !used.includes(text));
       // 计划回复条数多于可用字卡时允许重新抽取，而不是在已经回复后又把整批状态改成“已读不回”。
       if (!pool.length) pool = fullPool;
@@ -12677,10 +12667,18 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       return selected;
     }
 
-    function roleReplyDelay() {
+    function roleReplyDelay(roleOrId) {
+      /* v113 · blue 算法：回复延迟按「这位角色自己的」replyMin / replyMax 抽（人格参数，blue 的
+         calculatePersonaDelayMs）。拿不到角色时（旧数据/兜底路径）才回落全局节奏默认值，
+         保证任何调用点都不会因为角色缺失而算不出时间。 */
+      let role = null;
+      try {
+        if (roleOrId && typeof roleOrId === 'object') role = roleOrId;
+        else if (roleOrId) role = getRoleRecord(roleOrId);
+      } catch (_) {}
       const settings = getGlobalAppSettings();
-      const min = Math.max(1, Number(settings.replyMinSeconds) || 3);
-      const max = Math.max(min, Number(settings.replyMaxSeconds) || 60);
+      const min = Math.max(1, Number(role ? role.replyMin : settings.replyMinSeconds) || 3);
+      const max = Math.max(min, Number(role ? role.replyMax : settings.replyMaxSeconds) || 60);
       return (min + Math.random() * (max - min)) * 1000;
     }
 
@@ -12749,12 +12747,16 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
        合起来就是每两分钟、甚至几秒钟就有人冒头（实测相邻两条平均 2 秒）。
        现在默认「所有梦角合计」：用一个全局闸门把整个人群的最短间隔锁在「最快」那一格上。 */
     function proactiveMessageRhythmCombined() {
-      try { return getGlobalAppSettings().proactiveMessageRhythm !== 'perRole'; } catch (_) { return true; }
+      /* v113 · blue 算法：主动消息回到「每位梦角各自排期、各说各的」（blue 没有合计口径）。
+         一行关闭整个合计机制：下面的节拍闸/整群节拍/安静线锚点一并随之失效，
+         不用再逐处动刀（proactiveMessageRhythm 键保留不删，纯历史数据）。 */
+      return false;
     }
 
-    /* 一轮说几句：默认只发 1 句（不再借用回复条数权重）；开了连发才按回复权重抽 1~N 句。 */
+    /* 一轮说几句：v113 起回到 blue 算法 —— 主动消息一次到点只说 1 句，
+       「连发 1~N 句」开关（proactiveMessageBurst）随面板一起退役（键保留不删，纯历史数据）。 */
     function pickProactiveMessageCount() {
-      try { return getGlobalAppSettings().proactiveMessageBurst === true ? pickRoleReplyCount() : 1; } catch (_) { return 1; }
+      return 1;
     }
 
     /* v111z74：我方「安静线」—— 我方最后一次在聊天里说话 + 主动消息的「最快」值。
@@ -14881,7 +14883,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
            历史条目没有 channel（旧数据）时按回复处理，保持 v111z72 的行为不变。 */
         const isReplyChannel = item?.channel !== 'proactive';
         if (isReplyChannel && at && (nowReveal - at) > STALE_REVEAL_MS) {
-          item.createdAt = nowReveal + (typeof roleReplyDelay === 'function' ? roleReplyDelay() : 45000);
+          item.createdAt = nowReveal + (typeof roleReplyDelay === 'function' ? roleReplyDelay(item.roleId) : 45000);
           item.reTimedFrom = at;
           reTimedItems.push(item);
           return false;                                    // 这一轮先不显示
@@ -19543,145 +19545,112 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         const toggle = card.querySelector('.rhythm-card-head .setting-toggle input');
         if (toggle) card.classList.toggle('disabled', !toggle.checked);
       });
-      /* v111g：把换算后的人话写在行内，避免再把「分」填进「秒」框 */
-      const rangeHint = document.getElementById('proactiveMessageRangeHint');
-      if (rangeHint) {
-        const secs = Math.max(1, Number(settings.proactiveMessageMinSeconds) || 300);
-        const maxM = Math.max(1, Number(settings.proactiveMessageMaxMinutes) || 36);
-        const human = hours => hours >= 1 ? `${Math.round(hours * 10) / 10} 小时` : `${Math.round(hours * 60)} 分钟`;
-        /* v111j3：主动消息「每个梦角各算一条」—— 把这件事和「一次几句」
-           （条数权重）都写在明面上，并把 N 位梦角合起来的平均间隔算给你看。 */
-        const burstMax = Math.max(1, Math.min(5, Number(settings.replyMaxReplies) || 5));
-        const combinedMode = settings.proactiveMessageRhythm !== 'perRole';
-        const burstOn = settings.proactiveMessageBurst === true;
-        document.querySelectorAll('#globalSettingsApp [data-proactive-rhythm]').forEach(button => button.classList.toggle('active', (button.dataset.proactiveRhythm === 'perRole') !== combinedMode));
-        document.querySelectorAll('#globalSettingsApp [data-proactive-burst]').forEach(button => button.classList.toggle('active', (button.dataset.proactiveBurst === 'on') === burstOn));
-        let combined = '';
-        try {
-          const roleCount = Math.max(1, (typeof getProactiveContactRoles === 'function' ? getProactiveContactRoles().length : 1) || 1);
-          if (!combinedMode && roleCount > 1) {
-            const avgMs = (Math.max(1, Number(settings.proactiveMessageMinSeconds) || 300) * 1000
-              + Math.max(1, Number(settings.proactiveMessageMaxMinutes) || 36) * 60000) / 2 / roleCount;
-            combined = `。⚠ ${roleCount} 位梦角合起来 ≈ 每 ${avgMs >= 60000 ? human(avgMs / 3600000) : `${Math.max(1, Math.round(avgMs / 1000))} 秒`}就有人来一条（想更稀，把左边两格按梦角数放大即可）`;
-          }
-        } catch (_) {}
-        let turnInfo = '';
-        try {
-          if (combinedMode) {
-            const roleCount = Math.max(1, (typeof getProactiveContactRoles === 'function' ? getProactiveContactRoles().length : 1) || 1);
-            const avgPerRoleMin = Math.round(((Math.max(1, Number(settings.proactiveMessageMinSeconds) || 300) * 1000
-              + Math.max(1, Number(settings.proactiveMessageMaxMinutes) || 36) * 60000) / 2) * roleCount / 60000);
-            if (roleCount > 1) turnInfo = `，${roleCount} 位轮着开口：平均每人约 ${avgPerRoleMin} 分钟轮到一次`;
-          }
-        } catch (_) {}
-        /* v111z74：把两套节奏的区别、以及「你一发消息就重新计时」写在明面上。 */
-        const quietNote = combinedMode ? '；你一发消息，倒计时就重新开始' : '';
-        rangeHint.textContent = (combinedMode
-          ? `最快 / 最慢 · 所有梦角合起来：每 ${human(secs / 3600)} ~ ${human(maxM / 60)} 才会有一条主动消息${turnInfo}`
-          : `最快 / 最慢 · 现在 ≈ 每位梦角各 ${human(secs / 3600)} ~ ${human(maxM / 60)}来一条`)
-          + `（一轮${burstOn ? `按「回复节奏」的条数权重说 1~${burstMax} 句` : '只说 1 句'}）${combined}${quietNote}`;
-      }
-      renderGlobalReplyRhythm();
       renderGlobalRolePersonaPanel();
       applyGlobalSettingsFilter();
       lucide.createIcons();
     }
 
-    function renderGlobalReplyRhythm() {
-      const settings = loadGlobalAppSettings();
-      const fields = {
-        globalReplyMaxReplies: settings.replyMaxReplies,
-        globalReplyMinSeconds: settings.replyMinSeconds,
-        globalReplyMaxSeconds: settings.replyMaxSeconds,
-        globalGroupReplyMaxMembers: settings.groupReplyMaxMembers,
-        globalGroupAutonomousRounds: settings.groupAutonomousRounds,
-        globalGroupAutonomousChance: settings.groupAutonomousChance
+    /* ═══ v113 · 当前角色回复参数（blue 原版节奏算法：一切皆按角色人格） ═══
+       与 v111 全局节奏的差异：延迟 replyMin/replyMax、条数 maxReplies、权重 replyWeights、
+       专属字卡组 extraGroup 都是「这位角色自己的」。引擎唯一全域回落：拿不到角色时才用默认。 */
+
+    function normalizeRolePersonaNumbers(role) {
+      const chance = Number(role?.replyChance);
+      const min = Number(role?.replyMin);
+      const max = Number(role?.replyMax);
+      const count = Number(role?.maxReplies);
+      const replyMin = Math.max(1, Number.isFinite(min) ? min : 3);
+      const weights = Array.isArray(role?.replyWeights) ? role.replyWeights.slice(0, 5).map(v => Math.max(0, Number(v) || 0)) : [45,32,15,6,2];
+      while (weights.length < 5) weights.push(0);
+      if (!weights.some(v => v > 0)) weights.splice(0, 5, 45, 32, 15, 6, 2);
+      return {
+        replyChance: Math.max(0, Math.min(100, Number.isFinite(chance) ? chance : 99)),
+        replyMin,
+        replyMax: Math.max(replyMin, Number.isFinite(max) ? max : 60),
+        maxReplies: Math.max(1, Math.min(5, Math.floor(Number.isFinite(count) ? count : 5))),
+        replyWeights: weights,
+        extraGroup: String(role?.extraGroup || '')
       };
-      Object.entries(fields).forEach(([id, value]) => { const input = document.getElementById(id); if (input) input.value = value ?? ''; });
-      const forceReply = document.getElementById('globalGroupForceReplyToggle');
-      if (forceReply) forceReply.checked = settings.groupForceReply !== false;
-      (settings.replyWeights || [45,32,15,6,2]).forEach((value, index) => {
-        const input = document.getElementById(`globalReplyWeight${index + 1}`);
-        if (input) input.value = value;
-      });
-      /* v111j：把三个数换算成人话。很多人以为「一次回复 = 一条」，
-         其实条数是按下面的权重抽的（默认最多 5 条），且每条之间也等这个延迟 ——
-         这是「设了 5~10 分，却像一直在来消息」最容易被忽略的一处。
-         v112：权重分布不再拼在这句话后面，统一由独立气泡（blue 版 reply-weight-preview）展示。 */
-      const replyHint = document.getElementById('globalReplyRhythmHint');
-      if (replyHint) {
-        const maxN = Math.max(1, Math.min(5, Number(settings.replyMaxReplies) || 5));
-        const rMin = Math.max(1, Number(settings.replyMinSeconds) || 3);
-        const rMax = Math.max(rMin, Number(settings.replyMaxSeconds) || 60);
-        const span = (a, b, unit) => a === b ? `${a} ${unit}` : `${a} ~ ${b} ${unit}`;
-        replyHint.textContent = `现在 ≈ 你发一条后 ${span(rMin, rMax, '秒')}回你，一次最多 ${maxN} 条`
-          + (maxN > 1 ? `（回多条时，每条之间也按这个延迟，不是一秒一条）` : '（一次只回一条）');
-      }
-      updateGlobalReplyWeightPreview();
     }
 
-    /* v111z42：把「按上面这些数，对方每次回复会说几条」直接算给你看。
-       为什么加：把 2、3 档权重拉满、但「私聊单次最多回复」还是 1 时，
-       那些权重**根本不参与**（引擎里是先按最多回复截断再抽），面板上却看不出区别 ——
-       这一行会把它摆到明面上。引擎逻辑没动。
-       v112：独立成全局函数（blue 版更新时机：改权重/改最多回复时即时刷新 + 超出的档位灰掉）。 */
-    function updateGlobalReplyWeightPreview() {
-      const preview = document.getElementById('globalReplyWeightPreview');
-      const boxNumber = (id, fallback) => {
-        const el = document.getElementById(id);
-        const raw = el && String(el.value).trim() !== '' ? Number(el.value) : NaN;
-        return Number.isFinite(raw) ? raw : fallback;
-      };
-      const settings = loadGlobalAppSettings();
-      const savedWeights = settings.replyWeights || [45,32,15,6,2];
-      const maxN = Math.max(1, Math.min(5, Math.round(boxNumber('globalReplyMaxReplies', settings.replyMaxReplies ?? 5))));
-      const typed = [1,2,3,4,5].map(index => Math.max(0, boxNumber(`globalReplyWeight${index}`, savedWeights[index - 1] ?? 0)));
-      /* blue 版交互：超出「单次最多回复」的档位直接灰显，一眼看出不参与 */
-      [1,2,3,4,5].forEach(index => {
-        const weightInput = document.getElementById(`globalReplyWeight${index}`);
-        weightInput?.closest('label')?.classList.toggle('is-disabled', index > maxN);
-      });
+    /* blue 的 updateReplyWeightPreview：预览 = 前 maxReplies 档归一化 + 平均条数；
+       超出的档位灰掉；权重全 0 时明说会回落默认。 */
+    function updateRolePersonaWeightPreview() {
+      const preview = document.getElementById('replyWeightPreview');
+      const maxInput = document.getElementById('roleMaxReplies');
+      const weightInputs = [1,2,3,4,5].map(i => document.getElementById(`roleWeight${i}`));
+      const maxN = Math.max(1, Math.min(5, Math.floor(Number(maxInput?.value) || 5)));
+      const typed = weightInputs.map(input => Math.max(0, Number(input?.value) || 0));
+      weightInputs.forEach((input, index) => input?.closest('label')?.classList.toggle('is-disabled', index >= maxN));
       if (!preview) return;
-      const { weights } = roleReplyCountWeights(maxN, typed);
-      const total = weights.reduce((sum, value) => sum + value, 0);
+      const usable = typed.slice(0, maxN);
+      const total = usable.reduce((sum, v) => sum + v, 0);
       if (total <= 0) { preview.textContent = '实际分布：权重全为 0，将回落到默认分布'; return; }
-      const parts = weights.map((value, index) => `${index + 1} 条 ${Math.round(value / total * 100)}%`);
-      const average = weights.reduce((sum, value, index) => sum + (index + 1) * value, 0) / total;
-      const cutOff = typed.slice(maxN).filter(value => value > 0).length;
-      preview.textContent = `实际分布：${parts.join(' · ')}　平均 ${average.toFixed(2)} 条`
-        + (cutOff ? `。⚠ 「私聊单次最多回复」是 ${maxN}，第 ${maxN + 1} 档往后的权重不参与 —— 想让「2~3 条」真的生效，把这一格改成 ${Math.min(5, maxN + 1) === maxN ? maxN : maxN + 1} 或更大` : '');
+      const parts = usable.map((v, i) => `${i + 1} 条 ${(v / total * 100).toFixed(1)}%`);
+      const average = usable.reduce((sum, v, i) => sum + (i + 1) * v, 0) / total;
+      preview.textContent = `实际分布：${parts.join(' · ')}　平均 ${average.toFixed(2)} 条`;
     }
 
-    /* ═══ v112 · 当前角色回复参数卡（blue 版 persona 卡） ═══
-       引擎里真正按角色生效的是 replyChance（已读不回判定、群聊接话判定都读它）；
-       延迟/条数/权重在 v111 起就是全局的，面板上不摆按角色的死字段。 */
     function getPersonaContextRole() {
       const handle = String(activeChatHandle || currentPartnerHandle || '').trim();
       if (!handle || typeof getRoleRecord !== 'function') return null;
       try { return getRoleRecord(handle); } catch (_) { return null; }
     }
 
+    /* blue 的 populateRoleExtraGroupOptions：列出全部「内容」字卡组（屏蔽的标出来），
+       空值 = 跟随该角色的字卡权限。组被删后旧值自然落空，不设幽灵选项。 */
+    function populateRoleExtraGroupOptions(select, current) {
+      if (!select) return;
+      select.replaceChildren(new Option('跟随该角色的字卡权限', ''));
+      try {
+        getCardManagerGroups().forEach(group => {
+          if ((group.kind || group.id) !== 'content') return;
+          const count = (group.cards || []).length;
+          const option = new Option(`${group.name || group.id}${group.blocked ? '（屏蔽）' : ''} · ${count} 条`, String(group.id));
+          select.appendChild(option);
+        });
+      } catch (_) {}
+      select.value = current && [...select.options].some(o => o.value === current) ? current : '';
+    }
+
     function renderGlobalRolePersonaPanel() {
       const card = document.getElementById('globalRolePersonaCard');
       if (!card) return;
       const badge = document.getElementById('rolePersonaName');
-      const chanceInput = document.getElementById('rolePersonaReplyChance');
-      const saveButton = document.getElementById('saveRolePersonaBtn');
+      const saveButton = document.getElementById('saveRolePersona');
+      const fields = ['roleReplyChance', 'roleMaxReplies', 'roleReplyMin', 'roleReplyMax', 'roleExtraGroup']
+        .map(id => document.getElementById(id)).filter(Boolean);
       let role = null;
       try { role = getPersonaContextRole(); } catch (_) {}
       if (badge) badge.textContent = role ? `${getRoleDisplayNameForApp(role)}` : '未选择角色';
-      const chance = Math.max(0, Math.min(100, Number(role?.replyChance ?? 99)));
-      if (chanceInput) { chanceInput.disabled = !role; chanceInput.value = String(chance); }
+      fields.forEach(el => { el.disabled = !role; });
       if (saveButton) saveButton.disabled = !role;
+      const persona = normalizeRolePersonaNumbers(role || {});
+      const fill = (id, value) => { const el = document.getElementById(id); if (el) el.value = String(value); };
+      fill('roleReplyChance', persona.replyChance);
+      fill('roleMaxReplies', persona.maxReplies);
+      fill('roleReplyMin', persona.replyMin);
+      fill('roleReplyMax', persona.replyMax);
+      persona.replyWeights.forEach((v, i) => fill(`roleWeight${i + 1}`, v));
+      populateRoleExtraGroupOptions(document.getElementById('roleExtraGroup'), persona.extraGroup);
+      updateRolePersonaWeightPreview();
       card.classList.toggle('no-role', !role);
     }
 
     function saveGlobalRolePersona() {
       const role = getPersonaContextRole();
       if (!role) { showGlobalSettingsToast('先进一个聊天室，再来调这位梦角的参数'); return; }
-      const chanceInput = document.getElementById('rolePersonaReplyChance');
-      const chance = Number(chanceInput?.value);
-      role.replyChance = Math.max(0, Math.min(100, Number.isFinite(chance) ? Math.round(chance) : 99));
+      const number = (id, lo, hi, fallback) => {
+        const raw = Number(document.getElementById(id)?.value);
+        return Math.max(lo, Math.min(hi, Number.isFinite(raw) ? raw : fallback));
+      };
+      role.replyChance = Math.round(number('roleReplyChance', 0, 100, 99));
+      role.maxReplies = Math.round(number('roleMaxReplies', 1, 5, 5));
+      role.replyMin = Math.round(number('roleReplyMin', 1, 3600, 3));
+      role.replyMax = Math.max(role.replyMin, Math.round(number('roleReplyMax', 1, 7200, 60)));
+      role.replyWeights = [1,2,3,4,5].map(i => Math.max(0, Math.min(1000, Math.round(Number(document.getElementById(`roleWeight${i}`)?.value) || 0))));
+      if (!role.replyWeights.some(v => v > 0)) role.replyWeights = [45,32,15,6,2];
+      role.extraGroup = String(document.getElementById('roleExtraGroup')?.value || '');
       try { persistRoleRegistry(); } catch (_) {}
       renderGlobalRolePersonaPanel();
       showGlobalSettingsToast(`${getRoleDisplayNameForApp(role)} 的回复参数已保存`);
@@ -19700,29 +19669,6 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       else if (unit === '分钟' && value < 1) output.textContent = `${Number((value * 60).toFixed(1))} 秒`;
       else if (unit === '秒' && value >= 60) output.textContent = `${Number((value / 60).toFixed(1))} 分钟`;
       else output.textContent = `${input.value} ${unit}`.trim();
-    }
-
-    function saveGlobalReplyRhythm() {
-      const settings = loadGlobalAppSettings();
-      settings.replyMaxReplies = Math.max(1, Math.min(5, Number(document.getElementById('globalReplyMaxReplies')?.value) || 5));
-      settings.replyMinSeconds = Math.max(1, Math.min(3600, Number(document.getElementById('globalReplyMinSeconds')?.value) || 3));
-      settings.replyMaxSeconds = Math.max(settings.replyMinSeconds, Math.min(7200, Number(document.getElementById('globalReplyMaxSeconds')?.value) || 60));
-      settings.groupReplyMaxMembers = Math.max(1, Math.min(7, Number(document.getElementById('globalGroupReplyMaxMembers')?.value) || 3));
-      settings.groupForceReply = document.getElementById('globalGroupForceReplyToggle')?.checked !== false;
-      settings.groupAutonomousRounds = Math.max(0, Math.min(5, Number(document.getElementById('globalGroupAutonomousRounds')?.value) || 0));
-      settings.groupAutonomousChance = Math.max(0, Math.min(100, Number(document.getElementById('globalGroupAutonomousChance')?.value) || 0));
-      settings.replyWeights = [1,2,3,4,5].map(index => Math.max(0, Number(document.getElementById(`globalReplyWeight${index}`)?.value) || 0));
-      if (!settings.replyWeights.some(value => value > 0)) settings.replyWeights = [45,32,15,6,2];
-      persistGlobalAppSettings();
-      /* v111g：回信等待时间也按新值重排（已寄出、还没回的信） */
-      try {
-        if (typeof scheduleMailReply === 'function' && typeof mailLetters === 'object') {
-          Object.values(mailLetters).filter(letter => letter && letter.direction === 'out' && !letter.replyResolved)
-            .forEach(letter => scheduleMailReply(letter.id, false));
-        }
-      } catch (_) { }
-      renderGlobalSettings();
-      showGlobalSettingsToast('全局回复节奏已保存');
     }
 
     function applyGlobalSettingsFilter() {
@@ -20463,31 +20409,11 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       try { scheduleProactiveHeartbeat(); } catch (_) {}
     }
 
-    function setProactiveMessageRhythm(mode) {
-      const settings = loadGlobalAppSettings();
-      settings.proactiveMessageRhythm = mode === 'perRole' ? 'perRole' : 'combined';
-      persistGlobalAppSettings();
-      rebaseProactiveTimestamps(['message']);
-      startProactiveHeartbeat();
-      renderGlobalSettings();
-      showGlobalSettingsToast(settings.proactiveMessageRhythm === 'perRole' ? '主动消息：每位梦角各自排期' : '主动消息：所有梦角合用一个节奏');
-    }
-
-    function setProactiveMessageBurst(on) {
-      const settings = loadGlobalAppSettings();
-      settings.proactiveMessageBurst = on === true || on === 'on';
-      persistGlobalAppSettings();
-      renderGlobalSettings();
-      showGlobalSettingsToast(settings.proactiveMessageBurst ? '一轮可以连发 1~N 句' : '一轮只说 1 句');
-    }
-
     function bindGlobalSettingsControls() {
       const app = document.getElementById('globalSettingsApp');
       if (!app || app.dataset.bound === 'true') return;
       app.dataset.bound = 'true';
       document.querySelectorAll('[data-global-theme]').forEach(button => button.addEventListener('click', () => setGlobalTheme(button.dataset.globalTheme)));
-      app.querySelectorAll('[data-proactive-rhythm]').forEach(button => button.addEventListener('click', () => setProactiveMessageRhythm(button.dataset.proactiveRhythm)));
-      app.querySelectorAll('[data-proactive-burst]').forEach(button => button.addEventListener('click', () => setProactiveMessageBurst(button.dataset.proactiveBurst)));
       document.querySelectorAll('[data-aurora-palette]').forEach(button => button.addEventListener('click', () => setAuroraPalette(button.dataset.auroraPalette)));
       document.getElementById('globalMessageActionsToggle')?.addEventListener('change', event => { loadGlobalAppSettings().messageActionsEnabled = event.target.checked; persistGlobalAppSettings(); showGlobalSettingsToast(event.target.checked ? '已开启消息操作菜单' : '已关闭消息操作菜单'); });
       /* v112 · blue 版滑杆：值直接就是存储值（秒/分/小时），不再有「面板分钟⇄内部秒」的换算
@@ -20522,7 +20448,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         /* v111g：改完节奏，已排好的时间戳跟着重排 —— 否则调慢了也会按旧节奏再发一条，
            用户看到的就是「设了没用」。 */
         rebaseProactiveTimestamps(SCHEDULER_KEY_TYPES[key]);
-        /* 回信节奏改动：已寄出、还没回的信按新值重排（与 saveGlobalReplyRhythm 同款处理） */
+        /* 回信节奏改动：已寄出、还没回的信按新值重排 */
         if (/^letterReply/.test(key)) {
           try {
             if (typeof scheduleMailReply === 'function' && typeof mailLetters === 'object') {
@@ -20603,113 +20529,16 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
           showGlobalSettingsToast(`${meta.label}已${toggle.checked ? '开启' : '关闭'}`);
         });
       });
-      /* v112 · 当前角色回复参数卡 */
-      document.getElementById('saveRolePersonaBtn')?.addEventListener('click', saveGlobalRolePersona);
-      document.getElementById('rolePersonaReplyChance')?.addEventListener('change', event => {
+      /* v113 · 当前角色回复参数卡（blue 版）：权重/条数边改边出分布预览，收笔不自动写盘 ——
+         「保存当前角色回复参数」是唯一写盘点，避免拖动途中把半套参数存进去。 */
+      document.getElementById('saveRolePersona')?.addEventListener('click', saveGlobalRolePersona);
+      ['roleWeight1','roleWeight2','roleWeight3','roleWeight4','roleWeight5','roleMaxReplies'].forEach(id => {
+        document.getElementById(id)?.addEventListener('input', updateRolePersonaWeightPreview);
+      });
+      document.getElementById('roleReplyChance')?.addEventListener('change', event => {
         const value = Number(event.target.value);
         event.target.value = String(Math.max(0, Math.min(100, Number.isFinite(value) ? Math.round(value) : 99)));
       });
-      /* ── v111j10 · 全局回复节奏（02 节奏）：从「必须点保存」改成边打边存 ──
-         ⚠ 为什么改：这里原来只有「保存全局回复节奏」那一个按钮才落盘。
-         手机上改完直接下拉刷新 / 切走（不点按钮）= 白改，回来还是旧值 ——
-         和 v105 调度面板踩过的坑是同一个。现在照调度面板的办法：
-         ① input 防抖 420ms 自动存；
-         ② 打字途中不整页重渲染、也不回写输入框（否则打「30」时先来的「3」会被夹掉）；
-         ③ 收笔（失焦 / 回车 / 点保存）时才排秩序：最长 ≥ 最短、权重全 0 时回默认；
-         ④ 切后台 / 关页面前把没落盘的那一次补写。
-         ⚠ roleReplyDelay 里本来就有 Math.max(min, max)，所以「先写了 5 再改最小」这种
-         中间态不会算出负数区间，放心边打边存。 */
-      const replyRhythmClamp = {
-        globalReplyMaxReplies: ['replyMaxReplies', 1, 5],
-        globalReplyMinSeconds: ['replyMinSeconds', 1, 3600],
-        globalReplyMaxSeconds: ['replyMaxSeconds', 1, 7200],
-        globalGroupReplyMaxMembers: ['groupReplyMaxMembers', 1, 7],
-        globalGroupAutonomousRounds: ['groupAutonomousRounds', 0, 5],
-        globalGroupAutonomousChance: ['groupAutonomousChance', 0, 100]
-      };
-      const replyRhythmWeightIds = [1, 2, 3, 4, 5].map(index => `globalReplyWeight${index}`);
-      const replyRhythmTimers = new Map();
-      const replyRhythmValue = id => {
-        const raw = String(document.getElementById(id)?.value ?? '').trim();
-        if (raw === '') return null;                       // 清空中：不猜，等收笔
-        const num = Number(raw);
-        return Number.isFinite(num) ? num : null;
-      };
-      const replyRhythmWrite = (id, value) => {
-        const settings = loadGlobalAppSettings();
-        if (id.startsWith('globalReplyWeight')) {
-          const index = Number(id.replace('globalReplyWeight', '')) - 1;
-          const weights = [...(settings.replyWeights || [45, 32, 15, 6, 2])];
-          weights[index] = Math.max(0, Math.min(1000, Math.round(value)));
-          settings.replyWeights = weights;
-        } else {
-          const [key, lo, hi] = replyRhythmClamp[id] || [];
-          if (!key) return false;
-          settings[key] = Math.max(lo, Math.min(hi, Math.round(value)));
-        }
-        persistGlobalAppSettings();
-        return true;
-      };
-      const replyRhythmHint = () => { try { renderGlobalReplyRhythm(); } catch (_) {} };
-      const commitReplyRhythm = (id = '', finalize = false) => {
-        if (id) { window.clearTimeout(replyRhythmTimers.get(id)); replyRhythmTimers.delete(id); }
-        if (!finalize) {
-          /* 打字途中：只写你正在编辑的那一格，别的框一个都不动，也不碰输入框 */
-          if (!id) return;
-          const value = replyRhythmValue(id);
-          if (value === null) return;
-          if (replyRhythmWrite(id, value)) replyRhythmHint();
-          return;
-        }
-        const settings = loadGlobalAppSettings();
-        Object.entries(replyRhythmClamp).forEach(([fieldId, [key, lo, hi]]) => {
-          const value = replyRhythmValue(fieldId);
-          if (value === null) return;
-          settings[key] = Math.max(lo, Math.min(hi, Math.round(value)));
-        });
-        const weights = [...(settings.replyWeights || [45, 32, 15, 6, 2])];
-        replyRhythmWeightIds.forEach((fieldId, index) => {
-          const value = replyRhythmValue(fieldId);
-          if (value === null) return;
-          weights[index] = Math.max(0, Math.min(1000, Math.round(value)));
-        });
-        if (!weights.some(value => value > 0)) { weights[0] = 45; weights[1] = 32; weights[2] = 15; weights[3] = 6; weights[4] = 2; }
-        settings.replyWeights = weights;
-        /* 秩序：最短 ≤ 最长（只抬/降另一格，你正在编辑的那格保持原样由收笔时机保证） */
-        if (Number(settings.replyMinSeconds) > Number(settings.replyMaxSeconds)) {
-          if (id === 'globalReplyMinSeconds') settings.replyMaxSeconds = settings.replyMinSeconds;
-          else settings.replyMinSeconds = settings.replyMaxSeconds;
-        }
-        if (Number(settings.groupReplyMaxMembers) > 7) settings.groupReplyMaxMembers = 7;
-        persistGlobalAppSettings();
-        replyRhythmHint();                                 // 收笔时整块回填 + 提示行刷新
-      };
-      const bindReplyRhythmInput = id => {
-        const input = document.getElementById(id);
-        if (!input || input.dataset.rhythmBound === 'true') return;
-        input.dataset.rhythmBound = 'true';
-        input.addEventListener('input', () => {
-          window.clearTimeout(replyRhythmTimers.get(id));
-          replyRhythmTimers.set(id, window.setTimeout(() => commitReplyRhythm(id, false), 420));
-        });
-        input.addEventListener('change', () => commitReplyRhythm(id, true));
-        input.addEventListener('blur', () => commitReplyRhythm(id, true));
-        input.addEventListener('keydown', event => {
-          if (event.key !== 'Enter') return;
-          event.preventDefault();
-          commitReplyRhythm(id, true);
-          input.blur();
-        });
-      };
-      Object.keys(replyRhythmClamp).forEach(bindReplyRhythmInput);
-      replyRhythmWeightIds.forEach(bindReplyRhythmInput);
-      const flushReplyRhythm = () => {
-        if (!replyRhythmTimers.size) return;
-        [...replyRhythmTimers.keys()].forEach(id => commitReplyRhythm(id, false));
-        replyRhythmTimers.clear();
-      };
-      document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushReplyRhythm(); });
-      window.addEventListener('pagehide', flushReplyRhythm);
 
       document.getElementById('globalQuoteReplyToggle')?.addEventListener('change', event => { loadGlobalAppSettings().quoteReply = event.target.checked; persistGlobalAppSettings(); showGlobalSettingsToast(event.target.checked ? '已开启引用回复' : '已关闭引用回复'); });
       document.getElementById('globalReadReceiptToggle')?.addEventListener('change', event => { loadGlobalAppSettings().readReceipt = event.target.checked; persistGlobalAppSettings(); applyGlobalReceiptState(); showGlobalSettingsToast(event.target.checked ? '已开启已读回执' : '已关闭已读回执'); });
@@ -30262,7 +30091,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         try {
           const pendingDueAt = Number(existing.plannedAt) || 0;
           if (pendingDueAt > 0 && Number(existing.remaining) > 0) {
-            const fresh = Date.now() + (typeof roleReplyDelay === 'function' ? roleReplyDelay() : 45000);
+            const fresh = Date.now() + (typeof roleReplyDelay === 'function' ? roleReplyDelay(role) : 45000);
             if (fresh !== pendingDueAt) {
               existing.plannedAt = fresh;
               /* 已经在跑的引擎握着旧时间，必须清掉让它按新时间重排（pending 状态都在存档里，不会丢）。 */
@@ -30286,7 +30115,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
           const nowAt = Date.now();
           const stale = !dueAt || !Number.isFinite(dueAt) || (nowAt - dueAt) > 90 * 1000;
           if (stale) {
-            pending.plannedAt = nowAt + (typeof roleReplyDelay === 'function' ? roleReplyDelay() : 45000);
+            pending.plannedAt = nowAt + (typeof roleReplyDelay === 'function' ? roleReplyDelay(role) : 45000);
             pending.staleReTimedAt = nowAt;
             settings.pendingReply = { ...pending };
             saveChatSettings(settings, replyHandle);
@@ -30295,7 +30124,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       }
       if (!pending) {
         const kind = chooseMessageKind('reactive', role);
-        const total = options.forceSingle === true ? 1 : kind === 'text' ? pickRoleReplyCount() : 1;
+        const total = options.forceSingle === true ? 1 : kind === 'text' ? pickRoleReplyCount(role) : 1;
         // 批量发送必引用（多条里挑一条回应，这是批量模式的设计意图）；
         // 普通聊天给 28% 概率 —— 真人不会条条都引用，全引用反而机械。
         /* v111z36：引用必须带上「这条回复属于谁」——重新排期可能已经在别的房间前台发生。 */
@@ -30309,7 +30138,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
           total,
           remaining: total,
           used: [],
-          plannedAt: Date.now() + (manualContinue ? 450 + Math.floor(Math.random() * 451) : roleReplyDelay()),
+          plannedAt: Date.now() + (manualContinue ? 450 + Math.floor(Math.random() * 451) : roleReplyDelay(role)),
           readDecisionAt: manualContinue ? Date.now() : Date.now() + 1500 + Math.floor(Math.random() * 2501),
           replyPassed: manualContinue,
           batchId: options.batchId || '',
@@ -30428,7 +30257,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
             try { armProactiveClockFromPeerMoment(pending.roleId, 'peer-message'); } catch (_) {}
             if (pending.remaining > 0) {
               const nextMax = Math.min(5600, 1900 + 135 * text.length);
-              pending.plannedAt = Date.now() + (typeof roleReplyDelay === 'function' ? roleReplyDelay() : 1500 + Math.random() * 3600);   /* v111g：连发也听「最少/最长延迟」 */
+              pending.plannedAt = Date.now() + (typeof roleReplyDelay === 'function' ? roleReplyDelay(role) : 1500 + Math.random() * 3600);   /* v111g：连发也听「最少/最长延迟」 */
               syncQueuedReplyCount();
               // appendProactiveIncomingMessage 已写入新的待收消息和未读数；必须基于最新设置更新 pendingReply，不能用旧快照覆盖它。
               const latest = getChatSettings(pending.roleId);
@@ -30481,7 +30310,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
           syncQueuedReplyCount();
           if (pending.remaining > 0) {
             const nextMax = Math.min(5600, 1900 + 135 * text.length);
-            pending.plannedAt = Date.now() + (typeof roleReplyDelay === 'function' ? roleReplyDelay() : 1500 + Math.random() * 3600);   /* v111g：连发也听「最少/最长延迟」 */
+            pending.plannedAt = Date.now() + (typeof roleReplyDelay === 'function' ? roleReplyDelay(role) : 1500 + Math.random() * 3600);   /* v111g：连发也听「最少/最长延迟」 */
             syncQueuedReplyCount();
           }
           const latest = getChatSettings(pending.roleId);
@@ -30534,7 +30363,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         try {
           const dueAt = Number(pending.plannedAt) || 0;
           if (dueAt > 0) {
-            pending.plannedAt = Date.now() + (typeof roleReplyDelay === 'function' ? roleReplyDelay() : 45000);
+            pending.plannedAt = Date.now() + (typeof roleReplyDelay === 'function' ? roleReplyDelay(role) : 45000);
             if (hasActiveReplyEngine(currentPartnerHandle)) clearReplyEngine(currentPartnerHandle);
           }
         } catch (_) {}
@@ -36954,8 +36783,8 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
      所以不会再出现「指过去是 404 → 系统给一枚默认黑图标」。
      v111z3：这七个文件换成**用户自己的真 logo**（浅蓝灰底 + 深墨「∞」，由用户提供，原样交付）；
      并统一加 `?v=v111z3` —— 手机上可能还留着上一版占位图的 HTTP 缓存，换个 URL 才保证抓到新图。 */
-  const NOTIF_ICON_FALLBACK_URL = new URL('./icons/icon-192.png?v=v111z74', location.href).href;
-  const NOTIF_BADGE_URL = new URL('./icons/badge-96.png?v=v111z74', location.href).href;
+  const NOTIF_ICON_FALLBACK_URL = new URL('./icons/icon-192.png?v=v113', location.href).href;
+  const NOTIF_BADGE_URL = new URL('./icons/badge-96.png?v=v113', location.href).href;
   async function resolveNotificationAvatarIcon(routeData, opts) {
 
 
@@ -39102,8 +38931,8 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
     // 打乱顺序，避免总是前几个回复
     candidates.sort(()=> Math.random()-0.5);
     let replyCount = 0;
-    const configuredMaxReplies = Number(typeof getGlobalAppSettings==='function' ? getGlobalAppSettings().replyMaxReplies : 2) || 2;
-    const maxReplies = Math.min(group.members.length, Math.max(1, Math.min(5, configuredMaxReplies)));
+    const configuredMaxReplies = Number(typeof getGlobalAppSettings==='function' ? getGlobalAppSettings().groupReplyMaxMembers : 3) || 3;
+    const maxReplies = Math.min(group.members.length, Math.max(1, Math.min(7, configuredMaxReplies)));
     candidates.forEach((handle, idx)=>{
       if(replyCount>=maxReplies) return;
       let role = null;
@@ -39134,7 +38963,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
           }
         }catch(e){}
       }
-      const delay = (typeof roleReplyDelay==='function'? roleReplyDelay() : 1200 + Math.random()*2500) + idx*900;
+      const delay = (typeof roleReplyDelay==='function'? roleReplyDelay(role) : 1200 + Math.random()*2500) + idx*900;
       replyCount++;
       setTimeout(()=>{
         if(currentGroupId!==groupId || currentChatType!=='group') {
@@ -40582,7 +40411,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       sourceMemberName: roleName(task.memberId, group.id),
       sourceText: messageText(replyMessage),
       /* v111g：接话间隔原先写死 1.5~5.1 秒，完全不听「回复节奏」；现在跟首轮同一来源。 */
-      dueAt: Date.now() + Math.max(1500, (typeof roleReplyDelay === 'function' ? roleReplyDelay() : 1500 + Math.random() * 3600)),
+      dueAt: Date.now() + Math.max(1500, (typeof roleReplyDelay === 'function' ? roleReplyDelay(task.memberId) : 1500 + Math.random() * 3600)),
       status: 'pending',
       typingShown: false,
       createdAt: Date.now()
@@ -40618,7 +40447,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
     const tasks = loadTasks();
     selected.forEach((memberId, index) => {
       if (tasks.some(task => task.groupId === group.id && task.memberId === memberId && task.triggerMessageId === triggerMessage.id)) return;
-      const delay = Math.max(800, Number(typeof roleReplyDelay === 'function' ? roleReplyDelay() : 1200 + Math.random() * 2600)) + index * 850;
+      const delay = Math.max(800, Number(typeof roleReplyDelay === 'function' ? roleReplyDelay(memberId) : 1200 + Math.random() * 2600)) + index * 850;
       tasks.push({ id: uid('group-reply'), kind: 'reply', groupId: group.id, memberId, triggerMessageId: triggerMessage.id, rootTriggerId: triggerMessage.id, round: 0, allowAutonomous: index === 0, participants: [], dueAt: Date.now() + delay, status: 'pending', typingShown: false, createdAt: Date.now() });
     });
     saveTasks(tasks);
