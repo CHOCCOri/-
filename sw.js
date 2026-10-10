@@ -11,7 +11,7 @@ const STORE = 'state';
  * 应用自身的 mobius-image-resilience-v1（媒体韧性缓存，最多 64MB 用户媒体）
  * 由页面代码管理，本 SW 绝不可删除或拦截。
  * ------------------------------------------------------------------ */
-const CACHE_VERSION = 'v116';
+const CACHE_VERSION = 'v117';
 const SHELL_CACHE = `mobius-shell-${CACHE_VERSION}`;
 const SHELL_CACHE_PREFIX = 'mobius-shell-';
 const APP_MEDIA_CACHE = 'mobius-image-resilience-v1'; // 应用私有，永不触碰
@@ -269,13 +269,13 @@ self.addEventListener('fetch', event => {
 
   // 4) 页面导航：先给缓存（秒开），后台静默更新，有新版本再通知页面。
   /* ⚠ v111j13：这一段以前对所有导航一视同仁，把「任何页面的响应」都写进 ./index.html 的缓存位。
-     于是只要你打开过随包附带的 persona-check.html 或诊断页，App 的缓存就被换成了那个页面 ——
+     于是只要你打开过同源的自查/诊断页，App 的缓存就被换成了那个页面 ——
      下次打开 App 可能直接给你测试页，版本自检也跟着乱（缓存长度永远对不上 → 反复换壳）。
      现在只有「打开 App 本身」（路径是 / 或 /index.html）走这套；其它页面直接走网络。 */
   const isShellNavigation = request.mode === 'navigate'
     && (url.pathname === '/' || url.pathname === '' || url.pathname.endsWith('/index.html'));
   if (request.mode === 'navigate' && !isShellNavigation) {
-    return;                    // 其它页面（persona-check / 诊断页）走网络，绝不碰壳缓存位
+    return;                    // 其它页面（自查 / 诊断页）走网络，绝不碰壳缓存位
   }
   if (request.mode === 'navigate') {
     event.respondWith((async () => {

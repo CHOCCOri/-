@@ -13,9 +13,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Möbius">
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png?v=v116">
-  <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon-180.png?v=v116">
-  <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png?v=v116">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png?v=v117">
+  <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon-180.png?v=v117">
+  <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png?v=v117">
   <!-- 填写后端 Web Push 配置后，页面关闭或系统锁屏时也可由推送服务器唤醒 SW。 -->
   <meta name="dream-push-vapid-public-key" content="">
   <meta name="dream-push-subscribe-endpoint" content="">
@@ -1597,12 +1597,6 @@ if(focused&&!viewport&&stableHeight>0)keyboardInset=Math.max(keyboardInset,Math.
     .global-role-fields input[type=number],.global-role-fields select { grid-column: 1/3; }
     .global-role-fields select { width: 100%; height: 24px; padding: 0 5px; border: 1px solid #e0e7ea; border-radius: 6px; outline: 0; background: #fff; color: #405761; font-size: 7px; }
     .global-role-extra { grid-column: 1/-1; }
-    .global-role-weights { padding: 7px 9px; border-bottom: 1px solid #edf1f2; }
-    .global-role-weights > span { display: block; margin-bottom: 5px; color: #819098; font-size: 6px; }
-    .global-role-weights > small { display: block; margin: -1px 0 6px; color: #9aa5aa; font-size: 5.5px; line-height: 1.35; }
-    .global-role-weights > div { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 4px; }
-    .global-role-weights label { display: flex; align-items: center; gap: 2px; color: #8a989f; font-size: 6px; }
-    .global-role-weights input { width: 100%; height: 22px; min-width: 0; padding: 0 2px; border: 1px solid #e0e7ea; border-radius: 5px; outline: 0; background: #fff; color: #405761; font-size: 7px; text-align: center; }
     .global-role-fields label > b { grid-column: 3; color: #8a989f; font-size: 6px; font-weight: 700; }
     .global-settings-note { margin: 8px 2px 0; color: #8b989f; font-size: 6px; line-height: 1.5; }
     .global-font-family-setting { align-items: flex-start !important; flex-wrap: wrap; gap: 6px; }
@@ -1664,12 +1658,7 @@ if(focused&&!viewport&&stableHeight>0)keyboardInset=Math.max(keyboardInset,Math.
     .global-settings-app .range-control input { width: 100%; accent-color: #405b67; }
     .global-settings-app .range-control output { color: #5f7b86; font: 7px ui-monospace,monospace; text-align: right; }
     .global-settings-app .global-font-control { width: 115px; }
-    .global-settings-app .global-role-grid { margin-top: 8px; padding: 0; display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 5px; }
-    .global-settings-app .global-role-grid label { display: grid; grid-template-columns: minmax(0,1fr) 30px auto; gap: 2px; color: #819098; font-size: 6px; }
-    .global-settings-app .global-role-grid label > span { grid-column: 1/-1; }
-    .global-settings-app .global-role-grid input,.global-settings-app .global-role-grid select { grid-column: 1/3; width: 100%; height: 23px; min-width: 0; padding: 0 4px; border: 1px solid #e0e7ea; border-radius: 6px; outline: 0; background: #fff; color: #405761; font-size: 7px; }
-    .global-settings-app .global-role-grid label > b { grid-column: 3; color: #8a989f; font-size: 6px; }
-    .global-settings-app .global-role-grid .wide { grid-column: 1/-1; }
+
     .global-settings-app .rhythm-card { padding: 8px; border: 1px solid #e7edef; border-radius: 9px; background: #fff; }
     .global-settings-app .rhythm-card-head { display: flex; align-items: flex-start; gap: 6px; margin-bottom: 6px; }
     .global-settings-app .rhythm-card-head > div { min-width: 0; flex: 1; }
@@ -1681,18 +1670,12 @@ if(focused&&!viewport&&stableHeight>0)keyboardInset=Math.max(keyboardInset,Math.
     .global-settings-app .rhythm-card-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 7px; padding: 7px 8px; }
     @media (max-width: 720px) { .global-settings-app .rhythm-card-grid { grid-template-columns: 1fr; } }
     .global-settings-app .rhythm-card-grid .rhythm-card { display: flex; flex-direction: column; }
-    .global-settings-app .rhythm-card.disabled .range-control,
-    .global-settings-app .rhythm-card.disabled .rhythm-card-options { opacity: .38; }
+    .global-settings-app .rhythm-card.disabled .range-control { opacity: .38; }
     .global-settings-app .rhythm-card .range-control { width: 100%; min-height: 26px; display: grid; grid-template-columns: auto minmax(0,1fr) 52px; align-items: center; gap: 6px; margin-top: 5px; }
     .global-settings-app .rhythm-card .range-control > span { color: #819098; font-size: 7px; white-space: nowrap; }
     .global-settings-app .rhythm-card .range-control input[type="range"] { width: 100%; accent-color: #405b67; }
     .global-settings-app .rhythm-card .range-control output { color: #5f7b86; font: 8px ui-monospace,monospace; text-align: right; }
-    .global-settings-app .rhythm-card-options { display: grid; gap: 5px; margin-top: 7px; padding-top: 7px; border-top: 1px solid #edf1f2; transition: opacity .18s; }
-    .global-settings-app .rhythm-card-option-row { display: flex; align-items: center; gap: 7px; min-height: 30px; }
-    .global-settings-app .rhythm-card-option-row > div:first-child { min-width: 0; flex: 1; }
-    .global-settings-app .rhythm-card-option-row strong { display: block; color: #405761; font-size: 8px; font-weight: 850; }
-    .global-settings-app .rhythm-card-option-row small { display: block; margin-top: 2px; color: #89979d; font-size: 6px; line-height: 1.35; }
-    .global-settings-app .rhythm-card-option-row .global-theme-options { flex: 0 0 auto; }
+
     .global-settings-app .role-persona-grid { margin-top: 6px; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 6px; }
     .global-settings-app .role-persona-grid label { display: grid; gap: 3px; color: #819098; font-size: 6px; }
     .global-settings-app .role-persona-grid label.wide { grid-column: 1/-1; }
@@ -5595,11 +5578,7 @@ html[data-keyboard-open="true"] .chat-feature-modal { padding-bottom: calc(14px 
     #appScreen .global-settings-app .global-theme-option.active,
     #appScreen .global-settings-app .setting-toggle input:checked + i,
     #appScreen .global-settings-app .dashboard-section-head > span { border-color: var(--card-black); background: var(--card-black); color: #fff; }
-    #appScreen .global-settings-app .setting-value-note { background: color-mix(in srgb, var(--card-black) 10%, var(--card-white)); color: var(--card-black); }
-    #appScreen .global-settings-app .global-role-weights input,
-    #appScreen .global-settings-app .global-role-grid input,
-    #appScreen .global-settings-app .global-role-grid select,
-    #appScreen .global-settings-app .global-scheduler-pair input { border-color: var(--glass-border); background: var(--card-white); color: var(--text-main); }
+    #appScreen .global-settings-app .setting-value-note { background: color-mix(in srgb, var(--card-black) 10%, var(--card-white)); color: var(--card-black); }#appScreen .global-settings-app .global-scheduler-pair input{ border-color: var(--glass-border); background: var(--card-white); color: var(--text-main); }
     /* v112 · 玻璃主题下的 节奏/调度 卡片控件 */
     #appScreen .global-settings-app .current-persona-role,
     #appScreen .global-settings-app .reply-weight-preview { background: color-mix(in srgb, var(--card-black) 10%, var(--card-white)); color: var(--card-black); }
@@ -5608,14 +5587,8 @@ html[data-keyboard-open="true"] .chat-feature-modal { padding-bottom: calc(14px 
     #appScreen .global-settings-app .reply-weight-grid input { border-color: var(--glass-border); background: var(--card-white); color: var(--text-main); }
     #appScreen .global-settings-app .role-persona-grid label,
     #appScreen .global-settings-app .reply-weight-grid span,
-    #appScreen .global-settings-app .rhythm-card .range-control > span { color: var(--text-muted); }
-    #appScreen .global-settings-app .rhythm-card-option-row strong,
-    #appScreen .global-settings-app .reply-weight-head strong { color: var(--text-main); }
-    #appScreen .global-settings-app .rhythm-card-option-row small,
-    #appScreen .global-settings-app .reply-weight-head small { color: var(--text-muted); }
-    #appScreen .global-settings-app .rhythm-card .range-control output { color: var(--text-muted); }
-    #appScreen .global-settings-app .rhythm-card-options,
-    #appScreen .global-settings-app .reply-weight-block { border-color: var(--glass-border); }
+    #appScreen .global-settings-app .rhythm-card .range-control > span { color: var(--text-muted); }#appScreen .global-settings-app .reply-weight-head strong{ color: var(--text-main); }#appScreen .global-settings-app .reply-weight-head small{ color: var(--text-muted); }
+    #appScreen .global-settings-app .rhythm-card .range-control output { color: var(--text-muted); }#appScreen .global-settings-app .reply-weight-block{ border-color: var(--glass-border); }
     #appScreen .global-settings-app .save-role-persona { background: var(--card-black); color: var(--card-white); }
     #appScreen .global-settings-app .global-sound-copy { flex: 1 1 140px; }
     #appScreen .global-settings-app .global-sound-actions { flex: 0 0 auto; }
@@ -9403,16 +9376,8 @@ html[data-perf-mode="off"] #appScreen[data-widget-skin="glass"]{
     .global-settings-app .global-settings-action b,
     .global-settings-app .setting-value-note,
     .global-settings-app .range-control output { font-size: 9px; }
-    .global-settings-app .dashboard-setting-row select { font-size: 9px; }
-    .global-settings-app .global-role-grid label { font-size: 8px; }
-    /* v112 · 节奏/调度卡片同步放大 */
-    .global-settings-app .rhythm-card-head strong,
-    .global-settings-app .rhythm-card-option-row strong,
-    .global-settings-app .reply-weight-head strong { font-size: 10px; }
-    .global-settings-app .rhythm-card-head small,
-    .global-settings-app .rhythm-card-option-row small,
-    .global-settings-app .reply-weight-head small,
-    .global-settings-app .role-persona-help { font-size: 9px; }
+    .global-settings-app .dashboard-setting-row select { font-size: 9px; }/* v112 · 节奏/调度卡片同步放大 */
+    .global-settings-app .rhythm-card-head strong,.global-settings-app .reply-weight-head strong{ font-size: 10px; }.global-settings-app .rhythm-card-head small,.global-settings-app .reply-weight-head small,.global-settings-app .role-persona-help{ font-size: 9px; }
     .global-settings-app .role-persona-grid label,
     .global-settings-app .reply-weight-grid span,
     .global-settings-app .rhythm-card .range-control > span { font-size: 8px; }
@@ -12450,9 +12415,6 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       return selected;
     }
 
-    function getGlobalContentCardPool() {
-      return getRoleContentCardPool(currentPartnerHandle);
-    }
 
     /* v103：开启连词成句后，优先让对方「拼」一句；
        拼不出来（字库太少 / 没挂载 glyph 分组）就回落到普通字卡。
@@ -12488,9 +12450,6 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       return selected;
     }
 
-    function pickGlobalCardBatch(min = 1, max = min) {
-      return pickRoleCardBatch(currentPartnerHandle, min, max);
-    }
 
     function pickProactiveCheckText(roleOrId = currentPartnerHandle) {
       /* v111：查岗是纯文本出口，把拼句的零宽标记剥掉（否则会跟着写进查岗记录） */
@@ -12594,16 +12553,6 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
 
     /* v111z42：把「截断 + 归一化」这段算清楚，面板和引擎共用，避免两处口径不一致。
        注意 max 档位之外的权重是**真的不参与**（面板小字早就写了，但很容易漏看）。 */
-    function roleReplyCountWeights(maxOverride = null, weightsOverride = null) {
-      const settings = getGlobalAppSettings();
-      const max = maxOverride === null
-        ? Math.max(1, Math.min(5, Number(settings.replyMaxReplies) || 5))
-        : Math.max(1, Math.min(5, Number(maxOverride) || 5));
-      const raw = weightsOverride || settings.replyWeights || [45,32,15,6,2];
-      const weights = raw.slice(0, max).map(value => Math.max(0, Number(value) || 0));
-      if (!weights.some(value => value > 0)) return { max, weights: [45,32,15,6,2].slice(0, max) };
-      return { max, weights };
-    }
 
     function pickRoleReplyCount(role) {
       /* v113 · blue 算法：一次回几条，按「这位角色自己的」maxReplies / replyWeights 抽
@@ -14651,10 +14600,6 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       scheduleProactiveHeartbeat();
     }
 
-    function stopProactiveHeartbeat() {
-      window.clearTimeout(proactiveHeartbeatTimer);
-      proactiveHeartbeatTimer = null;
-    }
 
     /* ══════════════════════════════════════════════════════════════
        v111j4 → v111j5 · 待收队列：进房间直接补齐
@@ -15005,7 +14950,6 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       return dreamDataDbPromise;
     }
 
-    function openDreamDataDatabase() { return openDreamV3Database(); }
 
     // V3 镜像失败时的待重试队列。
     // 早期实现是「发射后不管」：IndexedDB 事务被中断（页面切后台、配额紧张、
@@ -15152,11 +15096,6 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       dreamStorageTimer = window.setTimeout(run, 180);
     }
 
-    function queueDreamStorageRaw(name, serialized) {
-      dreamPendingStorageWrites.set(name, serialized);
-      scheduleDreamStorageFlush();
-      return true;
-    }
 
     function dreamStorageSafetyKey(kind, key) {
       return `${DREAM_STORAGE_SAFETY_PREFIX}${kind}:${encodeURIComponent(String(key || ''))}`;
@@ -15309,9 +15248,6 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
     }
 
     // 手动清理入口（测试/面板可复用）：也只清理冗余快照。
-    function relieveDreamStoragePressure() {
-      relieveDreamStoragePressureStep(1);
-    }
 
     function writeDreamJSON(key, value) {
       const name = String(key || '');
@@ -15668,15 +15604,6 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       return true;
     }
 
-    async function clearDreamMediaDatabase() {
-      dreamMediaObjectUrls.forEach(url => URL.revokeObjectURL(url)); dreamMediaObjectUrls.clear();
-      const db = await openDreamV3Database();
-      if (db) await new Promise(resolve => {
-        try { const tx=db.transaction(DREAM_MEDIA_STORE_NAME,'readwrite'); tx.objectStore(DREAM_MEDIA_STORE_NAME).clear(); tx.oncomplete=tx.onerror=tx.onabort=()=>resolve(); }
-        catch (_) { resolve(); }
-      });
-      try { await caches.delete(DREAM_MEDIA_CACHE_NAME); } catch (_) {}
-    }
 
     async function garbageCollectDreamMedia() {
       // 安全优先：不再在启动时自动删除“看起来未被引用”的媒体。
@@ -15725,18 +15652,6 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       return true;
     }
 
-    function collectDreamStorageBackup() {
-      const backup = { type: 'dream-transmit-local-backup', schemaVersion: DREAM_STORAGE_SCHEMA_VERSION, exportDate: new Date().toISOString(), storage: {} };
-      try {
-        for (let index = 0; index < localStorage.length; index += 1) {
-          const key = localStorage.key(index);
-          if (!key || (!key.startsWith('dream-') && !key.startsWith('dream_')) || key.startsWith(DREAM_STORAGE_SAFETY_PREFIX)) continue;
-          const raw = localStorage.getItem(key);
-          try { backup.storage[key] = JSON.parse(decompressDreamJSONString(raw)); } catch (error) { backup.storage[key] = raw; }
-        }
-      } catch (error) { /* private mode */ }
-      return backup;
-    }
 
     const TIPS_GUIDE_CATEGORIES = Object.freeze([
       { id: 'all', label: '全部' }, { id: 'start', label: '入门' }, { id: 'chat', label: 'CHAT' },
@@ -17012,13 +16927,6 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       return getChatSettings(h);
     }
 
-    function saveDesktopInviteRecord(record, pending = null) {
-      const settings = desktopInviteSettings();
-      settings.inviteHistory = (settings.inviteHistory || []).map(item => item.id === record.id ? record : item);
-      if (!(settings.inviteHistory || []).some(item => item.id === record.id)) settings.inviteHistory = [...(settings.inviteHistory || []), record].slice(-60);
-      settings.pendingInvite = pending;
-      saveChatSettings(settings, currentPartnerHandle || 'mia.chen');
-    }
 
     function showDesktopInviteToast(message) {
       const toast = document.getElementById('desktopInviteToast');
@@ -18462,11 +18370,6 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       showCircleToast('动态已发表');
     }
 
-    function resetCircleCover() {
-      removeDreamStorage(CIRCLE_COVER_STORAGE_KEY);
-      applyCircleProfile();
-      showCircleToast('已恢复默认背景');
-    }
 
     document.getElementById('circleImageInput')?.addEventListener('change', handleCircleImageUpload);
     document.getElementById('circleAvatarInput')?.addEventListener('change', async event => {
@@ -19872,9 +19775,6 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
     const CHAT_BACKUP_SPECIAL_FIELDS = Object.freeze(['decisionRecords', 'boardRecords', 'redEnvelopes', 'transferRecords', 'voiceCards', 'checkHistory', 'deletedSpecialMessageIds', 'deletedChatLineKeys', 'pendingCheck', 'pendingReply', 'pendingProactiveMessages', 'pendingProactiveBoards', 'messageKindCooldowns', 'inviteHistory', 'pendingInvite', 'listenQueue', 'listenIndex', 'listenFavorites', 'listenTrail', 'chatFavorites', 'patTexts', 'glyphCardRequests']);
     const CHAT_BACKUP_STICKER_FIELDS = Object.freeze(['stickerMine', 'stickerTheirs', 'kaomoji']);
 
-    function getDreamBackupCategoryIds() {
-      return Object.keys(DREAM_BACKUP_CATEGORY_DEFINITIONS);
-    }
 
     function getSelectedDreamBackupCategoryIds() {
       return [...document.querySelectorAll('[data-backup-category]:checked')].map(input => input.dataset.backupCategory).filter(id => DREAM_BACKUP_CATEGORY_DEFINITIONS[id]);
@@ -20345,60 +20245,8 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       updateDreamBackupSelectionSummary();
     }
 
-    function exportDreamTransmitData() {
-      const data = collectDreamStorageBackup();
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `mobius-backup-${new Date().toISOString().slice(0, 10)}.json`;
-      document.body.appendChild(link); link.click(); link.remove(); URL.revokeObjectURL(url);
-      showGlobalSettingsToast('本地数据已导出');
-    }
 
-    async function importDreamTransmitData(event) {
-      const file = event.target.files?.[0];
-      if (!file) return;
-      let committed = false;
-      try {
-        const data = JSON.parse(await file.text());
-        const storage = data.storage && typeof data.storage === 'object' ? data.storage : data;
-        beginDreamDataImport();
-        Object.entries(storage).forEach(([key, value]) => {
-          if ((!key.startsWith('dream-') && !key.startsWith('dream_')) || key.startsWith(DREAM_STORAGE_SAFETY_PREFIX)) return;
-          const raw = typeof value === 'string' ? value : compressDreamJSONString(JSON.stringify(value));
-          writeImportedDreamStorageRaw(key, raw);
-        });
-        prepareDreamImportedStateForReload();
-        committed = true;
-        showGlobalSettingsToast('数据导入完成，即将刷新');
-        window.setTimeout(() => window.location.reload(), 650);
-      } catch (error) {
-        if (!committed) cancelDreamDataImport();
-        showGlobalSettingsToast('备份文件格式无效');
-      } finally {
-        event.target.value = '';
-      }
-    }
 
-    function resetDreamTransmitData() {
-      const confirmed = window.confirm ? window.confirm('确定清除当前项目保存的全部本地数据吗？') : false;
-      if (!confirmed) return;
-      const phrase = window.prompt?.('这是不可逆的全量清除，请输入“清除全部数据”');
-      if (phrase !== '清除全部数据') { showGlobalSettingsToast('未完成清除，数据保持不变'); return; }
-      try {
-        const keys = [];
-        for (let index = 0; index < localStorage.length; index += 1) {
-          const key = localStorage.key(index);
-          if (key && (key.startsWith('dream-') || key.startsWith('dream_'))) keys.push(key);
-        }
-        keys.forEach(key => removeDreamStorage(key));
-      } catch (error) { /* private mode */ }
-      clearDreamMediaDatabase().finally(() => {
-        showGlobalSettingsToast('本地数据已清除，即将刷新');
-        window.setTimeout(() => window.location.reload(), 650);
-      });
-    }
 
     /* v111g · 节奏设置 → 对应的主动事件类型 */
     const SCHEDULER_KEY_TYPES = {
@@ -22859,14 +22707,6 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       return '这条的音频源已经失效（本地上传的文件可能被清理过），请重新添加，或改用音频直链';
     }
 
-    function listenSourceProblemFor(code, reference, track) {
-      const ref = String(reference || '');
-      const looksLocal = ref.startsWith('blob:') || ref.startsWith('dream-media://')
-        || Boolean(track && track.audioSource === 'local-mp3');
-      if (looksLocal) return listenLocalLossReason();
-      if (looksLikeAudioFileUrl(ref)) return listenFetchProblem();
-      return listenSourceProblem(code);
-    }
 
     /* v111z74：完整一句「这条为什么放不出来 + 怎么办」——手动点按、错误事件共用。 */
     function listenPlayFailMessage(code, reference, track) {
@@ -23293,9 +23133,6 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       closeListenSongForm();
     }
 
-    function toggleListenAddPanel() {
-      openListenSongForm();
-    }
 
     function openListenSongForm() {
       const form = document.getElementById('listenSongFormBackdrop');
@@ -26037,14 +25874,6 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       if (status) status.textContent = `TA 的选择：${record.answer.join('、')}`;
     }
 
-    function sendDecisionQuestionMessage(text) {
-      const input = document.getElementById('chatMessageInput');
-      if (!input) return;
-      input.value = text;
-      handleChatInput(input);
-      closeExpressionPanel();
-      sendChatMessage(false);
-    }
 
     function renderExpressionTextList(kind) {
       const list = document.getElementById(kind === 'kaomoji' ? 'kaomojiList' : 'patTextList');
@@ -26292,31 +26121,11 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       if (!created && bubble) keys.push('tx:' + bubble);
       return keys;
     }
-    function chatLineMergeKey(html) {
-      const keys = chatLineIdentityKeys(html);
-      return keys.length ? keys[0] : '';
-    }
     /* 删除时要不要留身份：行上没有明确时间点、也没有卡片身份的老记录不留 —— 免得删一句「好」
        之后，将来重新发出同样的「好」被一起挡掉。 */
     /* 删除要留「强身份」：只有正文的老记录不留 —— 免得删一句「好」之后，将来重新发出的「好」被一起挡掉 */
     function chatLineDeleteKeys(html) {
       return chatLineIdentityKeys(html).filter(key => !key.startsWith('tx:'));
-    }
-    function chatLineDeleteKey(html) {
-      const keys = chatLineDeleteKeys(html);
-      return keys.length ? keys[0] : '';
-    }
-    function rememberDeletedChatLine(line, handle) {
-      try {
-        const keys = chatLineDeleteKeys(line?.outerHTML || '');
-        if (!keys.length || !handle) return;
-        const settings = getChatSettings(handle);
-        const list = Array.isArray(settings.deletedChatLineKeys) ? settings.deletedChatLineKeys.map(String) : [];
-        const fresh = keys.filter(key => !list.includes(key));
-        if (!fresh.length) return;
-        settings.deletedChatLineKeys = [...list, ...fresh].slice(-4000);
-        saveChatSettings(settings, handle);
-      } catch (_) { /* 记不上也不能挡住删除本身 */ }
     }
     function mergeChatHistoryLineLists(baseLines, incomingLines, deletedKeys) {
       const skip = deletedKeys instanceof Set ? deletedKeys : new Set();
@@ -28055,15 +27864,6 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       showChatToast('字卡已添加');
     }
 
-    function removeChatCard(index) {
-      const group = getCardManagerGroups().find(item => item.id === 'ungrouped');
-      if (!group) return;
-      group.cards.splice(index, 1);
-      persistCardManagerGroups();
-      renderCardLibrary();
-      renderCardManager();
-      showChatToast('字卡已移除');
-    }
 
     function applyChatGlassSettings() {
       const settings = getChatSettings();
@@ -31139,11 +30939,6 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
 
     // ===== 置顶联系人：持久化 + 顺序恢复（v73）=====
     // 存在角色注册表上，与「暂时离开」同一套机制；handle 为空的行（异常数据）直接忽略。
-    function isChatRowPinned(handle) {
-      const key = String(handle || '').trim();
-      if (!key) return false;
-      return getRoleRecord(key)?.pinnedAt > 0;
-    }
 
     function setChatRowPinned(handle, pinned) {
       const key = String(handle || '').trim();
@@ -31843,11 +31638,6 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       event.target.value = '';
     }
 
-    function resetDesktopTicketAvatar() {
-      loadDesktopWidgetState().ticket.avatar = '';
-      persistDesktopWidgetState();
-      renderDesktopTicketWidget();
-    }
 
     function desktopDateDayNumber(value) {
       const match = /^(\d{4})-(\d{2})-(\d{2})$/u.exec(String(value || ''));
@@ -32340,17 +32130,6 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       if (input) node.appendChild(input);
     }
 
-    async function openDesktopPhotoPreview(node) {
-      if (document.getElementById('appScreen')?.classList.contains('edit-mode')) return;
-      const source = await resolveDreamMediaSource(node?.dataset.desktopPhotoSource || '');
-      if (!source) return;
-      const modal = document.getElementById('desktopPhotoPreview');
-      const image = document.getElementById('desktopPhotoPreviewImage');
-      if (!modal || !image) return;
-      image.src = source;
-      modal.classList.add('is-open');
-      modal.setAttribute('aria-hidden', 'false');
-    }
 
     function closeDesktopPhotoPreview() {
       const modal = document.getElementById('desktopPhotoPreview');
@@ -32524,14 +32303,6 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
     }
 
 
-    function isStoredIncomingChatLine(html) {
-      if (!html || typeof html !== 'string') return false;
-      try {
-        const holder = document.createElement('div');
-        holder.innerHTML = html;
-        return Boolean(holder.firstElementChild?.classList.contains('incoming'));
-      } catch (error) { return false; }
-    }
 
     function getChatUnreadMessageCounts() {
       const allSettings = readAllChatSettings();
@@ -33840,11 +33611,6 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
     window.addEventListener('online', () => runLocalSchedulerCatchUp('online'));
     window.addEventListener('pagehide', flushDreamStorage);
     window.addEventListener('beforeunload', flushDreamStorage);
-    function toggleTheme() {
-      const order = ['mono', 'fog-blue', 'aurora'];
-      const currentIndex = Math.max(0, order.indexOf(currentTheme));
-      setGlobalTheme(order[(currentIndex + 1) % order.length]);
-    }
 
     function updateDynamicTime() {
       const now = new Date();
@@ -33865,20 +33631,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
     }
     updateDynamicTime();
 
-    function toggleAudioPlay() {
-      toggleDesktopWidgetAudio();
-    }
 
-    function toggleTodo(item) {
-      item.classList.toggle('completed');
-      const box = item.querySelector('.checkbox');
-      if (item.classList.contains('completed')) {
-        box.innerHTML = '<i data-lucide="check" size="8"></i>';
-      } else {
-        box.innerHTML = '';
-      }
-      lucide.createIcons();
-    }
 
     /* ═══ v103 · 连词成句「拼一拼」═══
        对方不用现成句子，而是从单字里逐个挑出来拼成一句话。
@@ -33953,7 +33706,6 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       if (GLYPH_POS_KEYS.includes(t)) return t;
       return GLYPH_SPEC_MIGRATE[t] || '';
     }
-    function glyphPosDetail() { return {}; }
     function readGlyphPosOverrides() {
       try { const v = typeof readDreamJSON === 'function' ? readDreamJSON(GLYPH_POS_KEY, {}) : null; return v && typeof v === 'object' ? v : {}; }
       catch (_) { return {}; }
@@ -34546,10 +34298,6 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       return groups.find(group => group.id === activeCardManagerGroupId) || groups[0];
     }
 
-    function getManagedCardPool(kindOrId) {
-      const group = getCardManagerGroups().find(item => item.id === kindOrId || item.kind === kindOrId);
-      return group && !group.blocked ? normalizeCardManagerCards(group.cards) : [];
-    }
 
     function getManagedContentCardPool() {
       return getCardManagerGroups().filter(group => !group.blocked && (group.kind || group.id) === 'content').flatMap(group => normalizeCardManagerCards(group.cards));
@@ -35525,7 +35273,6 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
   }
   /* v111j12：把权限刷新挂到 window —— 设置面板之外（比如权限横幅被手动关掉后）
      也需要一条能立刻重算显示状态的路，测试与自查都用它。 */
-  window.updateNotificationPermissionUI = function(){ try { updatePermissionUI(); } catch(_){} };
   window.requestSystemNotificationPermission = async function(){
     if(typeof Notification === 'undefined'){ showGlobalSettingsToast('当前浏览器不支持系统通知'); return; }
     if(Notification.permission === 'granted'){ showGlobalSettingsToast('已获得通知权限'); updatePermissionUI(); ensureSW(false); return; }
@@ -36053,27 +35800,6 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
   window.applyBackgroundKeepAlive = applyBackgroundKeepAlive;
   /* v111z5：保活这几行在 IIFE 里，测试与真机自查都得留个口子 */
   window.keepAlivePlayerWavDataUrl = keepAlivePlayerWavDataUrl;
-  window.getKeepAlivePlayerInfo = function(){
-    const el = keepAlivePlayer;
-    let ms = null;
-    try { ms = navigator.mediaSession; } catch (_) {}
-    return {
-      exists: !!el,
-      srcIsWav: String((el && el.src) || '').startsWith('data:audio/wav'),
-      paused: el ? el.paused : null,
-      loop: !!(el && el.loop),
-      duration: Number(el && el.duration) || 0,
-      currentTime: Number(el && el.currentTime) || 0,
-      mediaState: ms ? ms.playbackState : '',
-      title: (ms && ms.metadata) ? ms.metadata.title : '',
-      artist: (ms && ms.metadata) ? ms.metadata.artist : '',
-      artwork: (ms && ms.metadata) ? (ms.metadata.artwork || []).map(item => item.src) : [],
-      toneGain: (keepAliveNodes && keepAliveNodes.gain) ? keepAliveNodes.gain.gain.value : null
-    };
-  };
-  window.getBackgroundKeepAliveState = function(){ return { ...keepAliveState, battery: keepAliveBatteryNote || '', userPaused: keepAlivePlayerUserPaused === true,
-    mobileValve: keepAliveIsMobileSafetyProfile(), bgUsedMs: Math.round(keepAliveBgUsedMs), dailyUsedMs: Math.round(keepAliveDailyUsedMs),
-    dailyMaxMs: KEEPALIVE_DAILY_MAX_MS, mobileMaxMs: KEEPALIVE_MOBILE_MAX_MS, cooldownUntil: keepAliveSafetyCooldownUntil }; };
 
   window.setBackgroundKeepAliveMode = function(mode){
     if (!['off', 'smart', 'always'].includes(mode)) return;
@@ -36109,7 +35835,6 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
     clearTimeout(keepAlivePreviewTimer);
     keepAlivePreviewTimer = setTimeout(() => { applyBackgroundKeepAlive(); showGlobalSettingsToast('试听结束'); }, 15000);
   };
-  window.toggleBackgroundKeepAlive = function(){ window.setBackgroundKeepAliveMode(keepAliveMode() === 'off' ? 'smart' : 'off'); };
 
   /* 低电量自动降级（只在真拿到电池信息时生效，不瞎猜） */
   (function watchBattery(){
@@ -36701,7 +36426,6 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
   window.clearAppBadge = clearAppBadge;
   /* v111t：对外接口 —— 角标重算（主脚本「读过就回落」要用）与通知中心只读快照 */
   window.updateAppBadgeFromCenter = updateAppBadgeFromCenter;
-  window.getNotificationCenterSnapshot = function(){ return loadCenter().map(item => ({ ...item })); };
 
   // Notification routing
   window.handleNotificationRoute = function(route, data){
@@ -36871,8 +36595,8 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
      所以不会再出现「指过去是 404 → 系统给一枚默认黑图标」。
      v111z3：这七个文件换成**用户自己的真 logo**（浅蓝灰底 + 深墨「∞」，由用户提供，原样交付）；
      并统一加 `?v=v111z3` —— 手机上可能还留着上一版占位图的 HTTP 缓存，换个 URL 才保证抓到新图。 */
-  const NOTIF_ICON_FALLBACK_URL = new URL('./icons/icon-192.png?v=v116', location.href).href;
-  const NOTIF_BADGE_URL = new URL('./icons/badge-96.png?v=v116', location.href).href;
+  const NOTIF_ICON_FALLBACK_URL = new URL('./icons/icon-192.png?v=v117', location.href).href;
+  const NOTIF_BADGE_URL = new URL('./icons/badge-96.png?v=v117', location.href).href;
   async function resolveNotificationAvatarIcon(routeData, opts) {
 
 
@@ -37773,10 +37497,6 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
   function toZh(act){ return EN_TO_ZH[act] || act || '工作'; }
   function toEn(act){ return ZH_TO_EN[act] || act || 'work'; }
 
-  function ensureChatVisibleForInvite(){
-    // 若聊天未打开，静默保存历史，待用户打开时可见
-    // 这里不强制打开，仅确保存档
-  }
 
   function sendInviteFeedbackBubble(record){
     if(!record||record.direction!=='out'||!['accepted','declined','later'].includes(record.status))return;
@@ -43017,7 +42737,6 @@ async function repairKomoWallet(){const state=loadKomoState(),report=inspectKomo
 function komoToast(text){const toast=document.getElementById('komoToast');if(!toast)return;toast.textContent=text;toast.classList.add('show');clearTimeout(window.komoToastTimer);window.komoToastTimer=setTimeout(()=>toast.classList.remove('show'),1700);}
 function ensureKomoApp(){let app=document.getElementById('komoApp');if(app)return app;app=document.createElement('section');app.id='komoApp';app.className='komo-app';app.setAttribute('aria-hidden','true');app.innerHTML=`<header class="komo-head"><div class="komo-brand" id="komoBrand" role="button" tabindex="0" title="KOMO 便利店招牌"><small>24H DREAM CONVENIENCE</small><strong>KOMO 便利店</strong></div><button class="komo-motion-button" type="button" id="komoMotionToggle" title="切换动效强度">✦</button><button type="button" onclick="closeKomoStore()">×</button><span class="komo-motion-toast"></span></header><nav class="komo-tabs"><button data-komo-tab="store">货架</button><button data-komo-tab="cart">购物袋</button><button data-komo-tab="wallet">钱包</button><button data-komo-tab="orders">订单</button></nav><div class="komo-scroll" id="komoContent"></div><div class="komo-modal" id="komoModal"></div><div class="komo-toast" id="komoToast"></div>`;app.querySelectorAll('[data-komo-tab]').forEach(button=>button.onclick=()=>{komoTab=button.dataset.komoTab;renderKomo();});app.querySelector('#komoMotionToggle').onclick=cycleKomoMotion;const brand=app.querySelector('#komoBrand');brand.onclick=handleKomoBrandTap;brand.onkeydown=event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();handleKomoBrandTap();}};app.addEventListener('pointerdown',scheduleKomoIdleClerkMoment,{passive:true});document.getElementById('appScreen')?.appendChild(app);return app;}
 window.openKomoStore=function(options={}){komoEntryContext=options&&typeof options==='object'?options:null;komoState=normalizeState(loadKomoState());const freshInventory=defaultInventory();Object.keys(freshInventory).forEach(id=>{if(!(id in komoState.inventory))komoState.inventory[id]=freshInventory[id];});saveKomoState(komoState,'komo-daily-stock');const app=ensureKomoApp();try{closeChatApp();closeMailApp();closeMoonTracker();closeCircleApp();closeDesktopInviteApp();}catch(_){}app.dataset.komoMotion=komoState.motionMode||'standard';app.classList.add('is-visible','komo-opening');app.setAttribute('aria-hidden','false');window.setTimeout(()=>app.classList.remove('komo-opening'),900);renderKomo();startKomoAtmosphere();window.setTimeout(()=>showKomoShiftGreeting(),420);scheduleKomoGiftTasks();scheduleKomoShoppingRequests();scheduleKomoPayTasks();try{lucide.createIcons();}catch(_){}};
-window.openKomoFromInvite=function(record){openKomoStore({source:'invite',roleId:record?.roleId||currentPartnerHandle,inviteId:record?.id||''});};
 window.openKomoListenSnacks=function(){openKomoStore({source:'listen',roleId:currentPartnerHandle});};
 window.closeKomoStore=function(){const app=document.getElementById('komoApp');app?.classList.remove('is-visible');app?.setAttribute('aria-hidden','true');stopKomoAtmosphere();app?.querySelectorAll('.komo-shift-greeting,.komo-clerk-easter').forEach(node=>node.remove());closeKomoModal();};
 function renderKomo(){const app=ensureKomoApp(),state=loadKomoState();app.dataset.komoMotion=state.motionMode||'standard';app.querySelectorAll('[data-komo-tab]').forEach(button=>button.classList.toggle('active',button.dataset.komoTab===komoTab));if(komoTab==='store')renderStore(state);else if(komoTab==='cart')renderCart(state);else if(komoTab==='wallet')renderWallet(state);else renderOrders(state);if(komoTab==='store')scheduleKomoIdleClerkMoment();}
@@ -43787,21 +43506,6 @@ function orderNotify(title,body,routeData={},route='home'){
     else if(typeof window.showSystemNotification==='function') window.showSystemNotification({title:opts.title,body:opts.preview,route:opts.route,routeData:opts.routeData,kind:'order',group:'order',transient:true});
   }catch(_){}
 }
-function orderChatCard(kind,cfg){
-  try{
-    const fn=window.sendKomoSelfFlowCard;
-    if(typeof fn!=='function')return false;
-    return fn(kind,{...cfg,srcApp:'order'});
-  }catch(_){return false;}
-}
-function orderRecipeSummary(r){
-  if(!r)return '';
-  const b=(ORDER_BASE.find(x=>x[0]===r.base)||[])[1]||r.base;
-  const tops=(r.tops||[]).map(id=>(ORDER_TOP.find(x=>x[0]===id)||[])[1]).filter(Boolean).join('+');
-  const sw=(ORDER_SWEET.find(x=>x[0]===String(r.sweet))||[])[1]||'';
-  const ic=(ORDER_ICE.find(x=>x[0]===r.ice)||[])[1]||'';
-  return [tops?`${b}+${tops}`:b,sw,ic].filter(Boolean).join(' · ');
-}
 /* B · 配送进度：原地更新，一单只有 1 张卡 */
 function orderUpdateTraceCard(o){
   const id=`order-trace:${o.id}`;
@@ -43823,9 +43527,6 @@ function orderUpdateTraceCard(o){
   return false; /* ORDER 进度只在 ORDER 页面显示，不写入聊天。 */
 }
 function orderBagImg(){ return (ORDER_VESSEL.bag&&ORDER_VESSEL.bag.img)||''; }
-function orderInTransit(o){
-  return o&&Number(o.step)>=2&&Number(o.step)<ORDER_STEPS.length-1;
-}
 function orderBagHTML(w){
   const src=orderBagImg();
   if(!src)return '';
@@ -44089,13 +43790,6 @@ function orderCupLayers(r){
   return out;
 }
 /* ---------- B 手作评级 ---------- */
-function orderGradeOf(power){
-  const v=Number(power)||0;
-  if(v>=46&&v<=68)return{grade:'完美',tip:'摇得刚好，层次很清楚。'};
-  if(v>=30&&v<80)return{grade:'尚可',tip:'能喝，就是没那么惊艳。'};
-  if(v<30)return{grade:'翻车',tip:'没摇匀，底下都是糖。'};
-  return{grade:'翻车',tip:'摇过头了，稀得像水。'};
-}
 /* 记一次手作，返回本次是否解锁了新基底 */
 function orderRecordCraft(grade){
   const s=loadOrderState();
@@ -46452,10 +46146,6 @@ function purseLayeredPool(roleId){
   return pool;
 }
 /* 兼容旧调用：拍平成单个数组 */
-function purseSpendPool(roleId){
-  const p=purseLayeredPool(roleId);
-  return p.survive.concat(p.living,p.love);
-}
 /* 加权抽取：项目第 7 位是权重（缺省 10）。
    旧版画像内等概率，导致「宠物医院」180 天出现 35 次，比猫粮还勤 —— 显然不合理。 */
 function pursePickWeighted(list,n){
@@ -47323,10 +47013,6 @@ function savePersona(roleId,data){
       }
     }catch(_){}
   }
-}
-function personaIsEmpty(roleId){
-  const d=getPersona(roleId);
-  return !PERSONA_FIELDS.some(([k])=>d[k].trim());
 }
 /* AI 是否已配好 —— 未配好就不显示人设这一页（填了也没处用） */
 function phoneAIReady(){
@@ -51160,12 +50846,6 @@ window.MobiusPerf = {
   window.addEventListener('pagehide', function () { setEditing(false); });
 
   /* 供测试/排障调用：把状态回正并返回当前页面标记 */
-  window.__mobiusDrawerGuard = function () {
-    const app = syncActiveApp();
-    if (screen.scrollTop) screen.scrollTop = 0;
-    if (app !== 'desktop' && screen.classList.contains('drawer-open') && typeof window.closeDrawer === 'function') { try { window.closeDrawer(); } catch (_) {} }
-    return app;
-  };
 })();
 </script>
 
