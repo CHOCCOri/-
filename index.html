@@ -1676,6 +1676,40 @@ if(focused&&!viewport&&stableHeight>0)keyboardInset=Math.max(keyboardInset,Math.
     .global-settings-app .rhythm-card-head strong { display: block; color: #405761; font-size: 8px; }
     .global-settings-app .rhythm-card-head small { display: block; margin-top: 3px; color: #89979d; font-size: 6px; line-height: 1.35; }
     .global-settings-app .current-persona-role { flex: 0 0 auto; color: #66818d; font-size: 6px; }
+    .global-settings-app .current-persona-role { max-width: 38%; overflow: hidden; padding: 4px 6px; border-radius: 6px; background: #eef3f5; text-overflow: ellipsis; white-space: nowrap; }
+    /* ═══ v112 · 节奏 / 主动事件调度：卡片栅格 + 开关 + 滑杆（blue 版布局） ═══ */
+    .global-settings-app .rhythm-card-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 7px; padding: 7px 8px; }
+    @media (max-width: 720px) { .global-settings-app .rhythm-card-grid { grid-template-columns: 1fr; } }
+    .global-settings-app .rhythm-card-grid .rhythm-card { display: flex; flex-direction: column; }
+    .global-settings-app .rhythm-card.disabled .range-control,
+    .global-settings-app .rhythm-card.disabled .rhythm-card-options { opacity: .38; }
+    .global-settings-app .rhythm-card .range-control { width: 100%; min-height: 26px; display: grid; grid-template-columns: auto minmax(0,1fr) 52px; align-items: center; gap: 6px; margin-top: 5px; }
+    .global-settings-app .rhythm-card .range-control > span { color: #819098; font-size: 7px; white-space: nowrap; }
+    .global-settings-app .rhythm-card .range-control input[type="range"] { width: 100%; accent-color: #405b67; }
+    .global-settings-app .rhythm-card .range-control output { color: #5f7b86; font: 8px ui-monospace,monospace; text-align: right; }
+    .global-settings-app .rhythm-card-options { display: grid; gap: 5px; margin-top: 7px; padding-top: 7px; border-top: 1px solid #edf1f2; transition: opacity .18s; }
+    .global-settings-app .rhythm-card-option-row { display: flex; align-items: center; gap: 7px; min-height: 30px; }
+    .global-settings-app .rhythm-card-option-row > div:first-child { min-width: 0; flex: 1; }
+    .global-settings-app .rhythm-card-option-row strong { display: block; color: #405761; font-size: 8px; font-weight: 850; }
+    .global-settings-app .rhythm-card-option-row small { display: block; margin-top: 2px; color: #89979d; font-size: 6px; line-height: 1.35; }
+    .global-settings-app .rhythm-card-option-row .global-theme-options { flex: 0 0 auto; }
+    .global-settings-app .role-persona-grid { margin-top: 6px; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 6px; }
+    .global-settings-app .role-persona-grid label { display: grid; gap: 3px; color: #819098; font-size: 6px; }
+    .global-settings-app .role-persona-grid label.wide { grid-column: 1/-1; }
+    .global-settings-app .role-persona-grid input,.global-settings-app .role-persona-grid select { width: 100%; height: 26px; min-width: 0; padding: 0 6px; border: 1px solid #e0e7ea; border-radius: 7px; outline: 0; background: #f7f9fa; color: #405761; font-size: 8px; }
+    .global-settings-app .reply-weight-block { margin-top: 9px; padding-top: 8px; border-top: 1px solid #edf1f2; }
+    .global-settings-app .reply-weight-head strong { display: block; color: #405761; font-size: 8px; font-weight: 850; }
+    .global-settings-app .reply-weight-head small { display: block; margin-top: 2px; color: #89979d; font-size: 6px; line-height: 1.35; }
+    .global-settings-app .reply-weight-grid { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 4px; margin-top: 6px; }
+    .global-settings-app .reply-weight-grid label { display: grid; gap: 3px; transition: opacity .16s; }
+    .global-settings-app .reply-weight-grid label.is-disabled { opacity: .34; }
+    .global-settings-app .reply-weight-grid span { color: #8a989f; font-size: 6px; text-align: center; }
+    .global-settings-app .reply-weight-grid input { width: 100%; height: 24px; min-width: 0; padding: 0 2px; border: 1px solid #e0e7ea; border-radius: 6px; outline: 0; background: #fff; color: #405761; font-size: 8px; text-align: center; font-variant-numeric: tabular-nums; }
+    .global-settings-app .reply-weight-preview { margin: 7px 0 0; padding: 5px 7px; border-radius: 7px; background: #eef3f5; color: #5f7b86; font-size: 7px; line-height: 1.5; font-variant-numeric: tabular-nums; }
+    .global-settings-app .role-persona-help { margin: 7px 0 0; color: #929aa0; font-size: 6px; line-height: 1.55; }
+    .global-settings-app .save-role-persona { width: 100%; min-height: 32px; margin-top: 8px; color: #fff; border: 0; border-radius: 8px; font-size: 8px; font-weight: 800; background: #405b67; cursor: pointer; transition: transform .12s, opacity .18s; }
+    .global-settings-app .save-role-persona:active { transform: scale(.98); }
+    .global-settings-app .save-role-persona[disabled] { opacity: .45; pointer-events: none; }
     .global-settings-app .global-proactive-mini-toggles { display: flex; flex-wrap: wrap; gap: 3px; }
     .global-settings-app .global-proactive-mini-toggles label { display: inline-flex; align-items: center; gap: 2px; color: #6f8189; font-size: 6px; }
     .global-settings-app .global-proactive-mini-toggles input { width: 10px; height: 10px; accent-color: #405b67; }
@@ -5566,6 +5600,23 @@ html[data-keyboard-open="true"] .chat-feature-modal { padding-bottom: calc(14px 
     #appScreen .global-settings-app .global-role-grid input,
     #appScreen .global-settings-app .global-role-grid select,
     #appScreen .global-settings-app .global-scheduler-pair input { border-color: var(--glass-border); background: var(--card-white); color: var(--text-main); }
+    /* v112 · 玻璃主题下的 节奏/调度 卡片控件 */
+    #appScreen .global-settings-app .current-persona-role,
+    #appScreen .global-settings-app .reply-weight-preview { background: color-mix(in srgb, var(--card-black) 10%, var(--card-white)); color: var(--card-black); }
+    #appScreen .global-settings-app .role-persona-grid input,
+    #appScreen .global-settings-app .role-persona-grid select,
+    #appScreen .global-settings-app .reply-weight-grid input { border-color: var(--glass-border); background: var(--card-white); color: var(--text-main); }
+    #appScreen .global-settings-app .role-persona-grid label,
+    #appScreen .global-settings-app .reply-weight-grid span,
+    #appScreen .global-settings-app .rhythm-card .range-control > span { color: var(--text-muted); }
+    #appScreen .global-settings-app .rhythm-card-option-row strong,
+    #appScreen .global-settings-app .reply-weight-head strong { color: var(--text-main); }
+    #appScreen .global-settings-app .rhythm-card-option-row small,
+    #appScreen .global-settings-app .reply-weight-head small { color: var(--text-muted); }
+    #appScreen .global-settings-app .rhythm-card .range-control output { color: var(--text-muted); }
+    #appScreen .global-settings-app .rhythm-card-options,
+    #appScreen .global-settings-app .reply-weight-block { border-color: var(--glass-border); }
+    #appScreen .global-settings-app .save-role-persona { background: var(--card-black); color: var(--card-white); }
     #appScreen .global-settings-app .global-sound-copy { flex: 1 1 140px; }
     #appScreen .global-settings-app .global-sound-actions { flex: 0 0 auto; }
     #appScreen .global-settings-app .global-font-family-setting > div:first-child { flex: 1 1 150px; }
@@ -9346,6 +9397,23 @@ html[data-perf-mode="off"] #appScreen[data-widget-skin="glass"]{
     .global-settings-app .range-control output { font-size: 9px; }
     .global-settings-app .dashboard-setting-row select { font-size: 9px; }
     .global-settings-app .global-role-grid label { font-size: 8px; }
+    /* v112 · 节奏/调度卡片同步放大 */
+    .global-settings-app .rhythm-card-head strong,
+    .global-settings-app .rhythm-card-option-row strong,
+    .global-settings-app .reply-weight-head strong { font-size: 10px; }
+    .global-settings-app .rhythm-card-head small,
+    .global-settings-app .rhythm-card-option-row small,
+    .global-settings-app .reply-weight-head small,
+    .global-settings-app .role-persona-help { font-size: 9px; }
+    .global-settings-app .role-persona-grid label,
+    .global-settings-app .reply-weight-grid span,
+    .global-settings-app .rhythm-card .range-control > span { font-size: 8px; }
+    .global-settings-app .role-persona-grid input,
+    .global-settings-app .role-persona-grid select,
+    .global-settings-app .reply-weight-grid input,
+    .global-settings-app .reply-weight-preview,
+    .global-settings-app .save-role-persona { font-size: 9px; }
+    .global-settings-app .current-persona-role { font-size: 8px; }
 
     .card-manager-kicker { font-size: 9px; }
     .card-manager-section-head strong { font-size: 10px; }
@@ -9438,6 +9506,12 @@ html[data-perf-mode="off"] #appScreen[data-widget-skin="glass"]{
     .global-settings-app .range-control output { font-size: 9px; }
     .global-settings-app .dashboard-setting-row select { min-height: 30px; font-size: 9px; border-radius: 8px; }
     .global-settings-app .setting-toggle { transform: scale(1.05); transform-origin: right center; }
+    /* v112 · 节奏/调度卡片触控高度 */
+    .global-settings-app .role-persona-grid input,
+    .global-settings-app .role-persona-grid select { min-height: 34px; }
+    .global-settings-app .reply-weight-grid input { min-height: 30px; }
+    .global-settings-app .rhythm-card .range-control { min-height: 32px; }
+    .global-settings-app .save-role-persona { min-height: 40px; }
 
     /* 字卡管理：可读文字提高，操作按钮统一为 32px 触控高度。 */
     .card-manager-kicker { font-size: 9px; }
@@ -10493,37 +10567,94 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         </section>
 
         <section class="dashboard-section" id="globalRhythm">
-          <div class="dashboard-section-head"><span>02</span><div><strong>节奏</strong><small>Reply Rhythm</small></div></div>
-          <article class="rhythm-card current-role-persona-card">
-            <div class="rhythm-card-head"><div><strong>全局回复节奏</strong><small>所有角色共用；字卡库有可用字卡时，按以下参数安排回复。</small></div><b class="setting-value-note">全局</b></div>
-            <div class="role-persona-grid global-role-grid">
-              <label><span>私聊单次最多回复</span><input id="globalReplyMaxReplies" type="number" min="1" max="5" step="1"><b>条</b></label>
-              <label><span>最短延迟</span><input id="globalReplyMinSeconds" type="number" min="1" max="3600" step="1"><b>秒</b></label>
-              <label><span>最长延迟</span><input id="globalReplyMaxSeconds" type="number" min="1" max="7200" step="1"><b>秒</b></label>
-              <label><span>群聊首轮参与人数</span><input id="globalGroupReplyMaxMembers" type="number" min="1" max="7" step="1"><b>人</b></label>
-              <label><span>群聊自主接话轮数</span><input id="globalGroupAutonomousRounds" type="number" min="0" max="5" step="1"><b>轮</b></label>
-              <label><span>群聊自主接话概率</span><input id="globalGroupAutonomousChance" type="number" min="0" max="100" step="1"><b>%</b></label>
-            </div>
-            <div class="dashboard-setting-row"><div><strong>换算成实际节奏</strong><small id="globalReplyRhythmHint">现在 ≈ 你发一条后 3 ~ 60 秒回你，一次最多 5 条。</small></div></div>
-            <div class="dashboard-setting-row"><div><strong>群聊至少一人回复</strong><small>关闭后，无成员通过各自回复概率时允许群聊保持沉默。</small></div><label class="setting-toggle"><input id="globalGroupForceReplyToggle" type="checkbox"><i></i></label></div>
-            <div class="global-role-weights"><span>各条数出现权重</span><small class="global-rhythm-help">填写相对权重即可，不必凑满 100；超出最多回复条数的档位不参与。</small><div><label>1<input id="globalReplyWeight1" type="number" min="0" max="1000" step="1"></label><label>2<input id="globalReplyWeight2" type="number" min="0" max="1000" step="1"></label><label>3<input id="globalReplyWeight3" type="number" min="0" max="1000" step="1"></label><label>4<input id="globalReplyWeight4" type="number" min="0" max="1000" step="1"></label><label>5<input id="globalReplyWeight5" type="number" min="0" max="1000" step="1"></label></div></div>
-            <button class="global-settings-action" type="button" onclick="saveGlobalReplyRhythm()"><span><strong>保存全局回复节奏</strong><small>保存后对所有聊天室生效</small></span><b>保存</b></button>
-          </article>
+          <div class="dashboard-section-head"><span>02</span><div><strong>节奏</strong><small>Rhythm</small></div></div>
+          <div class="rhythm-card-grid">
+            <article class="rhythm-card current-role-persona-card" id="globalRolePersonaCard">
+              <div class="rhythm-card-head"><div><strong>当前角色回复参数</strong><small>切换聊天室后自动读取该角色的真实人格参数</small></div><b class="current-persona-role" id="rolePersonaName">未选择角色</b><label class="setting-toggle"><input id="globalReplyRhythmEnabledToggle" type="checkbox" checked aria-label="允许所有角色自动回复"><i></i></label></div>
+              <div class="role-persona-grid">
+                <label class="wide"><span>回复判定 replyChance（未命中即直接已读不回）</span><input id="rolePersonaReplyChance" type="number" min="0" max="100" step="1" value="99"></label>
+              </div>
+              <p class="role-persona-help">人格直接沉默 = 100% − replyChance；开启「欲言又止与撤回」后，通过回复判定的轮次另有极小概率输入后取消。「一次回几条」和「多久回」属于全局节奏，在旁边的「全局回复节奏」里调。</p>
+              <button class="save-role-persona" id="saveRolePersonaBtn" type="button">保存当前角色回复参数</button>
+            </article>
+
+            <article class="rhythm-card current-role-persona-card">
+              <div class="rhythm-card-head"><div><strong>全局回复节奏</strong><small>所有角色共用；字卡库有可用字卡时，按以下参数安排回复。</small></div><b class="setting-value-note">全局</b></div>
+              <div class="role-persona-grid">
+                <label><span>私聊单次最多回复（条）</span><input id="globalReplyMaxReplies" type="number" min="1" max="5" step="1"></label>
+                <label><span>群聊首轮参与人数</span><input id="globalGroupReplyMaxMembers" type="number" min="1" max="7" step="1"></label>
+                <label><span>最短延迟（秒）</span><input id="globalReplyMinSeconds" type="number" min="1" max="3600" step="1"></label>
+                <label><span>最长延迟（秒）</span><input id="globalReplyMaxSeconds" type="number" min="1" max="7200" step="1"></label>
+                <label><span>群聊自主接话轮数</span><input id="globalGroupAutonomousRounds" type="number" min="0" max="5" step="1"></label>
+                <label><span>群聊自主接话概率（%）</span><input id="globalGroupAutonomousChance" type="number" min="0" max="100" step="1"></label>
+              </div>
+              <p class="role-persona-help" id="globalReplyRhythmHint">现在 ≈ 你发一条后 3 ~ 60 秒回你，一次最多 5 条。</p>
+              <div class="rhythm-card-option-row"><div><strong>群聊至少一人回复</strong><small>关闭后，无成员通过各自回复概率时允许群聊保持沉默。</small></div><label class="setting-toggle"><input id="globalGroupForceReplyToggle" type="checkbox"><i></i></label></div>
+              <div class="reply-weight-block">
+                <div class="reply-weight-head"><strong>各条数出现权重</strong><small>填相对权重即可，不必凑满 100；系统会自动归一化。超出「单次最多回复」的档位不参与。</small></div>
+                <div class="reply-weight-grid" id="globalReplyWeightGrid">
+                  <label><span>1 条</span><input id="globalReplyWeight1" type="number" min="0" max="1000" step="1"></label>
+                  <label><span>2 条</span><input id="globalReplyWeight2" type="number" min="0" max="1000" step="1"></label>
+                  <label><span>3 条</span><input id="globalReplyWeight3" type="number" min="0" max="1000" step="1"></label>
+                  <label><span>4 条</span><input id="globalReplyWeight4" type="number" min="0" max="1000" step="1"></label>
+                  <label><span>5 条</span><input id="globalReplyWeight5" type="number" min="0" max="1000" step="1"></label>
+                </div>
+                <p class="reply-weight-preview" id="globalReplyWeightPreview">实际分布：—</p>
+              </div>
+              <button class="save-role-persona" type="button" onclick="saveGlobalReplyRhythm()">保存全局回复节奏</button>
+            </article>
+          </div>
         </section>
 
         <section class="dashboard-section" id="globalScheduler">
           <div class="dashboard-section-head"><span>03</span><div><strong>主动事件调度</strong><small>Proactive Scheduler</small></div></div>
-          <div class="dashboard-setting-list">
-            <div class="dashboard-setting-row"><div><strong>主动事件</strong><small>默认开启，仅按照概率与时间随机触发。</small></div><b class="setting-value-note">默认开启</b></div>
-            <div class="dashboard-setting-row"><div><strong>主动发送消息</strong><small id="proactiveMessageRangeHint">最快 / 最慢（分）</small></div><span class="global-scheduler-pair"><input id="proactiveMessageMinSecondsInput" type="number" min="1" max="60" step="1"><i>分</i><input id="proactiveMessageMaxMinutesInput" type="number" min="1" max="1440"><i>分</i></span></div>
-            <div class="dashboard-setting-row"><div><strong>节奏口径</strong><small>「最快 / 最慢」是算全部梦角合起来，还是每位梦角各算一条。</small></div><div class="global-theme-options"><button class="global-theme-option" data-proactive-rhythm="combined" type="button">所有梦角合计</button><button class="global-theme-option" data-proactive-rhythm="perRole" type="button">每位梦角各自</button></div></div>
-            <div class="dashboard-setting-row"><div><strong>一轮说几句</strong><small>对方一次到点说 1 句，还是连发 1~N 句（连发时句与句之间是主动消息自己的小停顿，与「全局回复节奏」无关）。</small></div><div class="global-theme-options"><button class="global-theme-option" data-proactive-burst="off" type="button">只发 1 句</button><button class="global-theme-option" data-proactive-burst="on" type="button">连发 1~N 句</button></div></div>
-            <div class="dashboard-setting-row"><div><strong>主动来电</strong><small>最快 / 最慢（分）· 每次到期只有 1/4 概率真的打来</small></div><span class="global-scheduler-pair"><input id="proactiveContactMinMinutesInput" type="number" min="1" max="180"><i>分</i><input id="proactiveContactMaxMinutesInput" type="number" min="1" max="360"><i>分</i></span></div>
-            <div class="dashboard-setting-row"><div><strong>主动写信</strong><small>最短分钟 / 最长小时</small></div><span class="global-scheduler-pair"><input id="proactiveLetterMinMinutesInput" type="number" min="1" max="180"><i>分</i><input id="proactiveLetterMaxHoursInput" type="number" min=".5" max="72" step=".5"><i>时</i></span></div>
-            <div class="dashboard-setting-row"><div><strong>对方回信</strong><small>默认开启，只调节收到邮件后的等待时间</small></div><span class="global-scheduler-pair"><input id="letterReplyMinMinutesInput" type="number" min=".1" max="180" step=".1"><i>分</i><input id="letterReplyMaxHoursInput" type="number" min=".1" max="24" step=".1"><i>时</i></span></div>
-            <div class="dashboard-setting-row"><div><strong>主动发布朋友圈</strong><small>最短分钟 / 最长小时</small></div><span class="global-scheduler-pair"><input id="circlePostMinMinutesInput" type="number" min="1" max="180"><i>分</i><input id="circlePostMaxHoursInput" type="number" min=".5" max="72" step=".5"><i>时</i></span></div>
-            <div class="dashboard-setting-row"><div><strong>朋友圈访客</strong><small>最快访问分钟 / 最长等待小时</small></div><span class="global-scheduler-pair"><input id="circleVisitorMinMinutesInput" type="number" min="1" max="180"><i>分</i><input id="circleVisitorMaxHoursInput" type="number" min=".5" max="72" step=".5"><i>时</i></span></div>
-            <div class="dashboard-setting-row"><div><strong>回复朋友圈评论</strong><small>最短分钟 / 最长分钟</small></div><span class="global-scheduler-pair"><input id="circleCommentMinMinutesInput" type="number" min="0" max="180"><i>分</i><input id="circleCommentMaxMinutesInput" type="number" min="0" max="720"><i>分</i></span></div>
+          <div class="rhythm-card-grid">
+            <article class="rhythm-card" data-scheduler-card="message">
+              <div class="rhythm-card-head"><div><strong>主动发送消息</strong><small>从我最后一次发送 CHAT 消息后计算；3% 查岗 / 5% 画板 / 4% 红包 / 3% 拍一拍 / 85% 普通字卡。对方红包档位：72%≤¥1000、23%≤¥5000、5%≤¥20000。</small></div><label class="setting-toggle"><input id="proactiveMessageEnabledToggle" type="checkbox" checked aria-label="开启主动发送消息"><i></i></label></div>
+              <label class="range-control"><span>最快</span><input id="proactiveMessageMinSecondsRange" type="range" min="1" max="3600" step="1" data-unit="秒"><output></output></label>
+              <label class="range-control"><span>最慢</span><input id="proactiveMessageMaxMinutesRange" type="range" min="1" max="1440" step="1" data-unit="分钟"><output></output></label>
+              <p class="role-persona-help" id="proactiveMessageRangeHint">最快 / 最慢</p>
+              <div class="rhythm-card-options">
+                <div class="rhythm-card-option-row"><div><strong>节奏口径</strong><small>「最快 / 最慢」是算全部梦角合起来，还是每位梦角各算一条。</small></div><div class="global-theme-options"><button class="global-theme-option" data-proactive-rhythm="combined" type="button">所有梦角合计</button><button class="global-theme-option" data-proactive-rhythm="perRole" type="button">每位梦角各自</button></div></div>
+                <div class="rhythm-card-option-row"><div><strong>一轮说几句</strong><small>对方一次到点说 1 句，还是连发 1~N 句（连发时句与句之间是主动消息自己的小停顿，与「回复节奏」无关）。</small></div><div class="global-theme-options"><button class="global-theme-option" data-proactive-burst="off" type="button">只发 1 句</button><button class="global-theme-option" data-proactive-burst="on" type="button">连发 1~N 句</button></div></div>
+              </div>
+            </article>
+
+            <article class="rhythm-card" data-scheduler-card="contact">
+              <div class="rhythm-card-head"><div><strong>主动来电</strong><small>对方主动打语音 / 视频电话；每次到期只有 1/4 概率真的打来</small></div><label class="setting-toggle"><input id="proactiveContactEnabledToggle" type="checkbox" checked aria-label="开启主动来电"><i></i></label></div>
+              <label class="range-control"><span>最快</span><input id="proactiveContactMinMinutesRange" type="range" min="1" max="180" step="1" data-unit="分钟"><output></output></label>
+              <label class="range-control"><span>最慢</span><input id="proactiveContactMaxMinutesRange" type="range" min="1" max="360" step="1" data-unit="分钟"><output></output></label>
+            </article>
+
+            <article class="rhythm-card" data-scheduler-card="letter">
+              <div class="rhythm-card-head"><div><strong>主动写信</strong><small>对方主动向我寄送梦笺</small></div><label class="setting-toggle"><input id="proactiveLetterEnabledToggle" type="checkbox" checked aria-label="开启主动写信"><i></i></label></div>
+              <label class="range-control"><span>最短等待</span><input id="proactiveLetterMinMinutesRange" type="range" min="1" max="180" step="1" data-unit="分钟"><output></output></label>
+              <label class="range-control"><span>最长等待</span><input id="proactiveLetterMaxHoursRange" type="range" min="0.5" max="72" step="0.5" data-unit="小时"><output></output></label>
+            </article>
+
+            <article class="rhythm-card" data-scheduler-card="letterReply">
+              <div class="rhythm-card-head"><div><strong>对方回信</strong><small>收到梦笺后的回信速度</small></div><label class="setting-toggle"><input id="letterReplyEnabledToggle" type="checkbox" checked aria-label="开启对方回信"><i></i></label></div>
+              <label class="range-control"><span>最短等待</span><input id="letterReplyMinMinutesRange" type="range" min="1" max="180" step="1" data-unit="分钟"><output></output></label>
+              <label class="range-control"><span>最长等待</span><input id="letterReplyMaxHoursRange" type="range" min="0.5" max="24" step="0.5" data-unit="小时"><output></output></label>
+            </article>
+
+            <article class="rhythm-card" data-scheduler-card="circle">
+              <div class="rhythm-card-head"><div><strong>主动发布朋友圈</strong><small>对方发布 CIRCLE 动态</small></div><label class="setting-toggle"><input id="proactiveCircleEnabledToggle" type="checkbox" checked aria-label="开启主动发布朋友圈"><i></i></label></div>
+              <label class="range-control"><span>最短间隔</span><input id="circlePostMinMinutesRange" type="range" min="1" max="180" step="1" data-unit="分钟"><output></output></label>
+              <label class="range-control"><span>最长间隔</span><input id="circlePostMaxHoursRange" type="range" min="0.5" max="72" step="0.5" data-unit="小时"><output></output></label>
+            </article>
+
+            <article class="rhythm-card" data-scheduler-card="visitor">
+              <div class="rhythm-card-head"><div><strong>朋友圈访客</strong><small>角色会真实写入访客记录，可随机留下字卡留言</small></div><label class="setting-toggle"><input id="circleVisitorEnabledToggle" type="checkbox" checked aria-label="开启朋友圈访客"><i></i></label></div>
+              <label class="range-control"><span>最快访问</span><input id="circleVisitorMinMinutesRange" type="range" min="1" max="180" step="1" data-unit="分钟"><output></output></label>
+              <label class="range-control"><span>最慢访问</span><input id="circleVisitorMaxHoursRange" type="range" min="0.5" max="72" step="0.5" data-unit="小时"><output></output></label>
+            </article>
+
+            <article class="rhythm-card" data-scheduler-card="comment">
+              <div class="rhythm-card-head"><div><strong>回复朋友圈评论</strong><small>对方回复评论的等待区间</small></div><label class="setting-toggle"><input id="circleCommentReplyEnabledToggle" type="checkbox" checked aria-label="开启回复朋友圈评论"><i></i></label></div>
+              <label class="range-control"><span>最短间隔</span><input id="circleCommentMinMinutesRange" type="range" min="0" max="180" step="1" data-unit="分钟"><output></output></label>
+              <label class="range-control"><span>最长间隔</span><input id="circleCommentMaxMinutesRange" type="range" min="0" max="720" step="1" data-unit="分钟"><output></output></label>
+            </article>
           </div>
         </section>
 
@@ -16221,8 +16352,12 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
        keepDue=true 表示沿用已存的到期时间（重建定时器时用），不重新掷骰。 */
     function scheduleMailReply(letterId, keepDue) {
       window.clearTimeout(mailReplyTimers.get(letterId));
+      mailReplyTimers.delete(letterId);
       const original = mailLetters[letterId];
       if (!original || original.direction !== 'out' || original.replyResolved) return;
+      /* v112：设置页「对方回信」开关（blue 版 letterReplyEnabled）。
+         关掉后不再排新的回信；replyDueAt 保留，重新打开时由 restoreMailReplies 接着排。 */
+      if (getGlobalAppSettings().letterReplyEnabled === false) return;
       const replySettings = getGlobalAppSettings();
       const replyMinMs = Math.max(1000, Number(replySettings.letterReplyMinMinutes) * 60000 || 60000);
       const replyMaxMs = Math.max(replyMinMs, Number(replySettings.letterReplyMaxHours) * 3600000 || replyMinMs * 2);
@@ -16236,6 +16371,8 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       const timer = window.setTimeout(() => {
         const current = mailLetters[letterId];
         if (!current || current.replyResolved) return;
+        /* v112：到点这一刻开关已被关掉 → 不回这封信，定时器句柄清掉（任务本身保留）。 */
+        if (getGlobalAppSettings().letterReplyEnabled === false) { mailReplyTimers.delete(letterId); return; }
         const id = `mail-reply-${Date.now()}-${Math.random().toString(16).slice(2)}`;
         const role = findRoleForSharedContent(current.recipientHandle, current.recipient, current.colors)
           || ensureRoleRecord(current.recipientHandle || current.recipient, { name: current.recipient, initials: Array.from(current.recipient || '角')[0] || '角', color1: '#c58d68', color2: '#795548' });
@@ -17697,7 +17834,10 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
     }
 
     async function processCircleCommentTasks() {
-      if (circleCommentTaskProcessing) return; circleCommentTaskProcessing = true;
+      if (circleCommentTaskProcessing) return;
+      /* v112：设置页关掉了「回复朋友圈评论」—— 到点任务也不再执行（任务保留，重新开启后心跳会继续跑）。 */
+      try { if (getGlobalAppSettings().circleCommentReplyEnabled === false) return; } catch (_) {}
+      circleCommentTaskProcessing = true;
       try {
         loadCirclePosts(true);
         const dueRoles = loadCircleCommentTasks().filter(task => Number(task.dueAt) <= Date.now()).map(task => String(task.roleId));
@@ -18366,7 +18506,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
 
     function loadGlobalAppSettings() {
       if (globalAppSettings) return globalAppSettings;
-      const defaults = { theme: 'mono', glyphCardsEnabled: false, quoteReply: true, readReceipt: true, receiptStyle: 'icon', autonomyHesitationEnabled: true, readNoReplyEnabled: true, typingMimic: true, cardSentence: false, messageActionsEnabled: true, simulationEnabled: true, messageSoundEnabled: false, messageSoundSrc: '', messageSoundName: '', ringtoneEnabled: false, ringtoneSrc: '', ringtoneName: '', globalFontSource: '', globalFontName: '', auroraPalette: 'cream', backgroundNotification: false, inAppPopup: true, usageAnnouncementEnabled: true, systemNotificationEnabled: true, notificationAppBadgeEnabled: true, notificationOnlyBackground: false, notificationPreviewMode: 'full', notificationDndEnabled: false, notificationDndStart: '22:00', notificationDndEnd: '08:00', notificationSoundEnabled: true, notificationVibrateEnabled: true, notificationDndSummaryEnabled: true, notificationRequireInteraction: false, notificationStrongVibrate: false, backgroundKeepAlive: false, pushServiceEndpoint: '', pushVapidPublicKey: '', notificationServiceWorkerEnabled: true, fontScale: 100, desktopIconShape: 'rounded', desktopIconMaterial: 'glass', desktopThemeColor: '', desktopAccentColor: '', desktopThemeOpacity: 75, desktopThemeBlur: 12, desktopWallpaper: '', replyMaxReplies: 5, replyMinSeconds: 3, replyMaxSeconds: 60, replyWeights: [45,32,15,6,2], companionProactiveMinMinutes: 2, companionProactiveMaxMinutes: 8, companionReplyMinSeconds: 20, companionReplyMaxSeconds: 90, groupReplyMaxMembers: 3, groupForceReply: true, groupAutonomousRounds: 2, groupAutonomousChance: 45, schedulerEnabled: true, proactiveContactEnabled: true, proactiveContactMinMinutes: 15, proactiveContactMaxMinutes: 60, proactiveMessageEnabled: true, proactiveLetterEnabled: true, proactiveCircleEnabled: true, proactiveMessageMinSeconds: 300, proactiveMessageMaxMinutes: 36, proactiveMessageRhythm: 'combined', proactiveMessageBurst: false, proactiveLetterMinMinutes: 60, proactiveLetterMaxHours: 24, letterReplyMinMinutes: 1, letterReplyMaxHours: 2, circlePostMinMinutes: 30, circlePostMaxHours: 4, circleVisitorEnabled: true, circleVisitorMinMinutes: 30, circleVisitorMaxHours: 6, circleCommentReplyEnabled: true, circleCommentMinMinutes: 5, circleCommentMaxMinutes: 30, proactiveMinMinutes: 5, proactiveMaxMinutes: 30, proactiveGlyphcardEnabled: true, proactiveGlyphcardMinMinutes: 180, proactiveGlyphcardMaxHours: 9 };
+      const defaults = { theme: 'mono', glyphCardsEnabled: false, quoteReply: true, readReceipt: true, receiptStyle: 'icon', autonomyHesitationEnabled: true, readNoReplyEnabled: true, replyRhythmEnabled: true, typingMimic: true, cardSentence: false, messageActionsEnabled: true, simulationEnabled: true, messageSoundEnabled: false, messageSoundSrc: '', messageSoundName: '', ringtoneEnabled: false, ringtoneSrc: '', ringtoneName: '', globalFontSource: '', globalFontName: '', auroraPalette: 'cream', backgroundNotification: false, inAppPopup: true, usageAnnouncementEnabled: true, systemNotificationEnabled: true, notificationAppBadgeEnabled: true, notificationOnlyBackground: false, notificationPreviewMode: 'full', notificationDndEnabled: false, notificationDndStart: '22:00', notificationDndEnd: '08:00', notificationSoundEnabled: true, notificationVibrateEnabled: true, notificationDndSummaryEnabled: true, notificationRequireInteraction: false, notificationStrongVibrate: false, backgroundKeepAlive: false, pushServiceEndpoint: '', pushVapidPublicKey: '', notificationServiceWorkerEnabled: true, fontScale: 100, desktopIconShape: 'rounded', desktopIconMaterial: 'glass', desktopThemeColor: '', desktopAccentColor: '', desktopThemeOpacity: 75, desktopThemeBlur: 12, desktopWallpaper: '', replyMaxReplies: 5, replyMinSeconds: 3, replyMaxSeconds: 60, replyWeights: [45,32,15,6,2], companionProactiveMinMinutes: 2, companionProactiveMaxMinutes: 8, companionReplyMinSeconds: 20, companionReplyMaxSeconds: 90, groupReplyMaxMembers: 3, groupForceReply: true, groupAutonomousRounds: 2, groupAutonomousChance: 45, schedulerEnabled: true, proactiveContactEnabled: true, proactiveContactMinMinutes: 15, proactiveContactMaxMinutes: 60, proactiveMessageEnabled: true, proactiveLetterEnabled: true, proactiveCircleEnabled: true, proactiveMessageMinSeconds: 300, proactiveMessageMaxMinutes: 36, proactiveMessageRhythm: 'combined', proactiveMessageBurst: false, proactiveLetterMinMinutes: 60, proactiveLetterMaxHours: 24, letterReplyEnabled: true, letterReplyMinMinutes: 1, letterReplyMaxHours: 2, circlePostMinMinutes: 30, circlePostMaxHours: 4, circleVisitorEnabled: true, circleVisitorMinMinutes: 30, circleVisitorMaxHours: 6, circleCommentReplyEnabled: true, circleCommentMinMinutes: 5, circleCommentMaxMinutes: 30, proactiveMinMinutes: 5, proactiveMaxMinutes: 30, proactiveGlyphcardEnabled: true, proactiveGlyphcardMinMinutes: 180, proactiveGlyphcardMaxHours: 9 };
       const saved = readDreamJSON(GLOBAL_SETTINGS_KEY, {});
       globalAppSettings = { ...defaults, ...(saved && typeof saved === 'object' ? saved : {}) };
       globalAppSettings.theme = ['mono', 'fog-blue', 'aurora', 'custom'].includes(globalAppSettings.theme) ? globalAppSettings.theme : 'mono';
@@ -18449,12 +18589,16 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       globalAppSettings.replyWeights = Array.from({ length: 5 }, (_, index) => Math.max(0, Number(replyWeights[index]) || 0));
       if (!globalAppSettings.replyWeights.some(value => value > 0)) globalAppSettings.replyWeights = [45,32,15,6,2];
       globalAppSettings.schedulerEnabled = true;
-      globalAppSettings.proactiveContactEnabled = true;
+      /* v112：面板恢复 blue 版「每类主动事件一个开关」—— 开关值改为可持久（默认开），
+         不再每次读取强制抹回 true，否则开关拨了等于没拨（引擎 proactiveEventEnabled/心跳闸都读它）。 */
+      globalAppSettings.proactiveContactEnabled = globalAppSettings.proactiveContactEnabled !== false;
       globalAppSettings.proactiveContactMinMinutes = Math.max(1, Math.min(180, Number(globalAppSettings.proactiveContactMinMinutes) || 15));
       globalAppSettings.proactiveContactMaxMinutes = Math.max(globalAppSettings.proactiveContactMinMinutes, Math.min(360, Number(globalAppSettings.proactiveContactMaxMinutes) || 60));
-      globalAppSettings.proactiveMessageEnabled = true;
-      globalAppSettings.proactiveLetterEnabled = true;
-      globalAppSettings.proactiveCircleEnabled = true;
+      globalAppSettings.proactiveMessageEnabled = globalAppSettings.proactiveMessageEnabled !== false;
+      globalAppSettings.proactiveLetterEnabled = globalAppSettings.proactiveLetterEnabled !== false;
+      globalAppSettings.proactiveCircleEnabled = globalAppSettings.proactiveCircleEnabled !== false;
+      globalAppSettings.letterReplyEnabled = globalAppSettings.letterReplyEnabled !== false;
+      globalAppSettings.replyRhythmEnabled = globalAppSettings.replyRhythmEnabled !== false;
       globalAppSettings.proactiveGlyphcardEnabled = true;
       /* v111z9：默认从「1.5 小时～8 小时」抬到「3 小时～12 小时」。等于老默认值的存量
          数据（说明用户没自己调过）跟着升上来；自己改过的值原样保留。
@@ -18467,14 +18611,13 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         globalAppSettings.proactiveGlyphcardMaxHours = Math.max(1, Math.min(168, glyphMaxRaw > 0 ? ((glyphMaxRaw === 8 || glyphMaxRaw === 12) ? 9 : glyphMaxRaw) : 9));
       }
       normalizeSchedulerSettings(globalAppSettings);
-      /* v111j：老面板「主动发送消息」最快那一格标的是「秒」，按「分」填 5 会留下 5 秒。
-         新面板两格都是分钟、下面一格最小 1 分钟 —— 小于 60 秒的值再也填不出来，
-         属于老数据残留，这里直接抬到 1 分钟（幂等，每次读取都会兜底）。 */
-      if (Number(globalAppSettings.proactiveMessageMinSeconds) < 60) globalAppSettings.proactiveMessageMinSeconds = 60;
+      /* v112：撤掉 v111j 的「<60 秒强制抬到 1 分钟」。当时面板只让填分钟，小于 60 秒确实填不出来；
+         v112 面板恢复 blue 版「最快」秒级滑杆（1~3600 秒），1 秒起的值现在都是合法用户输入，
+         再抬就等于把用户刚拖的 5 秒改坏。normalizeSchedulerSettings 的 1~3600 夹紧已经兜底。 */
       /* v111j3：撤掉共用节奏的设置位（有就删掉，不留死字段） */
       delete globalAppSettings.proactiveMessageShared;
       globalAppSettings.circleVisitorEnabled = globalAppSettings.circleVisitorEnabled !== false;
-      globalAppSettings.circleCommentReplyEnabled = true;
+      globalAppSettings.circleCommentReplyEnabled = globalAppSettings.circleCommentReplyEnabled !== false;
       globalAppSettings.proactiveMinMinutes = Math.max(1, Math.min(180, Number(globalAppSettings.proactiveMinMinutes) || 5));
       globalAppSettings.proactiveMaxMinutes = Math.max(globalAppSettings.proactiveMinMinutes, Math.min(720, Number(globalAppSettings.proactiveMaxMinutes) || 30));
       /* v111h · 陪伴空间里的说话节奏（五个空间共用一组；在选择活动界面里改） */
@@ -19360,29 +19503,50 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       const fontUrl = document.getElementById('globalFontUrlInput');
       if (fontStatus) fontStatus.textContent = settings.globalFontSource ? `已启用：${settings.globalFontName || '自定义字体'} · 应用到全站` : '当前使用网站默认字体。';
       if (fontUrl) fontUrl.value = /^https?:\/\//i.test(settings.globalFontSource || '') ? settings.globalFontSource : '';
-      const schedulerValues = {
-        proactiveMessageMinSecondsInput: Math.max(1, Math.round(Number(settings.proactiveMessageMinSeconds) / 60)),   /* v111g：内部存秒，面板显示分 */
-        proactiveMessageMaxMinutesInput: settings.proactiveMessageMaxMinutes,
-        /* v111j11：这两格以前漏在回填表外 —— 打开面板/每次收笔重渲染后它们都会变空白，
-           看着就像「填了没存 / 数字跳没了」（值其实写进去了）。补上。 */
-        proactiveContactMinMinutesInput: settings.proactiveContactMinMinutes,
-        proactiveContactMaxMinutesInput: settings.proactiveContactMaxMinutes,
-        proactiveLetterMinMinutesInput: settings.proactiveLetterMinMinutes,
-        proactiveLetterMaxHoursInput: settings.proactiveLetterMaxHours,
-        letterReplyMinMinutesInput: settings.letterReplyMinMinutes,
-        letterReplyMaxHoursInput: settings.letterReplyMaxHours,
-        circlePostMinMinutesInput: settings.circlePostMinMinutes,
-        circlePostMaxHoursInput: settings.circlePostMaxHours,
-        circleVisitorMinMinutesInput: settings.circleVisitorMinMinutes,
-        circleVisitorMaxHoursInput: settings.circleVisitorMaxHours,
-        circleCommentMinMinutesInput: settings.circleCommentMinMinutes,
-        circleCommentMaxMinutesInput: settings.circleCommentMaxMinutes
+      /* v112：blue 版滑杆回填 —— 读数气泡跟着 data-unit 自动换算（满 60 秒写分钟，不到 1 小时写分钟…），
+         不再做「内部存秒、面板显示分」的换算（v111g 那套换算就是「填 3 跳 180」的来源，现在滑杆直接存秒）。 */
+      const schedulerSliderValues = {
+        proactiveMessageMinSecondsRange: settings.proactiveMessageMinSeconds,
+        proactiveMessageMaxMinutesRange: settings.proactiveMessageMaxMinutes,
+        proactiveContactMinMinutesRange: settings.proactiveContactMinMinutes,
+        proactiveContactMaxMinutesRange: settings.proactiveContactMaxMinutes,
+        proactiveLetterMinMinutesRange: settings.proactiveLetterMinMinutes,
+        proactiveLetterMaxHoursRange: settings.proactiveLetterMaxHours,
+        letterReplyMinMinutesRange: settings.letterReplyMinMinutes,
+        letterReplyMaxHoursRange: settings.letterReplyMaxHours,
+        circlePostMinMinutesRange: settings.circlePostMinMinutes,
+        circlePostMaxHoursRange: settings.circlePostMaxHours,
+        circleVisitorMinMinutesRange: settings.circleVisitorMinMinutes,
+        circleVisitorMaxHoursRange: settings.circleVisitorMaxHours,
+        circleCommentMinMinutesRange: settings.circleCommentMinMinutes,
+        circleCommentMaxMinutesRange: settings.circleCommentMaxMinutes
       };
-      Object.entries(schedulerValues).forEach(([id, value]) => { const input = document.getElementById(id); if (input) input.value = value; });
+      Object.entries(schedulerSliderValues).forEach(([id, value]) => {
+        const input = document.getElementById(id);
+        if (!input) return;
+        input.value = value;
+        updateGlobalRangeOutput(input);
+      });
+      /* v112：每类主动事件的开关（blue 版卡头开关）。关掉的事件卡，滑杆与附加选项一并灰掉。 */
+      const schedulerToggleValues = {
+        globalReplyRhythmEnabledToggle: settings.replyRhythmEnabled !== false,
+        proactiveMessageEnabledToggle: settings.proactiveMessageEnabled !== false,
+        proactiveContactEnabledToggle: settings.proactiveContactEnabled !== false,
+        proactiveLetterEnabledToggle: settings.proactiveLetterEnabled !== false,
+        letterReplyEnabledToggle: settings.letterReplyEnabled !== false,
+        proactiveCircleEnabledToggle: settings.proactiveCircleEnabled !== false,
+        circleVisitorEnabledToggle: settings.circleVisitorEnabled !== false,
+        circleCommentReplyEnabledToggle: settings.circleCommentReplyEnabled !== false
+      };
+      Object.entries(schedulerToggleValues).forEach(([id, on]) => { const toggle = document.getElementById(id); if (toggle) toggle.checked = on; });
+      document.querySelectorAll('#globalScheduler .rhythm-card[data-scheduler-card]').forEach(card => {
+        const toggle = card.querySelector('.rhythm-card-head .setting-toggle input');
+        if (toggle) card.classList.toggle('disabled', !toggle.checked);
+      });
       /* v111g：把换算后的人话写在行内，避免再把「分」填进「秒」框 */
       const rangeHint = document.getElementById('proactiveMessageRangeHint');
       if (rangeHint) {
-        const mins = Math.max(1, Math.round(Number(settings.proactiveMessageMinSeconds) / 60));
+        const secs = Math.max(1, Number(settings.proactiveMessageMinSeconds) || 300);
         const maxM = Math.max(1, Number(settings.proactiveMessageMaxMinutes) || 36);
         const human = hours => hours >= 1 ? `${Math.round(hours * 10) / 10} 小时` : `${Math.round(hours * 60)} 分钟`;
         /* v111j3：主动消息「每个梦角各算一条」—— 把这件事和「一次几句」
@@ -19413,11 +19577,12 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         /* v111z74：把两套节奏的区别、以及「你一发消息就重新计时」写在明面上。 */
         const quietNote = combinedMode ? '；你一发消息，倒计时就重新开始' : '';
         rangeHint.textContent = (combinedMode
-          ? `最快 / 最慢（分）· 所有梦角合起来：每 ${human(mins / 60)} ~ ${human(maxM / 60)} 才会有一条主动消息${turnInfo}`
-          : `最快 / 最慢（分）· 现在 ≈ 每位梦角各 ${human(mins / 60)} ~ ${human(maxM / 60)}来一条`)
+          ? `最快 / 最慢 · 所有梦角合起来：每 ${human(secs / 3600)} ~ ${human(maxM / 60)} 才会有一条主动消息${turnInfo}`
+          : `最快 / 最慢 · 现在 ≈ 每位梦角各 ${human(secs / 3600)} ~ ${human(maxM / 60)}来一条`)
           + `（一轮${burstOn ? `按「回复节奏」的条数权重说 1~${burstMax} 句` : '只说 1 句'}）${combined}${quietNote}`;
       }
       renderGlobalReplyRhythm();
+      renderGlobalRolePersonaPanel();
       applyGlobalSettingsFilter();
       lucide.createIcons();
     }
@@ -19441,7 +19606,8 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       });
       /* v111j：把三个数换算成人话。很多人以为「一次回复 = 一条」，
          其实条数是按下面的权重抽的（默认最多 5 条），且每条之间也等这个延迟 ——
-         这是「设了 5~10 分，却像一直在来消息」最容易被忽略的一处。 */
+         这是「设了 5~10 分，却像一直在来消息」最容易被忽略的一处。
+         v112：权重分布不再拼在这句话后面，统一由独立气泡（blue 版 reply-weight-preview）展示。 */
       const replyHint = document.getElementById('globalReplyRhythmHint');
       if (replyHint) {
         const maxN = Math.max(1, Math.min(5, Number(settings.replyMaxReplies) || 5));
@@ -19449,30 +19615,91 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         const rMax = Math.max(rMin, Number(settings.replyMaxSeconds) || 60);
         const span = (a, b, unit) => a === b ? `${a} ${unit}` : `${a} ~ ${b} ${unit}`;
         replyHint.textContent = `现在 ≈ 你发一条后 ${span(rMin, rMax, '秒')}回你，一次最多 ${maxN} 条`
-          + (maxN > 1 ? `（回多条时，每条之间也按这个延迟，不是一秒一条）` : '（一次只回一条）')
-          + replyCountPreviewText();
+          + (maxN > 1 ? `（回多条时，每条之间也按这个延迟，不是一秒一条）` : '（一次只回一条）');
       }
-      /* v111z42：把「按上面这些数，对方每次回复会说几条」直接算给你看。
-         为什么加：把 2、3 档权重拉满、但「私聊单次最多回复」还是 1 时，
-         那些权重**根本不参与**（引擎里是先按最多回复截断再抽），面板上却看不出区别 ——
-         这一行会把它摆到明面上。引擎逻辑没动。 */
-      function replyCountPreviewText() {
-        const boxNumber = (id, fallback) => {
-          const el = document.getElementById(id);
-          const raw = el && String(el.value).trim() !== '' ? Number(el.value) : NaN;
-          return Number.isFinite(raw) ? raw : fallback;
-        };
-        const settings = loadGlobalAppSettings();
-        const savedWeights = settings.replyWeights || [45,32,15,6,2];
-        const maxN = Math.max(1, Math.min(5, Math.round(boxNumber('globalReplyMaxReplies', settings.replyMaxReplies ?? 5))));
-        const typed = [1,2,3,4,5].map(index => Math.max(0, boxNumber(`globalReplyWeight${index}`, savedWeights[index - 1] ?? 0)));
-        const { weights } = roleReplyCountWeights(maxN, typed);
-        const total = weights.reduce((sum, value) => sum + value, 0) || 1;
-        const parts = weights.map((value, index) => `${index + 1} 条 ${Math.round(value / total * 100)}%`);
-        const cutOff = typed.slice(maxN).filter(value => value > 0).length;
-        return `；按现在的权重：${parts.join(' · ')}`
-          + (cutOff ? `。⚠ 「私聊单次最多回复」是 ${maxN}，第 ${maxN + 1} 档往后的权重不参与 —— 想让「2~3 条」真的生效，把这一格改成 3 或更大` : '');
-      }
+      updateGlobalReplyWeightPreview();
+    }
+
+    /* v111z42：把「按上面这些数，对方每次回复会说几条」直接算给你看。
+       为什么加：把 2、3 档权重拉满、但「私聊单次最多回复」还是 1 时，
+       那些权重**根本不参与**（引擎里是先按最多回复截断再抽），面板上却看不出区别 ——
+       这一行会把它摆到明面上。引擎逻辑没动。
+       v112：独立成全局函数（blue 版更新时机：改权重/改最多回复时即时刷新 + 超出的档位灰掉）。 */
+    function updateGlobalReplyWeightPreview() {
+      const preview = document.getElementById('globalReplyWeightPreview');
+      const boxNumber = (id, fallback) => {
+        const el = document.getElementById(id);
+        const raw = el && String(el.value).trim() !== '' ? Number(el.value) : NaN;
+        return Number.isFinite(raw) ? raw : fallback;
+      };
+      const settings = loadGlobalAppSettings();
+      const savedWeights = settings.replyWeights || [45,32,15,6,2];
+      const maxN = Math.max(1, Math.min(5, Math.round(boxNumber('globalReplyMaxReplies', settings.replyMaxReplies ?? 5))));
+      const typed = [1,2,3,4,5].map(index => Math.max(0, boxNumber(`globalReplyWeight${index}`, savedWeights[index - 1] ?? 0)));
+      /* blue 版交互：超出「单次最多回复」的档位直接灰显，一眼看出不参与 */
+      [1,2,3,4,5].forEach(index => {
+        const weightInput = document.getElementById(`globalReplyWeight${index}`);
+        weightInput?.closest('label')?.classList.toggle('is-disabled', index > maxN);
+      });
+      if (!preview) return;
+      const { weights } = roleReplyCountWeights(maxN, typed);
+      const total = weights.reduce((sum, value) => sum + value, 0);
+      if (total <= 0) { preview.textContent = '实际分布：权重全为 0，将回落到默认分布'; return; }
+      const parts = weights.map((value, index) => `${index + 1} 条 ${Math.round(value / total * 100)}%`);
+      const average = weights.reduce((sum, value, index) => sum + (index + 1) * value, 0) / total;
+      const cutOff = typed.slice(maxN).filter(value => value > 0).length;
+      preview.textContent = `实际分布：${parts.join(' · ')}　平均 ${average.toFixed(2)} 条`
+        + (cutOff ? `。⚠ 「私聊单次最多回复」是 ${maxN}，第 ${maxN + 1} 档往后的权重不参与 —— 想让「2~3 条」真的生效，把这一格改成 ${Math.min(5, maxN + 1) === maxN ? maxN : maxN + 1} 或更大` : '');
+    }
+
+    /* ═══ v112 · 当前角色回复参数卡（blue 版 persona 卡） ═══
+       引擎里真正按角色生效的是 replyChance（已读不回判定、群聊接话判定都读它）；
+       延迟/条数/权重在 v111 起就是全局的，面板上不摆按角色的死字段。 */
+    function getPersonaContextRole() {
+      const handle = String(activeChatHandle || currentPartnerHandle || '').trim();
+      if (!handle || typeof getRoleRecord !== 'function') return null;
+      try { return getRoleRecord(handle); } catch (_) { return null; }
+    }
+
+    function renderGlobalRolePersonaPanel() {
+      const card = document.getElementById('globalRolePersonaCard');
+      if (!card) return;
+      const badge = document.getElementById('rolePersonaName');
+      const chanceInput = document.getElementById('rolePersonaReplyChance');
+      const saveButton = document.getElementById('saveRolePersonaBtn');
+      let role = null;
+      try { role = getPersonaContextRole(); } catch (_) {}
+      if (badge) badge.textContent = role ? `${getRoleDisplayNameForApp(role)}` : '未选择角色';
+      const chance = Math.max(0, Math.min(100, Number(role?.replyChance ?? 99)));
+      if (chanceInput) { chanceInput.disabled = !role; chanceInput.value = String(chance); }
+      if (saveButton) saveButton.disabled = !role;
+      card.classList.toggle('no-role', !role);
+    }
+
+    function saveGlobalRolePersona() {
+      const role = getPersonaContextRole();
+      if (!role) { showGlobalSettingsToast('先进一个聊天室，再来调这位梦角的参数'); return; }
+      const chanceInput = document.getElementById('rolePersonaReplyChance');
+      const chance = Number(chanceInput?.value);
+      role.replyChance = Math.max(0, Math.min(100, Number.isFinite(chance) ? Math.round(chance) : 99));
+      try { persistRoleRegistry(); } catch (_) {}
+      renderGlobalRolePersonaPanel();
+      showGlobalSettingsToast(`${getRoleDisplayNameForApp(role)} 的回复参数已保存`);
+    }
+
+    /* v112 · 滑杆读数气泡（blue 版 updateRangeOutput）：单位随数值自动换算，
+       满 60 秒显示分钟、不到 1 小时显示分钟、不到 1 分钟显示秒。 */
+    function updateGlobalRangeOutput(input) {
+      if (!input) return;
+      const output = input.closest('.range-control')?.querySelector('output');
+      if (!output) return;
+      const value = Number(input.value);
+      const unit = input.dataset.unit || '';
+      if (!Number.isFinite(value)) { output.textContent = ''; return; }
+      if (unit === '小时' && value < 1) output.textContent = `${Math.round(value * 60)} 分钟`;
+      else if (unit === '分钟' && value < 1) output.textContent = `${Number((value * 60).toFixed(1))} 秒`;
+      else if (unit === '秒' && value >= 60) output.textContent = `${Number((value / 60).toFixed(1))} 分钟`;
+      else output.textContent = `${input.value} ${unit}`.trim();
     }
 
     function saveGlobalReplyRhythm() {
@@ -20263,28 +20490,31 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       app.querySelectorAll('[data-proactive-burst]').forEach(button => button.addEventListener('click', () => setProactiveMessageBurst(button.dataset.proactiveBurst)));
       document.querySelectorAll('[data-aurora-palette]').forEach(button => button.addEventListener('click', () => setAuroraPalette(button.dataset.auroraPalette)));
       document.getElementById('globalMessageActionsToggle')?.addEventListener('change', event => { loadGlobalAppSettings().messageActionsEnabled = event.target.checked; persistGlobalAppSettings(); showGlobalSettingsToast(event.target.checked ? '已开启消息操作菜单' : '已关闭消息操作菜单'); });
-      const schedulerInputs = {
-        proactiveMessageMinSecondsInput: 'proactiveMessageMinSeconds', proactiveMessageMaxMinutesInput: 'proactiveMessageMaxMinutes',
-        proactiveContactMinMinutesInput: 'proactiveContactMinMinutes', proactiveContactMaxMinutesInput: 'proactiveContactMaxMinutes',
-        proactiveLetterMinMinutesInput: 'proactiveLetterMinMinutes', proactiveLetterMaxHoursInput: 'proactiveLetterMaxHours',
-        letterReplyMinMinutesInput: 'letterReplyMinMinutes', letterReplyMaxHoursInput: 'letterReplyMaxHours',
-        circlePostMinMinutesInput: 'circlePostMinMinutes', circlePostMaxHoursInput: 'circlePostMaxHours',
-        circleVisitorMinMinutesInput: 'circleVisitorMinMinutes', circleVisitorMaxHoursInput: 'circleVisitorMaxHours',
-        circleCommentMinMinutesInput: 'circleCommentMinMinutes', circleCommentMaxMinutesInput: 'circleCommentMaxMinutes'
+      /* v112 · blue 版滑杆：值直接就是存储值（秒/分/小时），不再有「面板分钟⇄内部秒」的换算
+         （v111g/v111z43 那套换算是「填 3 跳 180」的来源，随数字框一起退役）。
+         沿用 v105 的双监听 + 防抖 + 离页兜底：拖动途中只刷读数气泡、防抖 420ms 落盘，
+         松手 change 那次把夹紧结果回填并重渲染（跨 min/max 联动在 normalize 里完成）。 */
+      const schedulerRanges = {
+        proactiveMessageMinSecondsRange: 'proactiveMessageMinSeconds',
+        proactiveMessageMaxMinutesRange: 'proactiveMessageMaxMinutes',
+        proactiveContactMinMinutesRange: 'proactiveContactMinMinutes',
+        proactiveContactMaxMinutesRange: 'proactiveContactMaxMinutes',
+        proactiveLetterMinMinutesRange: 'proactiveLetterMinMinutes',
+        proactiveLetterMaxHoursRange: 'proactiveLetterMaxHours',
+        letterReplyMinMinutesRange: 'letterReplyMinMinutes',
+        letterReplyMaxHoursRange: 'letterReplyMaxHours',
+        circlePostMinMinutesRange: 'circlePostMinMinutes',
+        circlePostMaxHoursRange: 'circlePostMaxHours',
+        circleVisitorMinMinutesRange: 'circleVisitorMinMinutes',
+        circleVisitorMaxHoursRange: 'circleVisitorMaxHours',
+        circleCommentMinMinutesRange: 'circleCommentMinMinutes',
+        circleCommentMaxMinutesRange: 'circleCommentMaxMinutes'
       };
-      /* ⚠ v105：原本只监听 change —— 而 number 输入框的 change 只在「失焦 / 按回车」时才触发。
-         手机上改完直接切走或下拉刷新（不点别处 = 不失焦），输入框显示的是新值，
-         设置里却从没写进去，刷新后就「恢复原状」。实测复现：DOM=88 而内存仍是 300。
-         改成 input + change 双监听。input 要防抖，否则打「77」时先按下的「7」会被立刻
-         clamp 成 7；也不能在 input 里调 renderGlobalSettings()，那会回写 value 把光标顶掉。 */
       const schedulerSaveTimers = new Map();
       const commitSchedulerValue = (id, key, rawValue, fromInput) => {
         const settings = loadGlobalAppSettings();
-        /* v111g：「主动发送消息」的最快一格在面板上填的是分钟，内部仍按秒存（1~60 分）。
-           其余各行本来就是分钟/小时，原样。 */
-        const minuteInput = id === 'proactiveMessageMinSecondsInput';
-        const next = minuteInput ? Math.round(Number(rawValue) * 60) : Number(rawValue);
-        if (rawValue === '' || !Number.isFinite(next)) return;   // 清空中途不保存，等失焦兜底
+        const next = Number(rawValue);
+        if (rawValue === '' || !Number.isFinite(next)) return;
         if (settings[key] === next) return;
         settings[key] = next;
         persistGlobalAppSettings();
@@ -20292,25 +20522,29 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         /* v111g：改完节奏，已排好的时间戳跟着重排 —— 否则调慢了也会按旧节奏再发一条，
            用户看到的就是「设了没用」。 */
         rebaseProactiveTimestamps(SCHEDULER_KEY_TYPES[key]);
-        /* 正在打字时不整页重渲染：只在失焦/回车那次把 clamp 后的结果回填。
-           ⚠ 必须回填 —— 超出上下限时存的是夹紧值，输入框却还显示原数（实测填 99999
-           存 1440 但框里仍是 99999），看起来就像「设了没生效」。 */
+        /* 回信节奏改动：已寄出、还没回的信按新值重排（与 saveGlobalReplyRhythm 同款处理） */
+        if (/^letterReply/.test(key)) {
+          try {
+            if (typeof scheduleMailReply === 'function' && typeof mailLetters === 'object') {
+              Object.values(mailLetters).filter(letter => letter && letter.direction === 'out' && !letter.replyResolved)
+                .forEach(letter => scheduleMailReply(letter.id, false));
+            }
+          } catch (_) { }
+        }
+        /* 松手那次把夹紧后的值回填给滑杆 + 气泡（中间联动：normalize 会把 max 抬到 ≥ min） */
         if (!fromInput) {
           renderGlobalSettings();
           const input = document.getElementById(id);
-          const clamped = Number(loadGlobalAppSettings()[key]) || 0;
-          /* v111z43：回填必须换算回「面板单位」。最快那一格面板填的是分、内部存的是秒，
-             原来把秒数直接写回框里 —— 用户刚填 3、跳到下一格，就看见它变成「180」，
-             看上去像设置被改坏了（其实存的是 180 秒 = 3 分钟）。 */
-          const shown = minuteInput ? Math.max(1, Math.round(clamped / 60)) : clamped;
-          if (input && Number(input.value) !== Number(shown)) input.value = shown;
+          const clamped = Number(loadGlobalAppSettings()[key]);
+          if (input && Number.isFinite(clamped) && Number(input.value) !== clamped) { input.value = clamped; updateGlobalRangeOutput(input); }
         }
         showGlobalSettingsToast('节奏参数已更新');
       };
-      Object.entries(schedulerInputs).forEach(([id, key]) => {
+      Object.entries(schedulerRanges).forEach(([id, key]) => {
         const input = document.getElementById(id);
         if (!input) return;
         input.addEventListener('input', event => {
+          updateGlobalRangeOutput(event.target);           /* 读数气泡跟着拖，blue 版手感 */
           const value = event.target.value;
           window.clearTimeout(schedulerSaveTimers.get(id));
           schedulerSaveTimers.set(id, window.setTimeout(() => commitSchedulerValue(id, key, value, true), 420));
@@ -20326,12 +20560,55 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         schedulerSaveTimers.forEach((timer, id) => {
           window.clearTimeout(timer);
           const input = document.getElementById(id);
-          if (input) commitSchedulerValue(id, schedulerInputs[id], input.value, true);
+          if (input) commitSchedulerValue(id, schedulerRanges[id], input.value, true);
         });
         schedulerSaveTimers.clear();
       };
       document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushSchedulerPending(); });
       window.addEventListener('pagehide', flushSchedulerPending);
+
+      /* ═══ v112 · 卡头开关（blue 版）：每类主动事件一个开关，拨了立即生效 ═══ */
+      const schedulerToggles = {
+        globalReplyRhythmEnabledToggle: { key: 'replyRhythmEnabled', label: '自动回复' },
+        proactiveMessageEnabledToggle: { key: 'proactiveMessageEnabled', type: 'message', label: '主动发送消息' },
+        proactiveContactEnabledToggle: { key: 'proactiveContactEnabled', type: 'contact', label: '主动来电' },
+        proactiveLetterEnabledToggle: { key: 'proactiveLetterEnabled', type: 'letter', label: '主动写信' },
+        letterReplyEnabledToggle: { key: 'letterReplyEnabled', label: '对方回信' },
+        proactiveCircleEnabledToggle: { key: 'proactiveCircleEnabled', type: 'circle', label: '主动发布朋友圈' },
+        circleVisitorEnabledToggle: { key: 'circleVisitorEnabled', type: 'visitor', label: '朋友圈访客' },
+        circleCommentReplyEnabledToggle: { key: 'circleCommentReplyEnabled', label: '回复朋友圈评论' }
+      };
+      Object.entries(schedulerToggles).forEach(([id, meta]) => {
+        const toggle = document.getElementById(id);
+        if (!toggle) return;
+        toggle.addEventListener('change', () => {
+          const settings = loadGlobalAppSettings();
+          settings[meta.key] = toggle.checked;
+          persistGlobalAppSettings();
+          /* 关掉：心跳的 proactiveEventEnabled 闸会跳过它；打开：交给心跳首排，并把已排时间戳重排 */
+          if (meta.type) {
+            startProactiveHeartbeat();
+            rebaseProactiveTimestamps(meta.type);
+          }
+          if (meta.key === 'letterReplyEnabled') {
+            try {
+              if (!toggle.checked) {
+                /* 停掉所有在等的回信定时器；replyDueAt 保留，重新打开时 restoreMailReplies 接着排。 */
+                mailReplyTimers.forEach(timer => window.clearTimeout(timer));
+                mailReplyTimers.clear();
+              } else if (typeof restoreMailReplies === 'function') restoreMailReplies();
+            } catch (_) { }
+          }
+          renderGlobalSettings();
+          showGlobalSettingsToast(`${meta.label}已${toggle.checked ? '开启' : '关闭'}`);
+        });
+      });
+      /* v112 · 当前角色回复参数卡 */
+      document.getElementById('saveRolePersonaBtn')?.addEventListener('click', saveGlobalRolePersona);
+      document.getElementById('rolePersonaReplyChance')?.addEventListener('change', event => {
+        const value = Number(event.target.value);
+        event.target.value = String(Math.max(0, Math.min(100, Number.isFinite(value) ? Math.round(value) : 99)));
+      });
       /* ── v111j10 · 全局回复节奏（02 节奏）：从「必须点保存」改成边打边存 ──
          ⚠ 为什么改：这里原来只有「保存全局回复节奏」那一个按钮才落盘。
          手机上改完直接下拉刷新 / 切走（不点按钮）= 白改，回来还是旧值 ——
@@ -29965,6 +30242,9 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
 
     function scheduleRoleReplies(body, typing, role, resume = false, options = {}) {
       // 回复计时器与聊天室可见性解耦：退出线程或 CHAT 后仍继续，到点后写入该联系人的待收队列。
+      /* v112：设置页「允许所有角色自动回复」总开关（blue 版 replyRhythmEnabled）。
+         关闭后不再排新的自动回复；手动点「继续」(manualContinue) 是用户自己的动作，不受这个开关管。 */
+      try { if (!options.manualContinue && getGlobalAppSettings().replyRhythmEnabled === false) return; } catch (_) {}
       if (!role || isRoleTemporarilyAway(role) || !getGlobalAppSettings().simulationEnabled) return;
       if (!body) body = document.getElementById('chatThreadBody');
       if (!typing) typing = document.getElementById('chatTyping');
@@ -38811,6 +39091,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
   function scheduleGroupReplies(groupId, triggerText, batchId){
     // V2 初始化后旧实时调度器永久让路；仅在 V2 未加载时作为兼容兜底。
     if (window.GroupChatV2) return;
+    try { if (typeof getGlobalAppSettings === 'function' && getGlobalAppSettings().replyRhythmEnabled === false) return; } catch (_) {}
     const group = getGroup(groupId);
     if(!group || !group.members || !group.members.length) return;
     const body = document.getElementById('chatThreadBody');
@@ -40309,6 +40590,8 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
   }
 
   function scheduleGroupReplyTasks(triggerMessage) {
+    /* v112：「允许所有角色自动回复」总开关关闭时，群聊也不再自动接话。 */
+    try { if (typeof getGlobalAppSettings === 'function' && getGlobalAppSettings().replyRhythmEnabled === false) return; } catch (_) {}
     const group = getGroupRecord(triggerMessage.groupId);
     if (!group?.members?.length || (typeof getGlobalAppSettings === 'function' && !getGlobalAppSettings().simulationEnabled)) return;
     const availableMembers=group.members.filter(handle=>!isRoleTemporarilyAway(handle));
