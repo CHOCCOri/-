@@ -13,9 +13,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Möbius">
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png?v=v115">
-  <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon-180.png?v=v115">
-  <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png?v=v115">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png?v=v116">
+  <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon-180.png?v=v116">
+  <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png?v=v116">
   <!-- 填写后端 Web Push 配置后，页面关闭或系统锁屏时也可由推送服务器唤醒 SW。 -->
   <meta name="dream-push-vapid-public-key" content="">
   <meta name="dream-push-subscribe-endpoint" content="">
@@ -9201,7 +9201,10 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
 /* ② 撕边 / 锯齿 / 和纸胶带 / 票根齿孔：全删 */
 #appScreen[data-widget-skin="glass"] .draggable-card :is(.frame-3x4,.frame-1x1){
   clip-path:none !important; -webkit-mask:none !important; mask:none !important; filter:none !important;
-  border-radius:var(--wg-r-sm) !important; background:rgba(255,255,255,.55) !important;
+  /* v116：「玻璃材质没法传图」根因 —— 这里 background 简写 + !important 会把刚上传的
+     内联 backgroundImage 整锅顶掉（图其实传上去了，只是被雾面盖住看不见）。
+     现在：雾面只留背景色；classic 的图片底图用普通 image:none 压（优先级更高、但不压内联）。 */
+  border-radius:var(--wg-r-sm) !important; background-image:none; background-color:rgba(255,255,255,.55) !important;
   display:flex !important; flex-direction:column; gap:7px; align-items:center; justify-content:center;
 }
 #appScreen[data-widget-skin="glass"] .draggable-card :is(.frame-1x1,.frame-3x4):has(.wg-empty-note){
@@ -9236,7 +9239,8 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
   background:rgba(255,255,255,.72) !important; border-color:color-mix(in srgb, var(--wg-accent) 24%, transparent) !important;
 }
 #appScreen[data-widget-skin="glass"] .draggable-card .clear-specimen-icon{
-  color:var(--wg-accent) !important; border-color:color-mix(in srgb, var(--wg-accent) 30%, transparent) !important; background:#fff !important;
+  color:var(--wg-accent) !important; border-color:color-mix(in srgb, var(--wg-accent) 30%, transparent) !important;
+  background-image:none; background-color:#fff !important;   /* v116：同上，标本框传图后要让内联图显出来 */
 }
 #appScreen[data-widget-skin="glass"] .draggable-card .paper-pocket-top{ background:color-mix(in srgb, var(--wg-accent) 16%, rgba(255,255,255,.5)) !important; }
 #appScreen[data-widget-skin="glass"] .draggable-card .paper-pocket-card{ background:rgba(255,255,255,.88) !important; border:1px solid rgba(255,255,255,.9) !important; }
@@ -9302,8 +9306,12 @@ html[data-perf-mode="off"] #appScreen[data-widget-skin="glass"]{
 }
 #appScreen[data-widget-skin="glass"] .draggable-card .photoism-grid-4{ gap:6px !important; }
 #appScreen[data-widget-skin="glass"] .draggable-card .photoism-item{
+  border-radius:11px !important;
+  background-image:none; background-color:color-mix(in srgb, var(--wg-accent) 6%, rgba(255,255,255,.45)) !important;   /* v116：四格传图后内联图盖过雾面色 */
+}
+/* v116：虚线位只是「还在等图」的占位 cue —— 有图了就收起来，不再框住照片 */
+#appScreen[data-widget-skin="glass"] .draggable-card .photoism-item:has(.wg-empty-note){
   border:1.5px dashed color-mix(in srgb, var(--wg-accent) 34%, transparent) !important;
-  border-radius:11px !important; background:color-mix(in srgb, var(--wg-accent) 6%, rgba(255,255,255,.45)) !important;
 }
 #appScreen[data-widget-skin="glass"] .draggable-card .frame-1x1,
 #appScreen[data-widget-skin="glass"] .draggable-card .frame-3x4{ box-shadow:inset 0 1px 0 rgba(255,255,255,.85); }
@@ -11659,7 +11667,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
     const DESKTOP_WIDGET_MEDIA_USAGE_KEY = 'dream-messenger:desktop-widget-media-usage:v2';
     const DESKTOP_GRID_SIZE = 8;
     const DESKTOP_LAYOUT_COLUMNS = 24;
-    const PROTECTED_DESKTOP_APP_IDS = new Set(['app-chat','app-moon','app-tarot','app-mail','app-box','app-invite','app-phone','app-komo','app-tips','app-order']);
+    const PROTECTED_DESKTOP_APP_IDS = new Set(['app-chat','app-moon','app-tarot','app-mail','app-box','app-invite','app-phone','app-komo','app-tips','app-order','app-fortune']);
     // 系统不再提供任何预设字卡；以下旧文本只用于从历史存档中清除旧版内置项，绝不参与抽取或回复。
     const REMOVED_SYSTEM_CARD_TEXTS = new Set(['今晚月色真美。','见字如面，今天过得开心吗？','你的情绪也值得被照顾。','留一张字卡给今天。','慢慢来，灵感会找到你。','收到啦，晚点继续和你聊 ✨','我在这里，慢慢说给我听。','好呀，这件事我想听你讲完。','今晚月色真美','正在收听','在窗边','整理档案','共享空间','写着新信','正在发光','安静','柔软','清醒','在线','想念','拍一拍','揉了揉脑袋','轻轻戳了戳']);
     const PRESET_REPLY_CARD_TEXTS = new Set();
@@ -32264,14 +32272,17 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       canvas.width = 512; canvas.height = 512;
       const ctx = canvas.getContext('2d');
       ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, 512, 512);   // 兜底压 JPEG 时不留透明黑洞
-      const factor = 512 / state.size;
-      ctx.drawImage(
-        state.bitmap,
-        state.x * factor, state.y * factor,
-        state.bitmap.naturalWidth * state.base * state.zoom * factor,
-        state.bitmap.naturalHeight * state.base * state.zoom * factor,
-        0, 0, 512, 512
-      );
+      /* v116 · 裁切错位根因：9 参 drawImage 的第 2~5 个参数是「原图里的源矩形」（原图像素），
+         旧代码把屏幕坐标系的位移(x,y)和显示尺寸直接塞进去 —— 单位体系不对，
+         框里是 A、存下来是移位+缩放错位的 B（用户报「裁剪切割 bug」）。
+         现在用屏幕→原图的换算 k=base*zoom 正确反推源矩形：方框左上在原图的位置 + 方框覆盖的原图边长。 */
+      const k = state.base * state.zoom;
+      const srcSize = Math.max(1, state.size / k);
+      const srcX = Math.min(Math.max(0, -state.x / k), Math.max(0, state.bitmap.naturalWidth - srcSize));
+      const srcY = Math.min(Math.max(0, -state.y / k), Math.max(0, state.bitmap.naturalHeight - srcSize));
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(state.bitmap, srcX, srcY, srcSize, srcSize, 0, 0, 512, 512);
       const blob = await iconCropBlob(canvas);
       if (!blob) { showGlobalSettingsToast('裁切失败，换一张试试'); return; }
       const key = state.key;
@@ -36860,8 +36871,8 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
      所以不会再出现「指过去是 404 → 系统给一枚默认黑图标」。
      v111z3：这七个文件换成**用户自己的真 logo**（浅蓝灰底 + 深墨「∞」，由用户提供，原样交付）；
      并统一加 `?v=v111z3` —— 手机上可能还留着上一版占位图的 HTTP 缓存，换个 URL 才保证抓到新图。 */
-  const NOTIF_ICON_FALLBACK_URL = new URL('./icons/icon-192.png?v=v115', location.href).href;
-  const NOTIF_BADGE_URL = new URL('./icons/badge-96.png?v=v115', location.href).href;
+  const NOTIF_ICON_FALLBACK_URL = new URL('./icons/icon-192.png?v=v116', location.href).href;
+  const NOTIF_BADGE_URL = new URL('./icons/badge-96.png?v=v116', location.href).href;
   async function resolveNotificationAvatarIcon(routeData, opts) {
 
 
