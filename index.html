@@ -13,9 +13,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Möbius">
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png?v=v117">
-  <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon-180.png?v=v117">
-  <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png?v=v117">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png?v=v118">
+  <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon-180.png?v=v118">
+  <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png?v=v118">
   <!-- 填写后端 Web Push 配置后，页面关闭或系统锁屏时也可由推送服务器唤醒 SW。 -->
   <meta name="dream-push-vapid-public-key" content="">
   <meta name="dream-push-subscribe-endpoint" content="">
@@ -12887,7 +12887,8 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
           const meta = line.querySelector('.chat-message-meta');
           if (meta) meta.textContent = typeof formatChatMessageTimestamp === 'function' ? formatChatMessageTimestamp(arrivalAt) : '刚刚';
         }
-        body.insertBefore(line, typing && typing.parentNode === body ? typing : null);
+        /* v118：开着房间的补话带着旧时刻 —— 按时刻插位，不再一律怼到尾巴把旧话顶到新话前面 */
+        insertChatLineChronologically(body, typing, line, Number(arrivalAt) || Date.now());
         body.scrollTop = body.scrollHeight;
         if (!proactiveCatchupQuiet) {
           playGlobalSound('message');
@@ -12924,6 +12925,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       line.dataset.messageKind = messageKind;
       if (proactiveCatchupAt > 0) line.dataset.createdAt = String(proactiveCatchupAt);
       const avatar = document.createElement('div');
+      /* v118：补话表情/颜文字也一样按时刻插位（插入点在下方统一换） */
       avatar.className = 'chat-message-avatar partner-avatar';
       const content = document.createElement('div');
       content.className = 'chat-message-content';
@@ -12948,7 +12950,8 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       content.append(bubble, meta);
       setChatAvatarVisual(avatar, role.initials, role.avatarImage ? { type: 'image', src: role.avatarImage } : `linear-gradient(135deg,${role.color1},${role.color2})`);
       line.append(avatar, content);
-      body.insertBefore(line, typing && typing.parentNode === body ? typing : null);
+      /* v118：补话表情/颜文字按时刻插位，不再怼尾巴 */
+      insertChatLineChronologically(body, typing, line, Number(line.dataset.createdAt) || Date.now());
       body.scrollTop = body.scrollHeight;
       if (!proactiveCatchupQuiet) {
         playGlobalSound('message');
@@ -13509,7 +13512,8 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       content.append(createChatVoiceBubble(text, seconds), Object.assign(document.createElement('div'), { className: 'chat-message-meta', textContent: '刚刚' }));
       setChatAvatarVisual(avatar, role.initials, role.avatarImage ? { type: 'image', src: role.avatarImage } : `linear-gradient(135deg,${role.color1},${role.color2})`);
       line.append(avatar, content);
-      body.insertBefore(line, typing && typing.parentNode === body ? typing : null);
+      /* v118：补话语音按它本该到达的时刻插位 */
+      insertChatLineChronologically(body, typing, line, Math.max(0, proactiveCatchupAt) || Date.now());
       body.scrollTop = body.scrollHeight;
       playGlobalSound('message');
       showChatToast(`${getRoleDisplayNameForApp(role)} 发来一条语音`);
@@ -13520,7 +13524,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       if (isRoleTemporarilyAway(role) || getChatSettings(role?.id).partnerVoiceEnabled === false || !card?.src) return false;
       const isOpen=isChatConversationLoaded(role.id),seconds=Math.max(1,Math.min(3600,Number(card.duration)||1));
       if(!isOpen){const settings=getChatSettings(role.id);settings.pendingProactiveMessages=[...(settings.pendingProactiveMessages||[]),{id:`proactive-voice-card-${Date.now()}-${Math.random().toString(16).slice(2)}`,kind:'voice-card',audioSrc:card.src,audioName:card.name||'MP3 语音字卡',duration:seconds,createdAt:(proactiveCatchupAt>0?proactiveCatchupAt:Date.now())}].slice(-PROACTIVE_PENDING_CAP);saveChatSettings(settings,role.id);return true;}
-      const body=document.getElementById('chatThreadBody'),typing=document.getElementById('chatTyping');if(!body)return false;const line=document.createElement('div');line.className='chat-message-line incoming';line.dataset.messageKind='voice-card';line.dataset.createdAt=String(Date.now());const avatar=document.createElement('div');avatar.className='chat-message-avatar partner-avatar';const content=document.createElement('div');content.className='chat-message-content';content.append(createChatVoiceBubble('',seconds,{audioSource:card.src,audioName:card.name,noTranscript:true}),Object.assign(document.createElement('div'),{className:'chat-message-meta',textContent:'刚刚'}));setChatAvatarVisual(avatar,role.initials,role.avatarImage?{type:'image',src:role.avatarImage}:`linear-gradient(135deg,${role.color1},${role.color2})`);line.append(avatar,content);body.insertBefore(line, typing && typing.parentNode === body ? typing : null);body.scrollTop=body.scrollHeight;playGlobalSound('message');showChatToast(`${getRoleDisplayNameForApp(role)} 发来一条语音`);return true;
+      const body=document.getElementById('chatThreadBody'),typing=document.getElementById('chatTyping');if(!body)return false;const line=document.createElement('div');line.className='chat-message-line incoming';line.dataset.messageKind='voice-card';line.dataset.createdAt=String((proactiveCatchupAt>0?proactiveCatchupAt:Date.now()));const avatar=document.createElement('div');avatar.className='chat-message-avatar partner-avatar';const content=document.createElement('div');content.className='chat-message-content';content.append(createChatVoiceBubble('',seconds,{audioSource:card.src,audioName:card.name,noTranscript:true}),Object.assign(document.createElement('div'),{className:'chat-message-meta',textContent:typeof formatChatMessageTimestamp==='function'&&proactiveCatchupAt>0?formatChatMessageTimestamp(proactiveCatchupAt):'刚刚'}));setChatAvatarVisual(avatar,role.initials,role.avatarImage?{type:'image',src:role.avatarImage}:`linear-gradient(135deg,${role.color1},${role.color2})`);line.append(avatar,content);insertChatLineChronologically(body, typing, line, Number(line.dataset.createdAt) || Date.now());body.scrollTop=body.scrollHeight;playGlobalSound('message');showChatToast(`${getRoleDisplayNameForApp(role)} 发来一条语音`);return true;
     }
 
     function triggerProactiveVoice(role) {
@@ -13603,7 +13607,8 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         saveChatSettings(settings, role.id);
         return true;
       }
-      if (!appendChatPokeNotice(text, { direction: 'incoming' })) return false;
+      /* v118：补话的拍一拍也带它本该到达的时刻，交给时序自愈排好 */
+      if (!appendChatPokeNotice(text, { direction: 'incoming', createdAt: proactiveCatchupAt > 0 ? proactiveCatchupAt : Date.now() })) return false;
       // 拍一拍使用居中 system notice，不是 incoming 消息行；离开正文或页面在后台时需显式累加一次。
       if (!isChatConversationBeingRead(role.id)) incrementChatUnreadCount(role.id, 1, text);
       playGlobalSound('message');
@@ -26470,6 +26475,61 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       body.insertBefore(node, anchor || (typing && typing.parentNode === body ? typing : null));
     }
 
+    /* ═══ v118 · 聊天线程时序自愈 ═══
+       v115 修的是「恢复历史 / 待收队列」两条路；后来排查又抓到第三条漏网：
+       「补话赶在人还开着房间时到点」会带着旧时刻直接怼到线程尾巴。
+       与其靠人眼把每个追加入口都逮住，这里直接给线程上一个保险：
+       任何行落进 DOM 后 120ms 内核对一遍时刻序 —— 乱了就地插排，顺手把排好的顺序写盘。
+       已经排好（99.9% 的情况）零 DOM 移动、零写盘。 */
+    let chatOrderRepairTimer = 0;
+    function repairChatThreadChronology(body) {
+      if (!body) body = document.getElementById('chatThreadBody');
+      if (!body) return 0;
+      const rows = [...body.querySelectorAll(':scope > .chat-message-line, :scope > .chat-call-system-message')];
+      if (rows.length < 2) return 0;
+      let prevTs = 0;
+      const keyed = rows.map((el, index) => {
+        let ts = Number(el.dataset && el.dataset.createdAt) || 0;
+        /* 没戳的行贴着上一行的时间走（特殊的全宽卡、系统提示） */
+        if (!ts) ts = prevTs; else prevTs = ts;
+        return { el, ts, index };
+      });
+      prevTs = -Infinity;
+      let dirty = false;
+      for (const item of keyed) { if (item.ts < prevTs) { dirty = true; break; } prevTs = item.ts; }
+      if (!dirty) return 0;
+      /* 就地插入排序：DOM 节点只挪不按不重渲染，滚动位置自然不动 */
+      for (let i = 1; i < keyed.length; i++) {
+        const cur = keyed[i];
+        if (keyed[i - 1].ts <= cur.ts) continue;
+        let anchor = null;
+        for (let j = i - 1; j >= 0; j--) {
+          if (keyed[j].ts > cur.ts) anchor = keyed[j].el;
+          else break;
+        }
+        if (anchor) body.insertBefore(cur.el, anchor);
+      }
+      return rows.length;
+    }
+    if (!window.__chatOrderSelfHealBound) {
+      window.__chatOrderSelfHealBound = true;
+      const bindChatOrderWatch = () => {
+        const body = document.getElementById('chatThreadBody');
+        if (!body) { window.setTimeout(bindChatOrderWatch, 800); return; }
+        new MutationObserver(() => {
+          window.clearTimeout(chatOrderRepairTimer);
+          chatOrderRepairTimer = window.setTimeout(() => {
+            const b = document.getElementById('chatThreadBody');
+            if (!b) return;
+            if (typeof restoringChatHistory !== 'undefined' && restoringChatHistory) return;   // 恢复流程自己已经排过
+            const moved = repairChatThreadChronology(b);
+            if (moved) { try { saveChatHistoryForHandle(undefined, { reason: 'order-self-heal' }); } catch (_) {} }
+          }, 120);
+        }).observe(body, { childList: true });
+      };
+      bindChatOrderWatch();
+    }
+
     function restoreChatHistory(handle, options = {}) {
       const key = String(handle || '').trim();
       const snapshot = getChatHistorySnapshot(key);
@@ -36595,8 +36655,8 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
      所以不会再出现「指过去是 404 → 系统给一枚默认黑图标」。
      v111z3：这七个文件换成**用户自己的真 logo**（浅蓝灰底 + 深墨「∞」，由用户提供，原样交付）；
      并统一加 `?v=v111z3` —— 手机上可能还留着上一版占位图的 HTTP 缓存，换个 URL 才保证抓到新图。 */
-  const NOTIF_ICON_FALLBACK_URL = new URL('./icons/icon-192.png?v=v117', location.href).href;
-  const NOTIF_BADGE_URL = new URL('./icons/badge-96.png?v=v117', location.href).href;
+  const NOTIF_ICON_FALLBACK_URL = new URL('./icons/icon-192.png?v=v118', location.href).href;
+  const NOTIF_BADGE_URL = new URL('./icons/badge-96.png?v=v118', location.href).href;
   async function resolveNotificationAvatarIcon(routeData, opts) {
 
 
