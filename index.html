@@ -151,15 +151,17 @@ if(focused&&!viewport&&stableHeight>0)keyboardInset=Math.max(keyboardInset,Math.
     .app-header {
       padding: calc(12px + env(safe-area-inset-top, 0px)) 12px 0;
       min-height: calc(12px + env(safe-area-inset-top, 0px));
-      box-sizing: border-box;
       display: flex;
       justify-content: flex-end;
       align-items: center;
       z-index: 10;
+      box-sizing: border-box;
+      pointer-events: none;
     }
     #appScreen.edit-mode > .app-header {
       padding: calc(8px + env(safe-area-inset-top, 0px)) 12px 6px;
       min-height: calc(40px + env(safe-area-inset-top, 0px));
+      pointer-events: auto;
     }
 
     .editable-sub {
@@ -239,7 +241,7 @@ if(focused&&!viewport&&stableHeight>0)keyboardInset=Math.max(keyboardInset,Math.
     .bottom-nav { height: 44px; padding: 0 16px; }
     .nav-btn { width: 34px; height: 34px; }
     .card-manager-page { inset: 0 0 52px; }
-    .desktop-theme-panel { top: calc(48px + env(safe-area-inset-top, 0px)); width: 202px; max-height: 330px; overflow-y: auto; }
+    .desktop-theme-panel { top: 58px; width: 202px; max-height: 330px; overflow-y: auto; }
     .desktop-theme-field { display: flex; align-items: center; justify-content: space-between; gap: 7px; margin-top: 8px; color: var(--text-muted); font-size: 7px; }
     .desktop-theme-field select { width: 86px; height: 22px; padding: 0 4px; border: 1px solid var(--glass-border); border-radius: 6px; outline: 0; background: var(--card-white); color: var(--text-main); font-size: 7px; }
     .desktop-theme-color-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
@@ -2948,9 +2950,9 @@ if(focused&&!viewport&&stableHeight>0)keyboardInset=Math.max(keyboardInset,Math.
     #chatApp[data-chat-bubble="kakao"] .chat-message-line.outgoing .chat-bubble:not(.chat-sticker-bubble):not(.chat-voice-bubble):not(.chat-poke-bubble):not(.chat-board-bubble):not(.chat-red-envelope-bubble):not(.chat-check-bubble):not(.chat-invite-bubble):not(.chat-decision-bubble):not(.chat-transfer-bubble) { border: 1px solid #e5cf00; border-bottom-right-radius: 4px; }
 
     #chatApp[data-chat-bubble="imessage"] .chat-message-line.incoming .chat-bubble:not(.chat-sticker-bubble):not(.chat-voice-bubble):not(.chat-poke-bubble):not(.chat-board-bubble):not(.chat-red-envelope-bubble):not(.chat-check-bubble):not(.chat-invite-bubble):not(.chat-decision-bubble):not(.chat-transfer-bubble),
-    #chatApp[data-chat-bubble="imessage"] .chat-message-line.outgoing .chat-bubble:not(.chat-sticker-bubble):not(.chat-voice-bubble):not(.chat-poke-bubble):not(.chat-board-bubble):not(.chat-red-envelope-bubble):not(.chat-check-bubble):not(.chat-invite-bubble):not(.chat-decision-bubble):not(.chat-transfer-bubble) { position: relative; padding: 8.5px 13px !important; border-radius: 18px !important; font-size: 14px !important; line-height: 1.45 !important; letter-spacing: 0.01em !important; box-shadow: none !important; }
-    #chatApp[data-chat-bubble="imessage"] .chat-message-line.incoming .chat-bubble:not(.chat-sticker-bubble):not(.chat-voice-bubble):not(.chat-poke-bubble):not(.chat-board-bubble):not(.chat-red-envelope-bubble):not(.chat-check-bubble):not(.chat-invite-bubble):not(.chat-decision-bubble):not(.chat-transfer-bubble) { background: #e9e9eb !important; border: none !important; color: #000000 !important; }
-    #chatApp[data-chat-bubble="imessage"] .chat-message-line.outgoing .chat-bubble:not(.chat-sticker-bubble):not(.chat-voice-bubble):not(.chat-poke-bubble):not(.chat-board-bubble):not(.chat-red-envelope-bubble):not(.chat-check-bubble):not(.chat-invite-bubble):not(.chat-decision-bubble):not(.chat-transfer-bubble) { background: #007aff !important; border: none !important; color: #ffffff !important; }
+    #chatApp[data-chat-bubble="imessage"] .chat-message-line.outgoing .chat-bubble:not(.chat-sticker-bubble):not(.chat-voice-bubble):not(.chat-poke-bubble):not(.chat-board-bubble):not(.chat-red-envelope-bubble):not(.chat-check-bubble):not(.chat-invite-bubble):not(.chat-decision-bubble):not(.chat-transfer-bubble) { position: relative; padding: 8px 12px; border-radius: 18px; box-shadow: 0 3px 9px rgba(0,82,180,.16), inset 0 1px 0 rgba(255,255,255,.3); font-size: 10px; line-height: 1.5; }
+    #chatApp[data-chat-bubble="imessage"] .chat-message-line.incoming .chat-bubble:not(.chat-sticker-bubble):not(.chat-voice-bubble):not(.chat-poke-bubble):not(.chat-board-bubble):not(.chat-red-envelope-bubble):not(.chat-check-bubble):not(.chat-invite-bubble):not(.chat-decision-bubble):not(.chat-transfer-bubble) { border: 1px solid #d7d7dc; border-bottom-left-radius: 5px; box-shadow: 0 2px 7px rgba(45,49,58,.1), inset 0 1px 0 rgba(255,255,255,.72); }
+    #chatApp[data-chat-bubble="imessage"] .chat-message-line.outgoing .chat-bubble:not(.chat-sticker-bubble):not(.chat-voice-bubble):not(.chat-poke-bubble):not(.chat-board-bubble):not(.chat-red-envelope-bubble):not(.chat-check-bubble):not(.chat-invite-bubble):not(.chat-decision-bubble):not(.chat-transfer-bubble) { border: 1px solid #006ee6; border-bottom-right-radius: 5px; }
 
     #chatApp .chat-message-meta { font-size: 6px; }
     #chatApp .chat-history-empty { padding: 38px 20px; font-size: 8px; }
@@ -9771,8 +9773,8 @@ html[data-perf-mode="off"] #appScreen[data-widget-skin="glass"]{
    切换开关在「聊天室设置 → 输入栏样式」，按聊天室记忆；
    默认（没有 data-composer-style="classic"）就是胶囊，老档不受影响。
    ⚠ 类名沿用 v111z53 的胶囊几何，只是加了柔光、并且全部挂在 :not([data-composer-style="classic"]) 下。 */
-#chatApp:not([data-chat-style-theme]):not([data-composer-style="classic"]) .chat-composer,
-#appScreen #chatApp:not([data-chat-style-theme]):not([data-composer-style="classic"]) .chat-composer {
+#chatApp:not([data-composer-style="classic"]) .chat-composer,
+#appScreen #chatApp:not([data-composer-style="classic"]) .chat-composer {
   /* 柔光两档（想调强弱改这两个变量即可） */
   --cc-glow-soft: rgba(126,180,255,.26);
   --cc-glow-halo: rgba(126,180,255,.10);
@@ -9799,15 +9801,15 @@ html[data-perf-mode="off"] #appScreen[data-widget-skin="glass"]{
 }
 /* 打字 / 获得焦点时，光稍微亮一档（还是「淡淡」的量级）。
    ⚠ 必须把 #appScreen 那条也写上：基础规则是两条拼的，少一条就会被 (2 id) 那条压住。 */
-#chatApp:not([data-chat-style-theme]):not([data-composer-style="classic"]) .chat-composer:focus-within,
-#appScreen #chatApp:not([data-chat-style-theme]):not([data-composer-style="classic"]) .chat-composer:focus-within,
-#chatApp:not([data-chat-style-theme]):not([data-composer-style="classic"]) .chat-composer.has-text,
-#appScreen #chatApp:not([data-chat-style-theme]):not([data-composer-style="classic"]) .chat-composer.has-text {
+#chatApp:not([data-composer-style="classic"]) .chat-composer:focus-within,
+#appScreen #chatApp:not([data-composer-style="classic"]) .chat-composer:focus-within,
+#chatApp:not([data-composer-style="classic"]) .chat-composer.has-text,
+#appScreen #chatApp:not([data-composer-style="classic"]) .chat-composer.has-text {
   --cc-glow-soft: rgba(126,180,255,.34);
   --cc-glow-halo: rgba(126,180,255,.14);
 }
 /* 输入框不再是「胶囊里的小胶囊」：内层去掉描边与底色 */
-#chatApp:not([data-chat-style-theme]):not([data-composer-style="classic"]) .chat-composer .chat-input-wrap {
+#chatApp:not([data-composer-style="classic"]) .chat-composer .chat-input-wrap {
   border: 0 !important;
   background: transparent !important;
   min-height: 32px;
@@ -9815,668 +9817,20 @@ html[data-perf-mode="off"] #appScreen[data-widget-skin="glass"]{
   -webkit-backdrop-filter: none !important;
   backdrop-filter: none !important;
 }
-#chatApp:not([data-chat-style-theme]):not([data-composer-style="classic"]) .chat-composer .chat-expression-toggle { margin-left: -2px; }
-#chatApp:not([data-chat-style-theme]):not([data-composer-style="classic"]) .chat-composer .chat-input { font-size: 11px; }
-#chatApp:not([data-chat-style-theme]):not([data-composer-style="classic"]) .chat-composer .chat-composer-icon,
-#chatApp:not([data-chat-style-theme]):not([data-composer-style="classic"]) .chat-composer .chat-send-btn { height: 32px; }
+#chatApp:not([data-composer-style="classic"]) .chat-composer .chat-expression-toggle { margin-left: -2px; }
+#chatApp:not([data-composer-style="classic"]) .chat-composer .chat-input { font-size: 11px; }
+#chatApp:not([data-composer-style="classic"]) .chat-composer .chat-composer-icon,
+#chatApp:not([data-composer-style="classic"]) .chat-composer .chat-send-btn { height: 32px; }
 /* 壁纸 + 玻璃同时开着时，胶囊保持自己的底 */
-#appScreen.chat-glass-enabled #chatApp:not([data-chat-style-theme]):not([data-composer-style="classic"]) .chat-composer { background: rgba(255,255,255,.8) !important; }
+#appScreen.chat-glass-enabled #chatApp:not([data-composer-style="classic"]) .chat-composer { background: rgba(255,255,255,.8) !important; }
 /* 性能模式 lite：全站 backdrop-filter 被 !important 关掉，胶囊改用实底，免得发灰（柔光不受影响） */
-html[data-perf-mode="lite"] #chatApp:not([data-chat-style-theme]):not([data-composer-style="classic"]) .chat-composer { background: rgba(255,255,255,.95) !important; }
+html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-composer { background: rgba(255,255,255,.95) !important; }
 /* 极窄屏：字小一点，保证胶囊里排得下 */
 @media (max-width: 360px) {
-  #chatApp:not([data-chat-style-theme]):not([data-composer-style="classic"]) .chat-composer { margin-left: 7px !important; margin-right: 7px !important; padding-right: 6px !important; }
-  #chatApp:not([data-chat-style-theme]):not([data-composer-style="classic"]) .chat-composer .chat-input { font-size: 10px; }
+  #chatApp:not([data-composer-style="classic"]) .chat-composer { margin-left: 7px !important; margin-right: 7px !important; padding-right: 6px !important; }
+  #chatApp:not([data-composer-style="classic"]) .chat-composer .chat-input { font-size: 10px; }
 }
 </style>
-<style id="chatRefinedUIStyles">
-/* ══════════════════════════════════════════════════════════════════════════
-   【聊天室 3 大官方提案独立风格系统 · 自主选择】
-   方案 A: planA - 🏝️ 【现代灵动 · 悬浮交互岛】（iOS 18 / Telegram 现代感）
-   方案 B: planB - 📰 【极简日系杂志 · 卡片流】（LINE / Notion 居中留白）
-   方案 C: planC - 🎀 【沉浸二次元 · 视觉小说风】（乙女向 / Galgame 伴聊窗口）
-   ══════════════════════════════════════════════════════════════════════════ */
-
-/* ================== 通用基础消息流与排版 ================== */
-html #appScreen #chatApp .chat-thread-body {
-  padding: 12px 14px 16px !important;
-  transition: background 0.3s ease !important;
-}
-html #appScreen #chatApp.has-custom-wallpaper .chat-thread-body,
-html #appScreen.has-chat-wallpaper #chatApp .chat-thread-body {
-  background: transparent !important;
-}
-
-html #appScreen #chatApp .chat-message-line {
-  gap: 8px !important;
-  margin-top: 6px !important;
-  margin-bottom: 6px !important;
-  align-items: flex-end !important;
-  user-select: text !important;
-}
-
-html #appScreen #chatApp .chat-message-line .chat-message-avatar {
-  width: 36px !important;
-  height: 36px !important;
-  flex: 0 0 36px !important;
-  border-radius: 50% !important;
-  font-size: 10px !important;
-  transform: none !important;
-  align-self: flex-end !important;
-  margin-bottom: 2px !important;
-  cursor: pointer !important;
-  transition: transform 0.16s ease, opacity 0.2s ease !important;
-}
-html #appScreen #chatApp .chat-message-line .chat-message-avatar:active {
-  transform: scale(0.92) !important;
-}
-
-html #appScreen #chatApp .chat-message-content {
-  max-width: 80% !important;
-  min-width: 0 !important;
-}
-
-html #appScreen #chatApp .chat-message-line .chat-bubble:not(.chat-sticker-bubble):not(.chat-voice-bubble):not(.chat-poke-bubble):not(.chat-board-bubble):not(.chat-image-bubble):not(.chat-image-stack-bubble):not(.chat-red-envelope-bubble):not(.chat-check-bubble):not(.chat-invite-bubble):not(.chat-decision-bubble):not(.chat-transfer-bubble):not(.group-v2-special-bubble):not([class*="chat-komo-"]) {
-  padding: 8.5px 13px !important;
-  font-size: 14px !important;
-  line-height: 1.45 !important;
-  letter-spacing: 0.01em !important;
-  word-break: break-word !important;
-}
-
-/* 隐藏各方案专属拓展部件的默认态 */
-html #appScreen #chatApp .chat-companion-badge,
-html #appScreen #chatApp .chat-spinning-vinyl,
-html #appScreen #chatApp #chatPlanBChips {
-  display: none !important;
-}
-
-/* ══════════════════════════════════════════════════════════════════════════
-   方案 A：【现代灵动 · 悬浮交互岛】（类似 iOS 18 / Telegram 现代感）
-   ══════════════════════════════════════════════════════════════════════════ */
-/* 1. 顶栏布局重构（Floating Glass Nav：取消 1px 分界线，无缝通透磨砂） */
-html #appScreen #chatApp[data-chat-style-theme="planA"] .chat-thread-header,
-html[data-ios] #appScreen #chatApp[data-chat-style-theme="planA"] .chat-thread-header {
-  min-height: 52px !important;
-  padding-top: calc(10px + env(safe-area-inset-top, 0px)) !important;
-  padding-bottom: 8px !important;
-  padding-left: 12px !important;
-  padding-right: 12px !important;
-  background: rgba(255, 255, 255, 0.75) !important;
-  backdrop-filter: blur(28px) saturate(190%) !important;
-  -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
-  border-bottom: none !important;
-  border-top: none !important;
-  border-left: none !important;
-  border-right: none !important;
-  box-shadow: 0 1px 16px rgba(0, 0, 0, 0.05) !important;
-}
-
-/* 头像立体阴影 + 脉冲呼吸灯 */
-html #appScreen #chatApp[data-chat-style-theme="planA"] .chat-thread-avatar {
-  width: 38px !important;
-  height: 38px !important;
-  flex: 0 0 38px !important;
-  border-radius: 50% !important;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.95), 0 3px 12px rgba(0, 122, 255, 0.32) !important;
-  animation: avatarGlowPulseA 3s ease-in-out infinite !important;
-}
-@keyframes avatarGlowPulseA {
-  0%, 100% { box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.95), 0 3px 12px rgba(0, 122, 255, 0.3); }
-  50% { box-shadow: 0 0 0 2.5px #ffffff, 0 4px 20px rgba(0, 122, 255, 0.6); }
-}
-
-html #appScreen #chatApp[data-chat-style-theme="planA"] .chat-thread-name {
-  font-size: 15px !important;
-  font-weight: 700 !important;
-  color: #000000 !important;
-  letter-spacing: -0.25px !important;
-}
-
-/* 状态重绘为微型半透明胶囊标签 */
-html #appScreen #chatApp[data-chat-style-theme="planA"] .chat-thread-status:not(:empty) {
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 4px !important;
-  padding: 1.5px 8px !important;
-  border-radius: 99px !important;
-  background: rgba(0, 122, 255, 0.08) !important;
-  color: #007aff !important;
-  font-size: 8.5px !important;
-  font-weight: 600 !important;
-  margin-top: 2px !important;
-}
-
-/* 顶栏按键：现代灵动圆钮 */
-html #appScreen #chatApp[data-chat-style-theme="planA"] .chat-thread-actions .chat-plain-btn,
-html #appScreen #chatApp[data-chat-style-theme="planA"] .chat-back-btn {
-  width: 32px !important;
-  height: 32px !important;
-  border-radius: 50% !important;
-  background: rgba(0, 122, 255, 0.07) !important;
-  color: #007aff !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  transition: transform 0.15s ease, background-color 0.15s ease !important;
-}
-html #appScreen #chatApp[data-chat-style-theme="planA"] .chat-thread-actions .chat-plain-btn:active,
-html #appScreen #chatApp[data-chat-style-theme="planA"] .chat-back-btn:active {
-  transform: scale(0.9) !important;
-  background: rgba(0, 122, 255, 0.18) !important;
-}
-
-/* 2. 消息流布局：底色温润、连续发言合并多余头像、间距压缩至 3px */
-html #appScreen #chatApp[data-chat-style-theme="planA"] .chat-thread-body {
-  background: #f2f2f7 !important;
-}
-
-/* 连续发言自动隐藏前面多余头像，只在同方最后一条展示头像 */
-html #appScreen #chatApp[data-chat-style-theme="planA"] .chat-message-line.incoming:has(+ .chat-message-line.incoming) .chat-message-avatar {
-  visibility: hidden !important;
-  pointer-events: none !important;
-}
-html #appScreen #chatApp[data-chat-style-theme="planA"] .chat-message-line.outgoing:has(+ .chat-message-line.outgoing) .chat-message-avatar {
-  visibility: hidden !important;
-  pointer-events: none !important;
-}
-
-/* 连续气泡纵向间距压缩至 3px */
-html #appScreen #chatApp[data-chat-style-theme="planA"] .chat-message-line.incoming + .chat-message-line.incoming,
-html #appScreen #chatApp[data-chat-style-theme="planA"] .chat-message-line.outgoing + .chat-message-line.outgoing {
-  margin-top: 3px !important;
-  margin-bottom: 0 !important;
-}
-
-/* 真实纯正的 iOS 18 / Telegram 气泡设计（无多余生硬黑边、真机质感） */
-html #appScreen #chatApp[data-chat-style-theme="planA"]:not([data-chat-bubble="custom"]) .chat-message-line.incoming .chat-bubble:not(.chat-image-bubble):not(.chat-sticker-bubble):not(.chat-voice-bubble):not(.chat-poke-bubble):not(.chat-board-bubble):not(.chat-red-envelope-bubble):not(.chat-check-bubble):not(.chat-invite-bubble):not(.chat-decision-bubble):not(.chat-transfer-bubble) {
-  background: #e9e9eb !important;
-  color: #000000 !important;
-  border: none !important;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
-  border-radius: 18px !important;
-}
-/* 组内首条（顶部大圆角、左下平直微收） */
-html #appScreen #chatApp[data-chat-style-theme="planA"]:not([data-chat-bubble="custom"]) .chat-message-line.incoming:has(+ .chat-message-line.incoming) .chat-bubble:not(.chat-image-bubble):not(.chat-sticker-bubble):not(.chat-voice-bubble):not(.chat-poke-bubble):not(.chat-board-bubble):not(.chat-red-envelope-bubble):not(.chat-check-bubble):not(.chat-invite-bubble):not(.chat-decision-bubble):not(.chat-transfer-bubble) {
-  border-radius: 18px 18px 18px 4px !important;
-}
-/* 组内中间条（双平直） */
-html #appScreen #chatApp[data-chat-style-theme="planA"]:not([data-chat-bubble="custom"]) .chat-message-line.incoming + .chat-message-line.incoming .chat-bubble:not(.chat-image-bubble):not(.chat-sticker-bubble):not(.chat-voice-bubble):not(.chat-poke-bubble):not(.chat-board-bubble):not(.chat-red-envelope-bubble):not(.chat-check-bubble):not(.chat-invite-bubble):not(.chat-decision-bubble):not(.chat-transfer-bubble) {
-  border-radius: 4px 18px 18px 4px !important;
-}
-/* 组内末条（底部收拢微尾角） */
-html #appScreen #chatApp[data-chat-style-theme="planA"]:not([data-chat-bubble="custom"]) .chat-message-line.incoming + .chat-message-line.incoming:not(:has(+ .chat-message-line.incoming)) .chat-bubble:not(.chat-image-bubble):not(.chat-sticker-bubble):not(.chat-voice-bubble):not(.chat-poke-bubble):not(.chat-board-bubble):not(.chat-red-envelope-bubble):not(.chat-check-bubble):not(.chat-invite-bubble):not(.chat-decision-bubble):not(.chat-transfer-bubble) {
-  border-radius: 4px 18px 18px 18px !important;
-}
-
-/* Outgoing：纯正鲜亮 Apple Blue (#007aff) */
-html #appScreen #chatApp[data-chat-style-theme="planA"]:not([data-chat-bubble="custom"]) .chat-message-line.outgoing .chat-bubble:not(.chat-image-bubble):not(.chat-sticker-bubble):not(.chat-voice-bubble):not(.chat-poke-bubble):not(.chat-board-bubble):not(.chat-red-envelope-bubble):not(.chat-check-bubble):not(.chat-invite-bubble):not(.chat-decision-bubble):not(.chat-transfer-bubble) {
-  background: #007aff !important;
-  color: #ffffff !important;
-  border: none !important;
-  box-shadow: 0 2px 8px rgba(0, 122, 255, 0.28) !important;
-  border-radius: 18px !important;
-}
-/* 组内首条（顶部大圆角、右下平直微收） */
-html #appScreen #chatApp[data-chat-style-theme="planA"]:not([data-chat-bubble="custom"]) .chat-message-line.outgoing:has(+ .chat-message-line.outgoing) .chat-bubble:not(.chat-image-bubble):not(.chat-sticker-bubble):not(.chat-voice-bubble):not(.chat-poke-bubble):not(.chat-board-bubble):not(.chat-red-envelope-bubble):not(.chat-check-bubble):not(.chat-invite-bubble):not(.chat-decision-bubble):not(.chat-transfer-bubble) {
-  border-radius: 18px 18px 4px 18px !important;
-}
-/* 组内中间条（双平直） */
-html #appScreen #chatApp[data-chat-style-theme="planA"]:not([data-chat-bubble="custom"]) .chat-message-line.outgoing + .chat-message-line.outgoing .chat-bubble:not(.chat-image-bubble):not(.chat-sticker-bubble):not(.chat-voice-bubble):not(.chat-poke-bubble):not(.chat-board-bubble):not(.chat-red-envelope-bubble):not(.chat-check-bubble):not(.chat-invite-bubble):not(.chat-decision-bubble):not(.chat-transfer-bubble) {
-  border-radius: 18px 4px 4px 18px !important;
-}
-/* 组内末条（底部收拢微尾角） */
-html #appScreen #chatApp[data-chat-style-theme="planA"]:not([data-chat-bubble="custom"]) .chat-message-line.outgoing + .chat-message-line.outgoing:not(:has(+ .chat-message-line.outgoing)) .chat-bubble:not(.chat-image-bubble):not(.chat-sticker-bubble):not(.chat-voice-bubble):not(.chat-poke-bubble):not(.chat-board-bubble):not(.chat-red-envelope-bubble):not(.chat-check-bubble):not(.chat-invite-bubble):not(.chat-decision-bubble):not(.chat-transfer-bubble) {
-  border-radius: 18px 4px 18px 18px !important;
-}
-html #appScreen #chatApp[data-chat-style-theme="planA"] .chat-image-bubble {
-  border-radius: 18px !important;
-  overflow: hidden !important;
-}
-
-/* 时间戳与回执行内紧凑整合（消除突兀的底部空行） */
-html #appScreen #chatApp[data-chat-style-theme="planA"] .chat-message-content {
-  position: relative !important;
-  display: inline-flex !important;
-  flex-direction: row !important;
-  align-items: flex-end !important;
-  gap: 6px !important;
-}
-html #appScreen #chatApp[data-chat-style-theme="planA"] .chat-message-line.incoming .chat-message-content {
-  flex-direction: row !important;
-}
-html #appScreen #chatApp[data-chat-style-theme="planA"] .chat-message-line.outgoing .chat-message-content {
-  flex-direction: row-reverse !important;
-}
-html #appScreen #chatApp[data-chat-style-theme="planA"] .chat-message-meta {
-  margin: 0 0 2px 0 !important;
-  font-size: 8.5px !important;
-  line-height: 1 !important;
-  color: #8e8e93 !important;
-  white-space: nowrap !important;
-  padding: 0 !important;
-}
-
-/* 3. 输入栏重构（Floating Capsule 独立悬浮药丸舱：悬离底边 10px，圆润一体） */
-html #appScreen #chatApp[data-chat-style-theme="planA"] .chat-composer,
-html[data-ios] #appScreen #chatApp[data-chat-style-theme="planA"] .chat-composer {
-  margin: 6px 12px calc(12px + env(safe-area-inset-bottom, 0px)) 12px !important;
-  border-radius: 999px !important;
-  background: rgba(255, 255, 255, 0.88) !important;
-  backdrop-filter: blur(28px) saturate(190%) !important;
-  -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.95) !important;
-  box-shadow: 0 6px 26px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04) !important;
-  padding: 6px 8px !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 6px !important;
-}
-html #appScreen #chatApp[data-chat-style-theme="planA"] .chat-input-wrap {
-  flex: 1 1 auto !important;
-  border: none !important;
-  background: rgba(0, 0, 0, 0.045) !important;
-  border-radius: 999px !important;
-  height: 36px !important;
-  min-height: 36px !important;
-  padding: 0 10px !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 4px !important;
-}
-html #appScreen #chatApp[data-chat-style-theme="planA"] .chat-input {
-  font-size: 14px !important;
-  color: #000000 !important;
-  background: transparent !important;
-  border: none !important;
-}
-html #appScreen #chatApp[data-chat-style-theme="planA"] .chat-send-btn {
-  width: 34px !important;
-  height: 34px !important;
-  flex: 0 0 34px !important;
-  border-radius: 50% !important;
-  background: #007aff !important;
-  color: #ffffff !important;
-  box-shadow: 0 2px 10px rgba(0, 122, 255, 0.38) !important;
-  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
-  border: none !important;
-}
-html #appScreen #chatApp[data-chat-style-theme="planA"] .chat-send-btn:active {
-  transform: scale(0.88) !important;
-}
-html #appScreen #chatApp[data-chat-style-theme="planA"] .chat-composer-icon {
-  width: 30px !important;
-  height: 30px !important;
-  flex: 0 0 30px !important;
-  border-radius: 50% !important;
-  color: #8e8e93 !important;
-}
-
-/* ══════════════════════════════════════════════════════════════════════════
-   方案 B：【极简日系杂志 · 卡片流】（类似 LINE / Notion 留白美学）
-   ══════════════════════════════════════════════════════════════════════════ */
-/* 1. 顶栏：Center Stage 居中对称人设栏 */
-html #appScreen #chatApp[data-chat-style-theme="planB"] .chat-thread-header,
-html[data-ios] #appScreen #chatApp[data-chat-style-theme="planB"] .chat-thread-header {
-  min-height: 62px !important;
-  padding-top: calc(10px + env(safe-area-inset-top, 0px)) !important;
-  padding-bottom: 10px !important;
-  padding-left: 16px !important;
-  padding-right: 16px !important;
-  background: #fbfbf9 !important;
-  border-bottom: 1px solid #eeedea !important;
-  border-top: none !important;
-  border-left: none !important;
-  border-right: none !important;
-  box-shadow: none !important;
-  position: relative !important;
-  display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
-}
-
-html #appScreen #chatApp[data-chat-style-theme="planB"] .chat-thread-left {
-  width: 100% !important;
-  justify-content: center !important;
-  align-items: center !important;
-  flex-direction: column !important;
-  gap: 3px !important;
-}
-
-html #appScreen #chatApp[data-chat-style-theme="planB"] .chat-back-btn {
-  position: absolute !important;
-  left: 12px !important;
-  top: 50% !important;
-  transform: translateY(-50%) !important;
-  width: 32px !important;
-  height: 32px !important;
-  border-radius: 99px !important;
-  background: #f0efeb !important;
-  color: #333333 !important;
-  border: none !important;
-}
-
-html #appScreen #chatApp[data-chat-style-theme="planB"] .chat-thread-avatar {
-  width: 32px !important;
-  height: 32px !important;
-  flex: 0 0 32px !important;
-  border-radius: 50% !important;
-  border: 1px solid rgba(0, 0, 0, 0.08) !important;
-  box-shadow: none !important;
-  animation: none !important;
-}
-
-html #appScreen #chatApp[data-chat-style-theme="planB"] .chat-thread-title {
-  text-align: center !important;
-  align-items: center !important;
-}
-
-html #appScreen #chatApp[data-chat-style-theme="planB"] .chat-thread-name {
-  font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "PingFang SC", sans-serif !important;
-  font-weight: 700 !important;
-  font-size: 13.5px !important;
-  letter-spacing: 0.04em !important;
-  color: #27272a !important;
-}
-
-html #appScreen #chatApp[data-chat-style-theme="planB"] .chat-thread-status {
-  font-size: 8px !important;
-  color: #71717a !important;
-  letter-spacing: 0.02em !important;
-  background: none !important;
-  border: none !important;
-  padding: 0 !important;
-}
-
-html #appScreen #chatApp[data-chat-style-theme="planB"] .chat-thread-actions {
-  position: absolute !important;
-  right: 12px !important;
-  top: 50% !important;
-  transform: translateY(-50%) !important;
-}
-html #appScreen #chatApp[data-chat-style-theme="planB"] .chat-thread-actions button:not(:last-child) {
-  display: none !important;
-}
-html #appScreen #chatApp[data-chat-style-theme="planB"] .chat-thread-actions button {
-  width: 32px !important;
-  height: 32px !important;
-  background: #f0efeb !important;
-  border-radius: 99px !important;
-  color: #333333 !important;
-  border: none !important;
-}
-
-/* 2. 消息流：极简日系纸感白、底部对齐、20px 鹅卵石 Squircle 圆角 */
-html #appScreen #chatApp[data-chat-style-theme="planB"] .chat-thread-body {
-  background: #f7f6f2 !important;
-  padding: 16px 14px !important;
-}
-
-html #appScreen #chatApp[data-chat-style-theme="planB"] .chat-message-line .chat-message-avatar {
-  border-radius: 12px !important;
-  align-self: flex-end !important;
-  box-shadow: none !important;
-  border: 1px solid rgba(0, 0, 0, 0.08) !important;
-}
-
-html #appScreen #chatApp[data-chat-style-theme="planB"]:not([data-chat-bubble="custom"]) .chat-message-line.incoming .chat-bubble:not(.chat-image-bubble):not(.chat-sticker-bubble):not(.chat-voice-bubble):not(.chat-poke-bubble):not(.chat-board-bubble):not(.chat-red-envelope-bubble):not(.chat-check-bubble):not(.chat-invite-bubble):not(.chat-decision-bubble):not(.chat-transfer-bubble) {
-  background: #ffffff !important;
-  border: 1px solid #e5e4de !important;
-  border-radius: 20px !important;
-  color: #2c2c2a !important;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03) !important;
-  padding: 9.5px 14px !important;
-  font-size: 13.5px !important;
-  letter-spacing: 0.02em !important;
-}
-
-html #appScreen #chatApp[data-chat-style-theme="planB"]:not([data-chat-bubble="custom"]) .chat-message-line.outgoing .chat-bubble:not(.chat-image-bubble):not(.chat-sticker-bubble):not(.chat-voice-bubble):not(.chat-poke-bubble):not(.chat-board-bubble):not(.chat-red-envelope-bubble):not(.chat-check-bubble):not(.chat-invite-bubble):not(.chat-decision-bubble):not(.chat-transfer-bubble) {
-  background: #2b2b28 !important;
-  border: none !important;
-  border-radius: 20px !important;
-  color: #ffffff !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12) !important;
-  padding: 9.5px 14px !important;
-  font-size: 13.5px !important;
-  letter-spacing: 0.02em !important;
-}
-html #appScreen #chatApp[data-chat-style-theme="planB"] .chat-image-bubble {
-  border-radius: 16px !important;
-  overflow: hidden !important;
-  border: 1px solid rgba(0, 0, 0, 0.08) !important;
-}
-
-/* 抽屉式引用回复卡片：主色竖指示线 + 微透底 */
-html #appScreen #chatApp[data-chat-style-theme="planB"] .chat-quoted-context {
-  border-left: 3px solid #2b2b28 !important;
-  background: rgba(0, 0, 0, 0.035) !important;
-  border-radius: 6px !important;
-  padding: 4px 8px !important;
-}
-
-/* 3. 输入栏：极简双层集成栏 + Quick Action Chips 快捷功能芯片 */
-html #appScreen #chatApp[data-chat-style-theme="planB"] #chatPlanBChips {
-  display: flex !important;
-  align-items: center !important;
-  gap: 7px !important;
-  padding: 7px 14px 4px !important;
-  overflow-x: auto !important;
-  background: #fbfbf9 !important;
-  border-top: 1px solid #eeedea !important;
-  scrollbar-width: none !important;
-}
-html #appScreen #chatApp[data-chat-style-theme="planB"] #chatPlanBChips::-webkit-scrollbar {
-  display: none !important;
-}
-html #appScreen #chatApp[data-chat-style-theme="planB"] .planb-chip {
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 4px !important;
-  padding: 3.5px 10px !important;
-  border-radius: 99px !important;
-  background: #ffffff !important;
-  border: 1px solid #e0dfd8 !important;
-  color: #4a4a46 !important;
-  font-size: 9.5px !important;
-  font-weight: 500 !important;
-  white-space: nowrap !important;
-  cursor: pointer !important;
-  transition: all 0.15s ease !important;
-}
-html #appScreen #chatApp[data-chat-style-theme="planB"] .planb-chip:active {
-  background: #f0efeb !important;
-  transform: scale(0.94) !important;
-}
-
-html #appScreen #chatApp[data-chat-style-theme="planB"] .chat-composer,
-html[data-ios] #appScreen #chatApp[data-chat-style-theme="planB"] .chat-composer {
-  margin: 0 !important;
-  border-radius: 0 !important;
-  background: #fbfbf9 !important;
-  border-top: none !important;
-  border-bottom: none !important;
-  border-left: none !important;
-  border-right: none !important;
-  box-shadow: none !important;
-  padding: 6px 14px calc(10px + env(safe-area-inset-bottom, 0px)) 14px !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 8px !important;
-}
-html #appScreen #chatApp[data-chat-style-theme="planB"] .chat-input-wrap {
-  flex: 1 1 auto !important;
-  background: #efeee9 !important;
-  border: 1px solid transparent !important;
-  border-radius: 10px !important;
-  height: 36px !important;
-  padding: 0 10px !important;
-}
-html #appScreen #chatApp[data-chat-style-theme="planB"] .chat-input-wrap:focus-within {
-  background: #ffffff !important;
-  border-color: #2b2b28 !important;
-  box-shadow: 0 0 0 2px rgba(43, 43, 40, 0.1) !important;
-}
-html #appScreen #chatApp[data-chat-style-theme="planB"] .chat-send-btn {
-  width: 34px !important;
-  height: 34px !important;
-  flex: 0 0 34px !important;
-  background: #2b2b28 !important;
-  color: #ffffff !important;
-  border-radius: 10px !important;
-  box-shadow: none !important;
-  border: none !important;
-}
-
-/* ══════════════════════════════════════════════════════════════════════════
-   方案 C：【沉浸二次元 · 视觉小说风】（类似 乙女向 / Galgame 伴聊窗口）
-   ══════════════════════════════════════════════════════════════════════════ */
-/* 1. 顶栏：Companion Bar 交互式陪伴栏 */
-html #appScreen #chatApp[data-chat-style-theme="planC"] .chat-thread-header,
-html[data-ios] #appScreen #chatApp[data-chat-style-theme="planC"] .chat-thread-header {
-  min-height: 58px !important;
-  padding-top: calc(10px + env(safe-area-inset-top, 0px)) !important;
-  padding-bottom: 10px !important;
-  padding-left: 14px !important;
-  padding-right: 14px !important;
-  background: linear-gradient(135deg, rgba(255, 240, 245, 0.96), rgba(245, 240, 255, 0.94)) !important;
-  border-bottom: 2px solid rgba(244, 114, 182, 0.35) !important;
-  border-top: none !important;
-  border-left: none !important;
-  border-right: none !important;
-  box-shadow: 0 4px 18px rgba(244, 114, 182, 0.12) !important;
-}
-
-html #appScreen #chatApp[data-chat-style-theme="planC"] .chat-thread-avatar {
-  border-radius: 50% !important;
-  box-shadow: 0 0 12px rgba(244, 63, 94, 0.35), 0 0 0 2px #ffffff !important;
-}
-
-html #appScreen #chatApp[data-chat-style-theme="planC"] .chat-companion-badge {
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 4px !important;
-  padding: 2.5px 9px !important;
-  border-radius: 99px !important;
-  background: linear-gradient(135deg, #fce7f3, #ffe4e6) !important;
-  border: 1px solid rgba(244, 114, 182, 0.5) !important;
-  color: #db2777 !important;
-  font-size: 8.5px !important;
-  font-weight: 700 !important;
-  cursor: pointer !important;
-  margin-bottom: 2px !important;
-}
-html #appScreen #chatApp[data-chat-style-theme="planC"] .chat-companion-badge .companion-heart {
-  animation: heartPulseC 1.5s ease-in-out infinite !important;
-}
-@keyframes heartPulseC {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.25); }
-}
-
-html #appScreen #chatApp[data-chat-style-theme="planC"] .chat-spinning-vinyl {
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  width: 32px !important;
-  height: 32px !important;
-  margin-right: 2px !important;
-}
-html #appScreen #chatApp[data-chat-style-theme="planC"] .vinyl-disc {
-  width: 24px !important;
-  height: 24px !important;
-  border-radius: 50% !important;
-  background: radial-gradient(circle, #f43f5e 20%, #18181b 22%, #27272a 70%, #09090b 100%) !important;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3) !important;
-  animation: spinVinylC 6s linear infinite !important;
-}
-@keyframes spinVinylC {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-/* 2. 消息流：对话框式沉浸气泡与磨砂浮雕卡片 */
-html #appScreen #chatApp[data-chat-style-theme="planC"] .chat-thread-body {
-  background: linear-gradient(180deg, #fff5f8 0%, #faf5ff 100%) !important;
-  padding: 14px 12px !important;
-}
-
-html #appScreen #chatApp[data-chat-style-theme="planC"]:not([data-chat-bubble="custom"]) .chat-message-line.incoming .chat-bubble:not(.chat-image-bubble):not(.chat-sticker-bubble):not(.chat-voice-bubble):not(.chat-poke-bubble):not(.chat-board-bubble):not(.chat-red-envelope-bubble):not(.chat-check-bubble):not(.chat-invite-bubble):not(.chat-decision-bubble):not(.chat-transfer-bubble) {
-  background: rgba(255, 255, 255, 0.96) !important;
-  border: 1.5px solid rgba(244, 114, 182, 0.35) !important;
-  border-left: 4px solid #ec4899 !important;
-  border-radius: 6px 16px 16px 6px !important;
-  color: #1f2937 !important;
-  box-shadow: 0 3px 12px rgba(236, 72, 153, 0.1) !important;
-  padding: 9px 13px !important;
-  font-size: 13.5px !important;
-}
-
-html #appScreen #chatApp[data-chat-style-theme="planC"]:not([data-chat-bubble="custom"]) .chat-message-line.outgoing .chat-bubble:not(.chat-image-bubble):not(.chat-sticker-bubble):not(.chat-voice-bubble):not(.chat-poke-bubble):not(.chat-board-bubble):not(.chat-red-envelope-bubble):not(.chat-check-bubble):not(.chat-invite-bubble):not(.chat-decision-bubble):not(.chat-transfer-bubble) {
-  background: linear-gradient(135deg, #f43f5e 0%, #ec4899 50%, #d946ef 100%) !important;
-  border: none !important;
-  border-radius: 16px 6px 6px 16px !important;
-  color: #ffffff !important;
-  box-shadow: 0 4px 14px rgba(244, 63, 94, 0.35) !important;
-  padding: 9px 13px !important;
-  font-size: 13.5px !important;
-}
-html #appScreen #chatApp[data-chat-style-theme="planC"] .chat-image-bubble {
-  border-radius: 16px !important;
-  overflow: hidden !important;
-  border: 1.5px solid rgba(244, 114, 182, 0.3) !important;
-}
-
-html #appScreen #chatApp[data-chat-style-theme="planC"] .chat-date-divider,
-html #appScreen #chatApp[data-chat-style-theme="planC"] .chat-recalled-notice,
-html #appScreen #chatApp[data-chat-style-theme="planC"] .chat-poke-bubble {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(254, 242, 242, 0.9)) !important;
-  border: 1px solid rgba(244, 114, 182, 0.35) !important;
-  box-shadow: 0 2px 10px rgba(244, 114, 182, 0.15) !important;
-  border-radius: 99px !important;
-  color: #db2777 !important;
-  font-weight: 600 !important;
-}
-
-/* 3. 输入栏：果冻质感轻面板与弹性微跳动 */
-html #appScreen #chatApp[data-chat-style-theme="planC"] .chat-composer,
-html[data-ios] #appScreen #chatApp[data-chat-style-theme="planC"] .chat-composer {
-  margin: 8px 10px calc(10px + env(safe-area-inset-bottom, 0px)) 10px !important;
-  border-radius: 20px !important;
-  background: rgba(255, 255, 255, 0.95) !important;
-  border: 1.5px solid rgba(244, 114, 182, 0.3) !important;
-  box-shadow: 0 4px 16px rgba(244, 114, 182, 0.12) !important;
-  padding: 6px 10px !important;
-  display: flex !important;
-  align-items: center !important;
-}
-html #appScreen #chatApp[data-chat-style-theme="planC"] .chat-input-wrap {
-  flex: 1 1 auto !important;
-  background: #fff1f5 !important;
-  border: 1px solid rgba(244, 114, 182, 0.3) !important;
-  border-radius: 14px !important;
-  height: 36px !important;
-  padding: 0 10px !important;
-}
-html #appScreen #chatApp[data-chat-style-theme="planC"] .chat-input-wrap:focus-within {
-  background: #ffffff !important;
-  border-color: #ec4899 !important;
-  box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.15) !important;
-}
-html #appScreen #chatApp[data-chat-style-theme="planC"] .chat-send-btn {
-  width: 34px !important;
-  height: 34px !important;
-  flex: 0 0 34px !important;
-  border-radius: 12px !important;
-  background: linear-gradient(135deg, #f43f5e 0%, #ec4899 50%, #d946ef 100%) !important;
-  color: #ffffff !important;
-  box-shadow: 0 3px 12px rgba(244, 63, 94, 0.45) !important;
-  animation: jellyBounceBtn 3s ease-in-out infinite !important;
-  border: none !important;
-}
-@keyframes jellyBounceBtn {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.08); }
-}
 </style>
 </head>
 <body>
@@ -10595,7 +9949,7 @@ html #appScreen #chatApp[data-chat-style-theme="planC"] .chat-send-btn {
         <div class="draggable-card col-span-1" draggable="true" style="left: 250px; top: 95px;">
           <div class="card-badge remove-badge" onclick="removeAppIcon(this)"><i data-lucide="minus" size="12"></i></div>
           <div class="app-icon-item" onclick="openKomoStore()" title="KOMO 24H 梦境便利店">
-            <div class="app-icon-box"><i data-lucide="store" size="20"></i></div>
+            <div class="app-icon-box"><i data-lucide="store" size="20"></i><span style="position:absolute;right:5px;bottom:4px;font:700 5px ui-monospace,monospace;">24H</span></div>
             <span class="app-icon-label">KOMO</span>
           </div>
         </div>
@@ -10603,7 +9957,7 @@ html #appScreen #chatApp[data-chat-style-theme="planC"] .chat-send-btn {
         <div class="draggable-card col-span-1" draggable="true" data-layout-id="app-order" style="left: 94px; top: 180px;">
           <div class="card-badge remove-badge" onclick="removeAppIcon(this)"><i data-lucide="minus" size="12"></i></div>
           <div class="app-icon-item" onclick="openOrderApp()" title="ORDER 点单 · 奶茶咖啡与外送">
-            <div class="app-icon-box"><i data-lucide="cup-soda" size="20"></i></div>
+            <div class="app-icon-box"><i data-lucide="cup-soda" size="20"></i><span style="position:absolute;right:5px;bottom:4px;font:800 5px ui-monospace,monospace;">NEW</span></div>
             <span class="app-icon-label">ORDER</span>
           </div>
         </div>
@@ -10611,7 +9965,7 @@ html #appScreen #chatApp[data-chat-style-theme="planC"] .chat-send-btn {
         <div class="draggable-card col-span-1" draggable="true" data-layout-id="app-phone" style="left: 16px; top: 180px;">
           <div class="card-badge remove-badge" onclick="removeAppIcon(this)"><i data-lucide="minus" size="12"></i></div>
           <div class="app-icon-item" onclick="openPhoneInspectionApp()" title="查看梦角手机">
-            <div class="app-icon-box"><i data-lucide="smartphone" size="20"></i></div>
+            <div class="app-icon-box"><i data-lucide="smartphone" size="20"></i><span style="position:absolute;right:5px;bottom:4px;font:800 5px ui-monospace,monospace;">LOOK</span></div>
             <span class="app-icon-label">PHONE</span>
           </div>
         </div>
@@ -10619,7 +9973,7 @@ html #appScreen #chatApp[data-chat-style-theme="planC"] .chat-send-btn {
         <div class="draggable-card col-span-1" draggable="true" data-layout-id="app-fortune" style="left: 94px; top: 180px;">
           <div class="card-badge remove-badge" onclick="removeAppIcon(this)"><i data-lucide="minus" size="12"></i></div>
           <div class="app-icon-item" onclick="openFortuneApp()" title="查看我和梦角的今日运势">
-            <div class="app-icon-box"><i data-lucide="sun-medium" size="20"></i></div>
+            <div class="app-icon-box"><i data-lucide="sun-medium" size="20"></i><span style="position:absolute;right:5px;bottom:4px;font:850 4.5px ui-monospace,monospace;">TODAY</span></div>
             <span class="app-icon-label">FORTUNE</span>
           </div>
         </div>
@@ -11435,7 +10789,7 @@ html #appScreen #chatApp[data-chat-style-theme="planC"] .chat-send-btn {
 
 
     <!-- CHAT 私信应用：Instagram 风格的消息列表与对话页 -->
-    <section class="chat-app" id="chatApp" data-chat-style-theme="planA" aria-hidden="true">
+    <section class="chat-app" id="chatApp" aria-hidden="true">
       <div class="chat-list-view" id="chatListView">
         <header class="chat-list-header">
           <div class="chat-list-header-row">
@@ -11478,16 +10832,11 @@ html #appScreen #chatApp[data-chat-style-theme="planC"] .chat-send-btn {
             </button>
             <div class="chat-thread-avatar" id="threadAvatar">＋</div>
             <div class="chat-thread-title">
-              <div class="chat-companion-badge" id="chatCompanionBadge" onclick="openProfileView()" title="点击进入伴侣空间" aria-label="伴侣状态">
-                <span class="companion-heart">💖</span>
-                <span class="companion-mood-text" id="companionMoodText">伴侣空间 · 在身边</span>
-              </div>
               <div class="chat-thread-name" id="threadName">未选择角色</div>
               <div class="chat-thread-status" id="threadStatus"></div>
             </div>
           </div>
           <div class="chat-thread-actions">
-            <button class="chat-plain-btn chat-spinning-vinyl" id="chatSpinningVinyl" type="button" onclick="openListenTogether()" title="伴聊唱片 · 点击开启一起听" aria-label="伴聊唱片"><span class="vinyl-disc"></span></button>
             <button class="chat-plain-btn" type="button" onclick="openChatThreadSearch()" aria-label="搜索当前聊天室" title="搜索当前聊天室"><i data-lucide="search" size="19"></i></button>
             <button class="chat-plain-btn" type="button" onclick="openCall('voice')" aria-label="语音通话"><i data-lucide="phone" size="19"></i></button>
             <button class="chat-plain-btn" type="button" onclick="openCall('video')" aria-label="视频通话"><i data-lucide="video" size="20"></i></button>
@@ -11536,13 +10885,6 @@ html #appScreen #chatApp[data-chat-style-theme="planC"] .chat-send-btn {
 第三条消息" oninput="updateChatBatchComposer()"></textarea>
           <div class="chat-batch-footer"><span id="chatBatchProgress">0 条</span><button class="chat-batch-button" type="button" data-global-font-ignore="true" onclick="cancelChatBatchMessages()">取消</button><button class="chat-batch-button primary" id="chatBatchSendButton" type="button" data-global-font-ignore="true" onclick="sendChatBatchMessages()" disabled>逐条发送</button></div>
         </section>
-        <div class="chat-quick-action-chips" id="chatPlanBChips" aria-label="日系快捷功能芯片">
-          <button type="button" class="planb-chip" onclick="openChatFeature('voice')"><i data-lucide="mic" size="11"></i><span>语音</span></button>
-          <button type="button" class="planb-chip" onclick="toggleExpressionPanel()"><i data-lucide="smile" size="11"></i><span>表情</span></button>
-          <button type="button" class="planb-chip" onclick="openChatCardMountPicker()"><i data-lucide="layers" size="11"></i><span>字卡</span></button>
-          <button type="button" class="planb-chip" onclick="sendAvatarInteraction('拍一拍')"><i data-lucide="hand" size="11"></i><span>拍一拍</span></button>
-          <button type="button" class="planb-chip" onclick="continueRoleReply()"><i data-lucide="sparkles" size="11"></i><span>继续说</span></button>
-        </div>
         <div class="chat-composer" id="chatComposer">
           <button class="chat-composer-icon" id="chatAttachmentToggle" type="button" onclick="toggleAttachmentPanel()" aria-label="附件" aria-expanded="false"><i data-lucide="paperclip" size="20"></i></button>
           <div class="chat-input-wrap">
@@ -11826,16 +11168,6 @@ html #appScreen #chatApp[data-chat-style-theme="planC"] .chat-send-btn {
             <div class="chat-settings-help">从已经添加的字卡分组中勾选当前角色可调用的范围。保存后，文字、查岗、语音、朋友圈和其他字卡内容都只从已挂载分组抽取。</div>
             <div class="chat-card-mount-summary empty" id="chatCardMountSummary">尚未设置挂载范围</div>
             <button class="chat-card-mount-action" type="button" onclick="openChatCardMountPicker()"><span>管理字卡挂载</span><small>进入分组选择 ›</small></button>
-          </section>
-
-          <section class="chat-settings-section">
-            <div class="chat-settings-section-title"><span>聊天室整体美化风格</span><small>当前聊天室</small></div>
-            <div class="chat-settings-help">在 3 套官方特色方案中自由选择，每套深度重构顶栏、消息流、气泡圆角与输入栏交互。</div>
-            <div class="chat-settings-segmented" style="display: grid; grid-template-columns: 1fr; gap: 6px;">
-              <button class="chat-settings-choice" data-chat-style-choice="planA" type="button" onclick="setChatStyleTheme('planA')">🏝️ 方案 A：【现代灵动 · 悬浮交互岛】（iOS 18 / Telegram 现代感）</button>
-              <button class="chat-settings-choice" data-chat-style-choice="planB" type="button" onclick="setChatStyleTheme('planB')">📰 方案 B：【极简日系杂志 · 卡片流】（LINE / Notion 留白美学）</button>
-              <button class="chat-settings-choice" data-chat-style-choice="planC" type="button" onclick="setChatStyleTheme('planC')">🎀 方案 C：【沉浸式二次元 / 视觉小说风】（乙女向 / Galgame 伴聊窗口）</button>
-            </div>
           </section>
 
           <section class="chat-settings-section">
@@ -21754,7 +21086,6 @@ html #appScreen #chatApp[data-chat-style-theme="planC"] .chat-send-btn {
       const cards = [];
       return {
         avatarShape: 'circle',
-        chatStyleTheme: 'planA',
         wallpaper: '',
         bubblePreset: 'default',
         customBubbleCSS: '',
@@ -21832,7 +21163,6 @@ html #appScreen #chatApp[data-chat-style-theme="planC"] .chat-send-btn {
         ...defaults,
         ...saved,
         bubblePreset: normalizedPreset || defaults.bubblePreset,
-        chatStyleTheme: saved.chatStyleTheme || 'planA',
         selfName: typeof saved.selfName === 'string' ? saved.selfName.slice(0, 24) : defaults.selfName,
         selfAvatar: typeof saved.selfAvatar === 'string' ? saved.selfAvatar : defaults.selfAvatar,
         selfGradient: typeof saved.selfGradient === 'string' && saved.selfGradient ? saved.selfGradient : defaults.selfGradient,
@@ -28348,39 +27678,11 @@ html #appScreen #chatApp[data-chat-style-theme="planC"] .chat-send-btn {
       showChatToast(next === 'classic' ? '输入栏已换成经典横条' : '输入栏已换成悬浮胶囊');
     }
 
-    function normalizeChatStyleTheme(theme) {
-      return ['planA', 'planB', 'planC'].includes(theme) ? theme : 'planA';
-    }
-
-    function applyChatStyleTheme(theme) {
-      const chatApp = document.getElementById('chatApp');
-      if (!chatApp) return;
-      const valid = normalizeChatStyleTheme(theme);
-      chatApp.dataset.chatStyleTheme = valid;
-      try { if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons(); } catch (_) {}
-    }
-    window.applyChatStyleTheme = applyChatStyleTheme;
-
-    function setChatStyleTheme(theme) {
-      const valid = normalizeChatStyleTheme(theme);
-      updateChatSettings({ chatStyleTheme: valid });
-      applyChatStyleTheme(valid);
-      renderChatSettings();
-      const labels = {
-        planA: '方案 A：现代灵动 · 悬浮交互岛',
-        planB: '方案 B：极简日系杂志 · 卡片流',
-        planC: '方案 C：沉浸式二次元 · 视觉小说风'
-      };
-      showChatToast(`聊天室风格已切换为「${labels[valid] || '方案 A'}」`);
-    }
-    window.setChatStyleTheme = setChatStyleTheme;
-
     function applyCurrentChatSettings() {
       const chatApp = document.getElementById('chatApp');
       if (!chatApp) return;
       const settings = getChatSettings();
       applyAvatarShape(settings.avatarShape);
-      applyChatStyleTheme(settings.chatStyleTheme || 'planA');
       applyChatComposerStyle(settings.composerStyle);   /* v111z54：输入栏样式 */
       chatApp.dataset.chatBubble = settings.bubblePreset || 'default';
       applyCustomBubbleCSS(settings.customBubbleCSS);
@@ -28583,11 +27885,6 @@ html #appScreen #chatApp[data-chat-style-theme="planC"] .chat-send-btn {
       if (bubbleCss) bubbleCss.value = settings.customBubbleCSS || '';
       if (themeCss) themeCss.value = settings.themeCSS || '';
       document.querySelectorAll('[data-avatar-shape]').forEach(button => button.classList.toggle('active', button.dataset.avatarShape === settings.avatarShape));
-      /* 聊天室整体美化 3 套官方方案自主选择 */
-      document.querySelectorAll('[data-chat-style-choice]').forEach(button => {
-        const currentTheme = normalizeChatStyleTheme(settings.chatStyleTheme || 'planA');
-        button.classList.toggle('active', button.dataset.chatStyleChoice === currentTheme);
-      });
       /* v111z54：输入栏样式（默认胶囊） */
       document.querySelectorAll('[data-composer-choice]').forEach(button => button.classList.toggle('active',
         button.dataset.composerChoice === (settings.composerStyle === 'classic' ? 'classic' : 'capsule')));
