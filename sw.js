@@ -11,7 +11,7 @@ const STORE = 'state';
  * 应用自身的 mobius-image-resilience-v1（媒体韧性缓存，最多 64MB 用户媒体）
  * 由页面代码管理，本 SW 绝不可删除或拦截。
  * ------------------------------------------------------------------ */
-const CACHE_VERSION = 'v118';
+const CACHE_VERSION = 'v119';
 const SHELL_CACHE = `mobius-shell-${CACHE_VERSION}`;
 const SHELL_CACHE_PREFIX = 'mobius-shell-';
 const APP_MEDIA_CACHE = 'mobius-image-resilience-v1'; // 应用私有，永不触碰
@@ -22,8 +22,8 @@ const APP_MEDIA_CACHE = 'mobius-image-resilience-v1'; // 应用私有，永不�
    这里做最后一道闸：不是同源网址就换成随包交付的站点图标。
    v111z3：站点图标换成用户自己的真 logo；URL 统一带 `?v=v111z3` 破缓存
    （手机里可能还留着旧占位图；问号只影响抓取，isPrecachedAsset 只比 pathname，见下）。 */
-const NOTIF_ICON_FALLBACK = './icons/icon-192.png?v=v111z62';
-const NOTIF_BADGE_FALLBACK = './icons/badge-96.png?v=v111z62';
+const NOTIF_ICON_FALLBACK = `./icons/icon-192.png?v=${CACHE_VERSION}`;
+const NOTIF_BADGE_FALLBACK = `./icons/badge-96.png?v=${CACHE_VERSION}`;
 function notifAssetUrl(value, fallback) {
   const s = String(value || '').trim();
   if (!s) return fallback;
@@ -35,13 +35,14 @@ const PRECACHE_URLS = [
   './',
   './index.html',
   './manifest.webmanifest',
-  './icons/icon-192.png?v=v111z62',
-  './icons/icon-512.png?v=v111z62',
-  './icons/icon-maskable-512.png?v=v111z62',
-  './icons/apple-touch-icon-180.png?v=v111z62',
-  './icons/badge-96.png?v=v111z62',
-  './icons/favicon-32.png?v=v111z62',
-  './icons/favicon-64.png?v=v111z62'
+  /* v119：图标指纹跟随 CACHE_VERSION —— 页面请求串与预缓存串一致，旧图标不再滞留 */
+  `./icons/icon-192.png?v=${CACHE_VERSION}`,
+  `./icons/icon-512.png?v=${CACHE_VERSION}`,
+  `./icons/icon-maskable-512.png?v=${CACHE_VERSION}`,
+  `./icons/apple-touch-icon-180.png?v=${CACHE_VERSION}`,
+  `./icons/badge-96.png?v=${CACHE_VERSION}`,
+  `./icons/favicon-32.png?v=${CACHE_VERSION}`,
+  `./icons/favicon-64.png?v=${CACHE_VERSION}`
 ];
 
 // 运行时缓存的第三方资源（lucide 图标库走 CDN，缓存后离线仍有图标）
