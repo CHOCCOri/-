@@ -6685,8 +6685,8 @@ html[data-keyboard-open="true"] .chat-feature-modal { padding-bottom: calc(14px 
        ⑤ 输入栏是一枚悬浮玻璃胶囊，发送键是 iOS 蓝圆钮。
        这一整套只挂在 .chat-immersive 上，关掉开关就回到原来的分栏布局。
        气泡配色只在「默认 / iMessage」预设下生效：WeChat / KakaoTalk / 自定义不动用户的选择。 */
-    /* 用户口径：中间那组「头像 + 胶囊」再往下挪一点（iOS 上在安全区之上再 +8px）。 */
-    #appScreen .chat-thread-view.chat-immersive { --chat-immersive-head-pad: max(20px, calc(env(safe-area-inset-top, 0px) + 8px)); }
+    /* 用户口径（v122 收矮）：头顶留白从 20px / +8px 收到 16px / +6px，配合更小的头像 + 胶囊，白纱整体少占屏幕。 */
+    #appScreen .chat-thread-view.chat-immersive { --chat-immersive-head-pad: max(16px, calc(env(safe-area-inset-top, 0px) + 6px)); }
 
     /* ① 顶栏外壳：贴顶浮层。grid 两行 —— 第一行头像，第二行 [返回][身份][功能]。
        ⚠ 位置一律由 grid 决定，不再用「绝对定位 + 猜高度」：字号 / 安全区 / 群聊一变也不会错位。 */
@@ -6715,7 +6715,7 @@ html[data-keyboard-open="true"] .chat-feature-modal { padding-bottom: calc(14px 
       touch-action: none;
       cursor: grab;
     }
-    /* 顶部「雾化」层：从顶栏里面一路雾到顶栏之外（往下多糊 72px）。
+    /* 顶部「雾化」层：从顶栏里面一路雾到顶栏之外（v122：往下只糊 40px，原 72px 太长、太占屏幕）。
        白纱是 5 段递进的渐变，磨砂用同形状的 mask 一起淡出 ——
        于是越往下越清透、到最底下干干净净地消失，没有硬边（iOS 顶部那种扩散）。
        控件浮在它上面，所以「磨砂玻璃」只包住控件那一小块。 */
@@ -6725,7 +6725,7 @@ html[data-keyboard-open="true"] .chat-feature-modal { padding-bottom: calc(14px 
       left: 0;
       right: 0;
       top: 0;
-      height: calc(100% + 72px);
+      height: calc(100% + 40px);
       z-index: -1;
       pointer-events: none;
       background: linear-gradient(180deg,
@@ -6804,8 +6804,8 @@ html[data-keyboard-open="true"] .chat-feature-modal { padding-bottom: calc(14px 
       grid-row: 1 / span 2;
       align-self: center;
       justify-self: start;
-      width: 36px !important;
-      height: 36px !important;
+      width: 30px !important;
+      height: 30px !important;
       border-radius: 50% !important;
       /* 清透磨砂：白纱很淡（不糊成奶白块），靠模糊出磨砂感，落影和内侧高光都收薄 */
       background: rgba(255,255,255,var(--chat-immersive-chrome,.34)) !important;
@@ -6815,6 +6815,8 @@ html[data-keyboard-open="true"] .chat-feature-modal { padding-bottom: calc(14px 
       backdrop-filter: blur(var(--chat-immersive-chrome-blur,19px)) saturate(170%);
     }
     #appScreen .chat-thread-view.chat-immersive .chat-thread-header .chat-back-btn:active { transform: scale(.92); }
+    /* v122：返回键跟着头像 / 胶囊一起收小，图标同步缩一档 */
+    #appScreen .chat-thread-view.chat-immersive .chat-thread-header .chat-back-btn svg { width: 18px; height: 18px; }
 
     /* ③ 头像：第一行居中，浮在壁纸上（不要白描边、不要白圈） */
     #appScreen .chat-thread-view.chat-immersive .chat-thread-header .chat-thread-avatar {
@@ -6823,10 +6825,10 @@ html[data-keyboard-open="true"] .chat-feature-modal { padding-bottom: calc(14px 
       justify-self: center;
       align-self: end;
       z-index: 1;
-      width: 60px !important;
-      height: 60px !important;
-      flex: 0 0 60px !important;
-      font-size: 15px !important;
+      width: 50px !important;
+      height: 50px !important;
+      flex: 0 0 50px !important;
+      font-size: 13px !important;
       border: 0 none !important;
       /* 立体感：头像要有「浮在壁纸上」的落影（仍然不要白描边） */
       box-shadow: 0 10px 22px rgba(6,16,28,.34), 0 3px 8px rgba(6,16,28,.22) !important;
@@ -6844,8 +6846,8 @@ html[data-keyboard-open="true"] .chat-feature-modal { padding-bottom: calc(14px 
       z-index: 2;
       width: max-content;                 /* 内容多宽就多宽：像头像下面挂的一颗小药丸 */
       max-width: min(220px, calc(100vw - 60px));
-      margin-top: -6px;                   /* 压住头像下缘一点点，两者连成一整块 */
-      padding: 5px 13px 6px !important;
+      margin-top: -5px;                   /* 压住头像下缘一点点，两者连成一整块（v122 随头像一起收小） */
+      padding: 3px 11px 4px !important;
       border-radius: 999px !important;
       /* 清透磨砂：白纱很淡（不糊成奶白块），靠模糊出磨砂感，落影和内侧高光都收薄 */
       background: rgba(255,255,255,var(--chat-immersive-chrome,.34)) !important;
@@ -6865,7 +6867,7 @@ html[data-keyboard-open="true"] .chat-feature-modal { padding-bottom: calc(14px 
       grid-row: 1;
       max-width: 100% !important;
       overflow: hidden;
-      font-size: 10px !important;
+      font-size: 9px !important;
       font-weight: 600;
       color: #45535f !important;
       text-overflow: ellipsis;
@@ -6882,7 +6884,7 @@ html[data-keyboard-open="true"] .chat-feature-modal { padding-bottom: calc(14px 
       grid-row: 1 / span 2;
       align-self: center;
       justify-self: end;
-      height: 36px;
+      height: 30px;
       gap: 0 !important;
       padding: 2px 3px !important;
       border-radius: 999px !important;
@@ -6893,12 +6895,14 @@ html[data-keyboard-open="true"] .chat-feature-modal { padding-bottom: calc(14px 
       backdrop-filter: blur(var(--chat-immersive-chrome-blur,19px)) saturate(170%);
     }
     #appScreen .chat-thread-view.chat-immersive .chat-thread-header .chat-thread-actions .chat-plain-btn {
-      width: 28px !important;
-      height: 28px !important;
+      width: 24px !important;
+      height: 24px !important;
       border-radius: 50% !important;
       color: #16212c !important;
     }
     #appScreen .chat-thread-view.chat-immersive .chat-thread-header .chat-thread-actions .chat-plain-btn:active { background: rgba(255,255,255,.92) !important; }
+    /* v122：搜索 / 语音通话 / 视频通话 / 更多设置跟着一起收小，图标同步缩一档 */
+    #appScreen .chat-thread-view.chat-immersive .chat-thread-header .chat-thread-actions .chat-plain-btn svg { width: 16px; height: 16px; }
 
     /* ⑥ 搜索条继续浮在顶栏正下方（顶栏高度由 JS 量出来） */
     #appScreen .chat-thread-view.chat-immersive .chat-thread-search-panel {
@@ -11646,7 +11650,6 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
 
           <section class="chat-settings-section">
             <div class="chat-settings-section-title"><span>沉浸式聊天室</span><small>iMessage / 液态玻璃</small></div>
-            <div class="chat-settings-help">默认关闭，按房间记忆。参考 iOS 的信息界面重做这个房间：壁纸从最上面铺到输入栏，顶栏拆成悬浮的玻璃控件（返回圆钮 / 头像名字胶囊 / 功能胶囊），消息从它们下面滑过去、往下渐隐，顶栏空白处也能直接滑动聊天；我方气泡走 iMessage 蓝、对方是通透玻璃，连续消息自动收成一串；输入栏是一枚悬浮玻璃胶囊，发送键是蓝色圆钮。气泡配色只在「默认 / iMessage」预设下生效，WeChat / KakaoTalk / 自定义保持原样。先给这个房间设一张「聊天壁纸」，效果最明显。</div>
             <div class="chat-settings-toggle-row"><span>开启沉浸式聊天室</span><button class="chat-glass-toggle" id="chatImmersiveToggle" type="button" onclick="toggleChatThreadImmersive()" aria-label="开启沉浸式聊天室" aria-pressed="false"></button></div>
             <div class="chat-settings-range-control"><span class="chat-settings-range-row">顶栏 / 气泡白纱</span><input id="chatImmersiveVeilInput" type="range" min="0" max="100" step="1" oninput="updateChatImmersiveSetting('veil', this.value)"><strong id="chatImmersiveVeilValue">62%</strong></div>
             <div class="chat-settings-range-control"><span class="chat-settings-range-row">玻璃磨砂</span><input id="chatImmersiveBlurInput" type="range" min="0" max="30" step="1" oninput="updateChatImmersiveSetting('blur', this.value)"><strong id="chatImmersiveBlurValue">14px</strong></div>
@@ -28574,13 +28577,14 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       if (label) label.textContent = kind === 'blur' ? `${Number(value)}px` : `${Number(value)}%`;
     }
 
-    /* v121：磨砂透明或沉浸式聊天室任一开启时，聊天壁纸才铺进聊天室
-       （顶栏是浮层，壁纸从顶栏底下一直到输入栏）。 */
+    /* v122 修 bug：壁纸只看「这个房间设没设壁纸」—— 不再要求磨砂透明 / 沉浸式任一开启，
+       否则没开沉浸式时换个壁纸根本贴不上（一关设置页就被这道闸抹掉）。
+       资料页 / 设置页打开时房间视图是隐藏的，照旧不挂；联系人列表入口也不挂。 */
     function chatThreadWallpaperShouldShow(settings = getChatSettings()) {
       const chatApp = document.getElementById('chatApp');
       if (!chatApp || !chatApp.classList.contains('thread-open')) return false;
       if (chatApp.classList.contains('profile-open') || chatApp.classList.contains('settings-open')) return false;
-      return settings.chatGlassEnabled === true || settings.threadImmersive === true;
+      return Boolean(settings && settings.wallpaper);
     }
 
     function applyChatThreadImmersiveSettings() {
