@@ -13,9 +13,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Möbius">
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png?v=v118">
-  <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon-180.png?v=v118">
-  <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png?v=v118">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png?v=v119">
+  <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon-180.png?v=v119">
+  <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png?v=v119">
   <!-- 填写后端 Web Push 配置后，页面关闭或系统锁屏时也可由推送服务器唤醒 SW。 -->
   <meta name="dream-push-vapid-public-key" content="">
   <meta name="dream-push-subscribe-endpoint" content="">
@@ -25540,7 +25540,10 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
     /* v111z36：本版实际包含 —— 引用只在所属房间取（不再串房）/ 房间切换不再抛
        insertBefore / 回到前台不再补发到点的主动来电 / 表情包上传压图·失败说清·失效占位。
        换壳时用同一个版本号比对离线壳，改完记得和 sw.js 的 CACHE_VERSION 一起动。 */
-    window.MOBIUS_SHELL_EXPECT = 'v111z74';
+    /* v119：此前这个期望版本号一直没跟着 sw.js 升（停在 v111z74），
+         启动自检每次都误判「离线壳陈旧」，于是一次会话最多白刷两次。
+         现在与 sw.js CACHE_VERSION、头部图标指纹三锚点锁死对齐。 */
+    window.MOBIUS_SHELL_EXPECT = 'v119';
     function comboDebug(msg) {
       try {
         if (localStorage.getItem('mobius:combo-debug') !== '1') return;
@@ -36655,8 +36658,8 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
      所以不会再出现「指过去是 404 → 系统给一枚默认黑图标」。
      v111z3：这七个文件换成**用户自己的真 logo**（浅蓝灰底 + 深墨「∞」，由用户提供，原样交付）；
      并统一加 `?v=v111z3` —— 手机上可能还留着上一版占位图的 HTTP 缓存，换个 URL 才保证抓到新图。 */
-  const NOTIF_ICON_FALLBACK_URL = new URL('./icons/icon-192.png?v=v118', location.href).href;
-  const NOTIF_BADGE_URL = new URL('./icons/badge-96.png?v=v118', location.href).href;
+  const NOTIF_ICON_FALLBACK_URL = new URL('./icons/icon-192.png?v=v119', location.href).href;
+  const NOTIF_BADGE_URL = new URL('./icons/badge-96.png?v=v119', location.href).href;
   async function resolveNotificationAvatarIcon(routeData, opts) {
 
 
