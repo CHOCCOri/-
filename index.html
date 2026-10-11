@@ -13,9 +13,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Möbius">
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png?v=v120">
-  <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon-180.png?v=v120">
-  <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png?v=v120">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png?v=v121">
+  <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon-180.png?v=v121">
+  <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png?v=v121">
   <!-- 填写后端 Web Push 配置后，页面关闭或系统锁屏时也可由推送服务器唤醒 SW。 -->
   <meta name="dream-push-vapid-public-key" content="">
   <meta name="dream-push-subscribe-endpoint" content="">
@@ -181,7 +181,9 @@ if(focused&&!viewport&&stableHeight>0)keyboardInset=Math.max(keyboardInset,Math.
       margin-top: 2px;
     }
 
-    .header-actions { display: flex; gap: 8px; align-items: center; }
+    /* v121：justify-content / flex-wrap 是给极窄屏兜底的 —— 正常宽度下这一行是内容宽，
+       看不出差别；真的放不下时按钮换行，而不是整行铺出屏幕被切掉。 */
+    .header-actions { display: flex; gap: 8px; align-items: center; justify-content: flex-end; flex-wrap: wrap; }
 
     .icon-btn {
       width: 38px;
@@ -1453,6 +1455,13 @@ if(focused&&!viewport&&stableHeight>0)keyboardInset=Math.max(keyboardInset,Math.
     .circle-empty strong { margin-top: 10px; color: #576971; font-size: 10px; }
     .circle-empty span { margin-top: 5px; font-size: 7px; }
     .circle-post { display: grid; grid-template-columns: 34px minmax(0,1fr); gap: 8px; padding: 12px 2px; border-bottom: 1px solid #e2e9ec; }
+    /* v121：从朋友圈通知点进来时，目标动态闪一下，让用户一眼看到是哪条 */
+    .circle-post.circle-post-flash { animation: circlePostFlash 1.9s ease; border-radius: 10px; }
+    @keyframes circlePostFlash {
+      0% { background: rgba(143,182,201,.32); box-shadow: 0 0 0 2px rgba(143,182,201,.42); }
+      70% { background: rgba(143,182,201,.18); box-shadow: 0 0 0 2px rgba(143,182,201,.22); }
+      100% { background: transparent; box-shadow: 0 0 0 2px transparent; }
+    }
     .circle-post-avatar { width: 34px; height: 34px; display: grid; place-items: center; overflow: hidden; border-radius: 8px; background: linear-gradient(145deg,#9aa9b8,#607386); color: #fff; font-size: 9px; font-weight: 800; background-position: center; background-size: cover; }
     .circle-post-body { min-width: 0; }
     .circle-post-author { color: #4d7280; font-size: 9px; font-weight: 850; }
@@ -6667,6 +6676,415 @@ html[data-keyboard-open="true"] .chat-feature-modal { padding-bottom: calc(14px 
       flex: 0 0 auto !important;
     }
 
+    /* ==================== v121 · 沉浸式聊天室（iMessage / Liquid Glass 风） ====================
+       参考 iOS 26/27 Liquid Glass 下的「信息」界面重新设计：
+       ① 壁纸从屏幕最上面一直铺到输入栏，中间不再有任何实心分栏；
+       ② 顶栏是浮层，内部用 grid 排两行：上面是居中头像，下面是 [返回圆钮][身份胶囊][功能胶囊] 一行；
+       ③ 消息列表让出顶栏高度，消息从这些玻璃控件下面穿过去、往下渐隐；
+       ④ 气泡走 iMessage：我方蓝色、对方通透玻璃；连续同侧消息收成一串，只在末端留小尾巴；
+       ⑤ 输入栏是一枚悬浮玻璃胶囊，发送键是 iOS 蓝圆钮。
+       这一整套只挂在 .chat-immersive 上，关掉开关就回到原来的分栏布局。
+       气泡配色只在「默认 / iMessage」预设下生效：WeChat / KakaoTalk / 自定义不动用户的选择。 */
+    /* 用户口径：中间那组「头像 + 胶囊」再往下挪一点（iOS 上在安全区之上再 +8px）。 */
+    #appScreen .chat-thread-view.chat-immersive { --chat-immersive-head-pad: max(20px, calc(env(safe-area-inset-top, 0px) + 8px)); }
+
+    /* ① 顶栏外壳：贴顶浮层。grid 两行 —— 第一行头像，第二行 [返回][身份][功能]。
+       ⚠ 位置一律由 grid 决定，不再用「绝对定位 + 猜高度」：字号 / 安全区 / 群聊一变也不会错位。 */
+    #appScreen .chat-thread-view.chat-immersive .chat-thread-header {
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      z-index: 7 !important;
+      display: grid !important;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      grid-template-rows: auto auto;
+      align-items: center !important;
+      justify-items: center;
+      row-gap: 0;                /* 胶囊靠自身负边距贴住头像下缘，读成「头像 + 胶囊」一整块 */
+      column-gap: 8px;
+      min-height: 0 !important;
+      padding: var(--chat-immersive-head-pad, 16px) 8px 8px !important;
+      border-bottom: 0 none !important;
+      /* 顶栏本体完全透明：它只是一层布局 + 手势面，
+         真正的「雾化 / 白纱 / 磨砂」全交给下面那个伸出身体的 ::before。 */
+      background: none !important;
+      -webkit-backdrop-filter: none !important;
+      backdrop-filter: none !important;
+      box-shadow: none !important;
+      touch-action: none;
+      cursor: grab;
+    }
+    /* 顶部「雾化」层：从顶栏里面一路雾到顶栏之外（往下多糊 72px）。
+       白纱是 5 段递进的渐变，磨砂用同形状的 mask 一起淡出 ——
+       于是越往下越清透、到最底下干干净净地消失，没有硬边（iOS 顶部那种扩散）。
+       控件浮在它上面，所以「磨砂玻璃」只包住控件那一小块。 */
+    #appScreen .chat-thread-view.chat-immersive .chat-thread-header::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      height: calc(100% + 72px);
+      z-index: -1;
+      pointer-events: none;
+      background: linear-gradient(180deg,
+        rgba(255,255,255,var(--chat-immersive-top-veil,.28)) 0%,
+        rgba(255,255,255,calc(var(--chat-immersive-top-veil,.28) * .88)) 30%,
+        rgba(255,255,255,calc(var(--chat-immersive-top-veil,.28) * .52)) 58%,
+        rgba(255,255,255,calc(var(--chat-immersive-top-veil,.28) * .18)) 80%,
+        rgba(255,255,255,0) 100%);
+      -webkit-backdrop-filter: blur(var(--chat-immersive-blur-strong,27px)) saturate(180%);
+      backdrop-filter: blur(var(--chat-immersive-blur-strong,27px)) saturate(180%);
+      -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 40%, rgba(0,0,0,.72) 62%, rgba(0,0,0,.28) 82%, transparent 100%);
+      mask-image: linear-gradient(180deg, #000 0%, #000 40%, rgba(0,0,0,.72) 62%, rgba(0,0,0,.28) 82%, transparent 100%);
+    }
+    /* ⚠ iOS 上有一条平台规则（html[data-ios] … .chat-thread-header）会给顶栏补安全区：
+       它的选择器比我这条多一个元素、优先级更高，会覆盖 padding-top / min-height。
+       而沉浸式顶栏的高度是由 grid 自己撑出来的（头像 + 胶囊两行），实测高度才准 ——
+       所以这里用一条优先级更高的规则把它按住。返回键错位最早就是被这条顶歪的。 */
+    html[data-ios] #appScreen .chat-thread-view.chat-immersive .chat-thread-header {
+      padding-top: var(--chat-immersive-head-pad, 20px) !important;
+      min-height: 0 !important;
+    }
+    /* ⑬ 底部这些面板（附件 / 表情包 / 继续说出来的批量面板 / 引用预览 / 发语音的录制面板）
+       也铺同一档磨砂 —— 之前它们是一块盖住壁纸的不透明白板。 */
+    #appScreen #chatApp .chat-thread-view.chat-immersive .chat-quote-preview,
+    #appScreen #chatApp .chat-thread-view.chat-immersive .chat-batch-panel,
+    #appScreen #chatApp .chat-thread-view.chat-immersive .chat-expression-panel,
+    #appScreen #chatApp .chat-thread-view.chat-immersive .chat-attachment-panel,
+    #appScreen #chatApp .chat-thread-view.chat-immersive .chat-voice-recording-panel {
+      background: rgba(255,255,255,var(--chat-immersive-sheet,.62)) !important;
+      border-top-color: rgba(255,255,255,.42) !important;
+      -webkit-backdrop-filter: blur(var(--chat-immersive-blur-strong,27px)) saturate(170%);
+      backdrop-filter: blur(var(--chat-immersive-blur-strong,27px)) saturate(170%);
+    }
+    /* 面板里的那些「白色色块」：标签条 / 卡片格 / 图标底 / 输入框 / 按钮 / 关闭键
+       本来都是实心白（--card-white / --bg-screen），贴在磨砂面板上就是一块块白斑。
+       统一改成半透明白 + 浅边，让它跟磨砂长成一体。 */
+    #appScreen #chatApp .chat-thread-view.chat-immersive .expression-empty,
+    #appScreen #chatApp .chat-thread-view.chat-immersive .sticker-send-button,
+    #appScreen #chatApp .chat-thread-view.chat-immersive .expression-editor-row textarea,
+    #appScreen #chatApp .chat-thread-view.chat-immersive .attachment-item,
+    #appScreen #chatApp .chat-thread-view.chat-immersive .attachment-icon,
+    #appScreen #chatApp .chat-thread-view.chat-immersive .chat-batch-input,
+    #appScreen #chatApp .chat-thread-view.chat-immersive .chat-batch-button:not(.primary),
+    #appScreen #chatApp .chat-thread-view.chat-immersive .chat-quote-close {
+      background: rgba(255,255,255,.46) !important;
+      border-color: rgba(255,255,255,.52) !important;
+    }
+    /* 表情分类的标签条本来是一整条白，磨砂面板上让它透明、只留一条细底线 */
+    #appScreen #chatApp .chat-thread-view.chat-immersive .expression-tabs {
+      background: transparent !important;
+      border-bottom-color: rgba(255,255,255,.4) !important;
+    }
+    /* 省电兜底：没有 backdrop-filter，这些内层小面要给实一点才读得清 */
+    html[data-perf-mode="lite"] #appScreen #chatApp .chat-thread-view.chat-immersive .attachment-item,
+    html[data-perf-mode="lite"] #appScreen #chatApp .chat-thread-view.chat-immersive .attachment-icon,
+    html[data-perf-mode="lite"] #appScreen #chatApp .chat-thread-view.chat-immersive .sticker-send-button,
+    html[data-perf-mode="lite"] #appScreen #chatApp .chat-thread-view.chat-immersive .chat-batch-input,
+    html[data-perf-mode="lite"] #appScreen #chatApp .chat-thread-view.chat-immersive .chat-batch-button:not(.primary) {
+      background: rgba(255,255,255,.84) !important;
+    }
+
+    /* 语音录制面板的「上滑取消」状态仍然是粉的 */
+    #appScreen #chatApp .chat-thread-view.chat-immersive .chat-voice-recording-panel.is-cancelling {
+      background: rgba(255,244,246,.86) !important;
+    }
+
+    /* 让 .chat-thread-left 不再自成一行：它的三个子元素（返回 / 头像 / 标题）
+       直接参与 header 的 grid 排版 —— 返回键永远和身份胶囊同行同中线，头像永远在它们上面居中。 */
+    #appScreen .chat-thread-view.chat-immersive .chat-thread-left { display: contents !important; }
+
+    /* ② 返回：左列第二行，和身份胶囊同一行 */
+    /* 返回键跨两行、垂直居中：对齐的是「头像 + 胶囊」这一整块的中线（iOS 就是这样，
+       所以它看起来比头像中心更低一点），而不是单独对齐头像那一行。 */
+    #appScreen .chat-thread-view.chat-immersive .chat-thread-header .chat-back-btn {
+      grid-column: 1;
+      grid-row: 1 / span 2;
+      align-self: center;
+      justify-self: start;
+      width: 36px !important;
+      height: 36px !important;
+      border-radius: 50% !important;
+      /* 清透磨砂：白纱很淡（不糊成奶白块），靠模糊出磨砂感，落影和内侧高光都收薄 */
+      background: rgba(255,255,255,var(--chat-immersive-chrome,.34)) !important;
+      color: #16212c !important;
+      box-shadow: 0 3px 10px rgba(18,32,46,.10), inset 0 1px 0 rgba(255,255,255,.36) !important;
+      -webkit-backdrop-filter: blur(var(--chat-immersive-chrome-blur,19px)) saturate(170%);
+      backdrop-filter: blur(var(--chat-immersive-chrome-blur,19px)) saturate(170%);
+    }
+    #appScreen .chat-thread-view.chat-immersive .chat-thread-header .chat-back-btn:active { transform: scale(.92); }
+
+    /* ③ 头像：第一行居中，浮在壁纸上（不要白描边、不要白圈） */
+    #appScreen .chat-thread-view.chat-immersive .chat-thread-header .chat-thread-avatar {
+      grid-column: 2;
+      grid-row: 1;
+      justify-self: center;
+      align-self: end;
+      z-index: 1;
+      width: 60px !important;
+      height: 60px !important;
+      flex: 0 0 60px !important;
+      font-size: 15px !important;
+      border: 0 none !important;
+      /* 立体感：头像要有「浮在壁纸上」的落影（仍然不要白描边） */
+      box-shadow: 0 10px 22px rgba(6,16,28,.34), 0 3px 8px rgba(6,16,28,.22) !important;
+    }
+
+    /* ④ 身份胶囊：第二行整行居中，只写「心情 · 状态」（昵称不再重复写在顶栏，
+       头像已经说明是谁了），右侧小箭头点进去看个人主页。 */
+    #appScreen .chat-thread-view.chat-immersive .chat-thread-header .chat-thread-title {
+      grid-column: 1 / -1;
+      grid-row: 2;
+      justify-self: center;
+      display: grid !important;
+      grid-template-columns: minmax(0, auto);
+      align-items: center;
+      z-index: 2;
+      width: max-content;                 /* 内容多宽就多宽：像头像下面挂的一颗小药丸 */
+      max-width: min(220px, calc(100vw - 60px));
+      margin-top: -6px;                   /* 压住头像下缘一点点，两者连成一整块 */
+      padding: 5px 13px 6px !important;
+      border-radius: 999px !important;
+      /* 清透磨砂：白纱很淡（不糊成奶白块），靠模糊出磨砂感，落影和内侧高光都收薄 */
+      background: rgba(255,255,255,var(--chat-immersive-chrome,.34)) !important;
+      box-shadow: 0 3px 10px rgba(18,32,46,.10), inset 0 1px 0 rgba(255,255,255,.36) !important;
+      -webkit-backdrop-filter: blur(var(--chat-immersive-chrome-blur,19px)) saturate(170%);
+      backdrop-filter: blur(var(--chat-immersive-chrome-blur,19px)) saturate(170%);
+      cursor: pointer;
+    }
+    #appScreen .chat-thread-view.chat-immersive .chat-thread-header .chat-thread-title:active { transform: scale(.97); }
+    /* 这个角色还没有心情 / 状态文案时，不留一颗空胶囊在头像下面 */
+    #appScreen .chat-thread-view.chat-immersive .chat-thread-header .chat-thread-title.chat-immersive-blank { display: none !important; }
+    /* 昵称不再出现在顶栏（用户口径：头像已经说明是谁，这里只放心情与状态）。
+       它仍然在 DOM 里，退出沉浸式 / 关掉开关就照旧显示。 */
+    #appScreen .chat-thread-view.chat-immersive .chat-thread-header .chat-thread-name { display: none !important; }
+    #appScreen .chat-thread-view.chat-immersive .chat-thread-header .chat-thread-status {
+      grid-column: 1;
+      grid-row: 1;
+      max-width: 100% !important;
+      overflow: hidden;
+      font-size: 10px !important;
+      font-weight: 600;
+      color: #45535f !important;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    /* 群聊没有「个人主页」：不给可点的手型，免得点了个空 */
+    #appScreen .chat-thread-view.chat-immersive .chat-thread-header:has(.chat-thread-avatar.group) .chat-thread-title { cursor: default; }
+    /* 用户口径：胶囊右侧那个小箭头不要（点胶囊仍然进个人主页）。 */
+    #appScreen .chat-thread-view.chat-immersive .chat-thread-header .chat-thread-title::after { content: none !important; }
+
+    /* ⑤ 功能：右列第二行，四个图标收在一枚玻璃胶囊里 */
+    #appScreen .chat-thread-view.chat-immersive .chat-thread-header .chat-thread-actions {
+      grid-column: 3;
+      grid-row: 1 / span 2;
+      align-self: center;
+      justify-self: end;
+      height: 36px;
+      gap: 0 !important;
+      padding: 2px 3px !important;
+      border-radius: 999px !important;
+      /* 清透磨砂：白纱很淡（不糊成奶白块），靠模糊出磨砂感，落影和内侧高光都收薄 */
+      background: rgba(255,255,255,var(--chat-immersive-chrome,.34)) !important;
+      box-shadow: 0 3px 10px rgba(18,32,46,.10), inset 0 1px 0 rgba(255,255,255,.36) !important;
+      -webkit-backdrop-filter: blur(var(--chat-immersive-chrome-blur,19px)) saturate(170%);
+      backdrop-filter: blur(var(--chat-immersive-chrome-blur,19px)) saturate(170%);
+    }
+    #appScreen .chat-thread-view.chat-immersive .chat-thread-header .chat-thread-actions .chat-plain-btn {
+      width: 28px !important;
+      height: 28px !important;
+      border-radius: 50% !important;
+      color: #16212c !important;
+    }
+    #appScreen .chat-thread-view.chat-immersive .chat-thread-header .chat-thread-actions .chat-plain-btn:active { background: rgba(255,255,255,.92) !important; }
+
+    /* ⑥ 搜索条继续浮在顶栏正下方（顶栏高度由 JS 量出来） */
+    #appScreen .chat-thread-view.chat-immersive .chat-thread-search-panel {
+      position: absolute !important;
+      top: var(--chat-immersive-header-h, 96px) !important;
+      left: 8px !important;
+      right: 8px !important;
+      z-index: 6 !important;
+      width: auto !important;
+      border: 0 none !important;
+      border-radius: 16px !important;
+      background: rgba(255,255,255,var(--chat-immersive-panel,.9)) !important;
+      -webkit-backdrop-filter: blur(var(--chat-immersive-blur-strong,27px)) saturate(180%);
+      backdrop-filter: blur(var(--chat-immersive-blur-strong,27px)) saturate(180%);
+      box-shadow: 0 10px 26px rgba(18,32,46,.16) !important;
+    }
+
+    /* ⑦ 消息列表让出顶栏（含搜索条）的高度：滚到最上面也盖不住第一条消息 */
+    .chat-thread-view.chat-immersive .chat-thread-body {
+      padding-top: calc(18px + var(--chat-immersive-top, 96px));
+      scroll-padding-top: calc(10px + var(--chat-immersive-top, 96px));
+    }
+    #chatApp .chat-thread-view.chat-immersive .chat-thread-body {
+      padding-top: calc(14px + var(--chat-immersive-top, 96px));
+    }
+
+    /* ⑧ 气泡：iMessage 蓝 + 通透玻璃（默认 / iMessage 预设） */
+    #chatApp:is([data-chat-bubble="default"],[data-chat-bubble="imessage"]) .chat-thread-view.chat-immersive .chat-message-line.incoming .chat-bubble:not(.chat-sticker-bubble):not(.chat-voice-bubble):not(.chat-poke-bubble):not(.chat-board-bubble):not(.chat-red-envelope-bubble):not(.chat-check-bubble):not(.chat-invite-bubble):not(.chat-decision-bubble):not(.chat-transfer-bubble) {
+      padding: 8px 12px !important;
+      border: 0 none !important;
+      border-radius: 19px 19px 19px 6px !important;
+      background: rgba(255,255,255,var(--chat-immersive-fill,.74)) !important;
+      color: #16202b !important;
+      box-shadow: 0 3px 12px rgba(18,32,46,.12), inset 0 1px 0 rgba(255,255,255,.75) !important;
+      -webkit-backdrop-filter: blur(14px) saturate(140%);
+      backdrop-filter: blur(14px) saturate(140%);
+    }
+    #chatApp:is([data-chat-bubble="default"],[data-chat-bubble="imessage"]) .chat-thread-view.chat-immersive .chat-message-line.outgoing .chat-bubble:not(.chat-sticker-bubble):not(.chat-voice-bubble):not(.chat-poke-bubble):not(.chat-board-bubble):not(.chat-red-envelope-bubble):not(.chat-check-bubble):not(.chat-invite-bubble):not(.chat-decision-bubble):not(.chat-transfer-bubble) {
+      padding: 8px 12px !important;
+      border: 0 none !important;
+      border-radius: 19px 19px 6px 19px !important;
+      background: linear-gradient(180deg,#2f8cff 0%,#0a7aff 100%) !important;
+      color: #fff !important;
+      box-shadow: 0 4px 14px rgba(10,92,190,.28) !important;
+    }
+    /* 连续同侧消息收成一串：小尾巴只留在末端那一条，头像也只挂在末端（iOS 的分组） */
+    #appScreen .chat-thread-view.chat-immersive .chat-message-line.incoming:has(+ .chat-message-line.incoming) .chat-bubble { border-bottom-left-radius: 19px !important; }
+    #appScreen .chat-thread-view.chat-immersive .chat-message-line.outgoing:has(+ .chat-message-line.outgoing) .chat-bubble { border-bottom-right-radius: 19px !important; }
+    /* 连发时头像跟【第一条】（用户口径：头像在第一条旁边，后面的消息往下走）：
+       所以藏掉的是「前面已经有同侧消息」的那些行，而不是后面的。 */
+    #appScreen .chat-thread-view.chat-immersive .chat-message-line.incoming + .chat-message-line.incoming .chat-message-avatar,
+    #appScreen .chat-thread-view.chat-immersive .chat-message-line.outgoing + .chat-message-line.outgoing .chat-message-avatar { visibility: hidden; }
+    /* 头像跟着第一条：对齐这一行的顶部；基线里那个 translateY(-8px) 是给「末条留头像」用的，归零。 */
+    #appScreen .chat-thread-view.chat-immersive .chat-message-line .chat-message-avatar {
+      align-self: flex-start;
+      transform: none !important;
+    }
+    #appScreen .chat-thread-view.chat-immersive .chat-message-line.incoming + .chat-message-line.incoming,
+    #appScreen .chat-thread-view.chat-immersive .chat-message-line.outgoing + .chat-message-line.outgoing { margin-top: 3px; }
+
+    /* ⑨ 头像不要白描边；时间 / 已读反馈不要白柔光，改用能压在壁纸上的深色 */
+    #appScreen .chat-thread-view.chat-immersive .chat-message-avatar,
+    #appScreen .chat-thread-view.chat-immersive .chat-profile-avatar,
+    #appScreen .chat-thread-view.chat-immersive .chat-thread-avatar {
+      border: 0 none !important;
+      box-shadow: none !important;
+    }
+    /* 气泡和时间戳之间留出呼吸：对方那条原本只有 2px，贴着气泡很难看 */
+    #appScreen .chat-thread-view.chat-immersive .chat-message-line.incoming .chat-message-meta { margin-top: 7px; }
+    #appScreen .chat-thread-view.chat-immersive .chat-message-line.outgoing .chat-message-meta { margin-top: 5px; }
+    #appScreen .chat-thread-view.chat-immersive .chat-message-meta,
+    #appScreen .chat-thread-view.chat-immersive .chat-message-meta .delivery-state {
+      color: #3d4d5b !important;
+      text-shadow: none !important;
+      font-weight: 700;
+    }
+    #appScreen .chat-thread-view.chat-immersive .chat-message-meta .delivery-read { color: #2f74c0 !important; }
+    #appScreen .chat-thread-view.chat-immersive .chat-message-meta .delivery-readNoReply { color: #b06a1f !important; }
+    #appScreen .chat-thread-view.chat-immersive .chat-date-divider {
+      color: #556472 !important;
+      font-size: 6.5px !important;
+      letter-spacing: .04em;
+      text-shadow: none !important;
+    }
+    #appScreen .chat-thread-view.chat-immersive .chat-date-divider::before,
+    #appScreen .chat-thread-view.chat-immersive .chat-date-divider::after { background: rgba(255,255,255,.75) !important; }
+    #appScreen .chat-thread-view.chat-immersive .chat-typing {
+      border: 1px solid rgba(255,255,255,.6) !important;
+      background: rgba(255,255,255,.72) !important;
+      box-shadow: 0 3px 12px rgba(18,32,46,.12);
+      -webkit-backdrop-filter: blur(12px) saturate(140%);
+      backdrop-filter: blur(12px) saturate(140%);
+    }
+    #appScreen .chat-thread-view.chat-immersive .chat-profile-card { padding-bottom: 12px; }
+    #appScreen .chat-thread-view.chat-immersive .chat-profile-button {
+      border: 1px solid rgba(255,255,255,.7) !important;
+      background: rgba(255,255,255,.66) !important;
+      color: #26333f !important;
+      box-shadow: 0 4px 14px rgba(18,32,46,.12), inset 0 1px 0 rgba(255,255,255,.9) !important;
+      -webkit-backdrop-filter: blur(12px) saturate(140%);
+      backdrop-filter: blur(12px) saturate(140%);
+    }
+
+    /* ⑩ 输入栏：悬浮玻璃胶囊 + iOS 蓝发送圆钮（经典输入栏也一起变）
+       下面那条长选择器＝「没有底部面板打开时」才把输入栏抬成浮层：
+       表情 / 附件 / 批量 / 引用预览 / 多选工具条一旦出现，就让它回到原来的分栏流里，不会互相压住。 */
+    #appScreen #chatApp .chat-thread-view.chat-immersive:not(.multi-select-mode):not(:has(> .chat-quote-preview:not([hidden]))):not(:has(> .chat-batch-panel:not([hidden]))):not(:has(> .chat-expression-panel:not([hidden]))):not(:has(> .chat-attachment-panel:not([hidden]))) .chat-composer {
+      position: absolute !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      z-index: 7 !important;
+    }
+    /* 输入栏浮起来以后，消息列表也要让出它的高度，最后一条消息才不会被压在胶囊下面 */
+    .chat-thread-view.chat-immersive .chat-thread-body { padding-bottom: calc(13px + var(--chat-immersive-bottom, 0px)); }
+    #chatApp .chat-thread-view.chat-immersive .chat-thread-body { padding-bottom: calc(13px + var(--chat-immersive-bottom, 0px)); }
+    #appScreen #chatApp .chat-thread-view.chat-immersive .chat-composer {
+      margin: 6px 10px calc(12px + env(safe-area-inset-bottom, 0px)) !important;
+      padding: 5px 6px !important;
+      gap: 5px !important;
+      align-items: center !important;
+      /* 输入栏也走「清透磨砂」那一档：白纱淡、边薄、影浅，靠模糊而不是靠白 */
+      border: 1px solid rgba(255,255,255,.42) !important;
+      border-top: 1px solid rgba(255,255,255,.42) !important;
+      border-radius: 999px !important;
+      background: rgba(255,255,255,var(--chat-immersive-chrome,.34)) !important;
+      box-shadow: 0 6px 18px rgba(18,32,46,.10), inset 0 1px 0 rgba(255,255,255,.42) !important;
+      -webkit-backdrop-filter: blur(var(--chat-immersive-chrome-blur,19px)) saturate(170%);
+      backdrop-filter: blur(var(--chat-immersive-chrome-blur,19px)) saturate(170%);
+    }
+    #appScreen #chatApp .chat-thread-view.chat-immersive .chat-composer .chat-input-wrap {
+      border: 0 !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      -webkit-backdrop-filter: none !important;
+      backdrop-filter: none !important;
+    }
+    /* 附件 / 继续说 / 语音这些图标不要再套一层乳白圆底，就是纯图标 */
+    #appScreen #chatApp .chat-thread-view.chat-immersive .chat-composer .chat-composer-icon {
+      width: 30px !important;
+      height: 30px !important;
+      flex: 0 0 30px !important;
+      border: 0 none !important;
+      border-radius: 50% !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      -webkit-backdrop-filter: none !important;
+      backdrop-filter: none !important;
+      color: #2d3d4a !important;
+    }
+    #appScreen #chatApp .chat-thread-view.chat-immersive .chat-composer .chat-composer-icon:active { background: rgba(255,255,255,.55) !important; }
+    #appScreen #chatApp .chat-thread-view.chat-immersive .chat-composer .chat-send-btn {
+      width: 30px !important;
+      height: 30px !important;
+      flex: 0 0 30px !important;
+      border-radius: 50% !important;
+      background: #0a7aff !important;
+      color: #fff !important;
+      opacity: 1 !important;
+      box-shadow: 0 4px 12px rgba(10,122,255,.35) !important;
+    }
+    #appScreen #chatApp .chat-thread-view.chat-immersive .chat-composer:not(.has-text) .chat-send-btn { opacity: .5 !important; }
+
+    /* ⑪ 省电模式（无 backdrop-filter）：白纱加浓，保证文字仍然读得清 */
+    html[data-perf-mode="lite"] #appScreen .chat-thread-view.chat-immersive .chat-thread-header::before {
+      background: linear-gradient(180deg, rgba(255,255,255,.92) 0%, rgba(255,255,255,.81) 30%, rgba(255,255,255,.48) 58%, rgba(255,255,255,.17) 80%, rgba(255,255,255,0) 100%) !important;
+    }
+    html[data-perf-mode="lite"] #appScreen .chat-thread-view.chat-immersive .chat-thread-header .chat-back-btn,
+    html[data-perf-mode="lite"] #appScreen .chat-thread-view.chat-immersive .chat-thread-header .chat-thread-title,
+    html[data-perf-mode="lite"] #appScreen .chat-thread-view.chat-immersive .chat-thread-header .chat-thread-actions { background: rgba(255,255,255,.74) !important; }
+    html[data-perf-mode="lite"] #appScreen .chat-thread-view.chat-immersive .chat-thread-search-panel { background: rgba(255,255,255,.97) !important; }
+    html[data-perf-mode="lite"] #appScreen #chatApp .chat-thread-view.chat-immersive .chat-composer { background: rgba(255,255,255,.9) !important; }
+    html[data-perf-mode="lite"] #appScreen #chatApp .chat-thread-view.chat-immersive .chat-quote-preview,
+    html[data-perf-mode="lite"] #appScreen #chatApp .chat-thread-view.chat-immersive .chat-batch-panel,
+    html[data-perf-mode="lite"] #appScreen #chatApp .chat-thread-view.chat-immersive .chat-expression-panel,
+    html[data-perf-mode="lite"] #appScreen #chatApp .chat-thread-view.chat-immersive .chat-attachment-panel,
+    html[data-perf-mode="lite"] #appScreen #chatApp .chat-thread-view.chat-immersive .chat-voice-recording-panel { background: rgba(255,255,255,.93) !important; }
+    html[data-perf-mode="lite"] #chatApp:is([data-chat-bubble="default"],[data-chat-bubble="imessage"]) .chat-thread-view.chat-immersive .chat-message-line.incoming .chat-bubble:not(.chat-sticker-bubble):not(.chat-voice-bubble):not(.chat-poke-bubble):not(.chat-board-bubble):not(.chat-red-envelope-bubble):not(.chat-check-bubble):not(.chat-invite-bubble):not(.chat-decision-bubble):not(.chat-transfer-bubble) { background: rgba(255,255,255,.94) !important; }
+    html[data-perf-mode="lite"] #appScreen .chat-thread-view.chat-immersive .chat-message-meta { color: #2f3d4a !important; }
+
+    /* ⑫ 窄屏收敛：手机上把「搜索」让出来（左滑顶栏照样能搜） */
+    @media (max-width: 430px) {
+      #appScreen .chat-thread-view.chat-immersive .chat-thread-header .chat-thread-actions .chat-plain-btn:first-child { display: none !important; }
+      #appScreen .chat-thread-view.chat-immersive .chat-thread-header .chat-thread-title { max-width: min(240px, calc(100vw - 40px)); }
+    }
+
     /* ==================== 最终页面间距优化 ==================== */
     /* 朋友圈右上角三个操作按钮上移，避免压到头像和个人资料区域。 */
     #appScreen > .circle-app .circle-cover-tools { top: 16px !important; right: 10px !important; }
@@ -9128,20 +9546,28 @@ html[data-keyboard-open="true"] #chatApp.thread-open .chat-thread-body{scroll-pa
 
 @media(max-width:430px){
   #appScreen.edit-mode>.app-header{gap:5px!important;}
-  #appScreen.edit-mode>.app-header>div:first-child{min-width:0;max-width:112px;}
+  /* ⚠ v121 修复「编辑模式顶部功能键溢出屏幕」：
+     这两条原本是按「头部第一个 div 是标题」写的（标题才需要卡宽度）。现在头部的第一个 div
+     就是操作按钮行本身（撤销 / 重做 / 自动排列 / 主题 / 完成），被卡到 112px 之后，
+     按钮行只能从自己的左边缘往右铺，直接铺出屏幕 → 最后一个「完成」被切掉、右边距也丢了。
+     现在只对真正的标题元素卡宽度，操作行按内容收缩、且真放不下时换行，绝不溢出。 */
+  #appScreen.edit-mode>.app-header>div:not(.header-actions){min-width:0;max-width:112px;}
   #appScreen.edit-mode>.app-header .editable-sub{font-size:7px;}
   #appScreen.edit-mode>.app-header .title{font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  #appScreen.edit-mode>.app-header .header-actions{min-width:0;gap:3px;}
+  #appScreen.edit-mode>.app-header .header-actions{min-width:0;max-width:100%;gap:3px;justify-content:flex-end;}
   #appScreen.edit-mode .edit-history-actions{gap:2px;}
   #appScreen.edit-mode .edit-history-btn{width:24px;height:24px;}
   #appScreen.edit-mode .edit-theme-btn{min-height:24px;padding:0 6px;}
   #appScreen.edit-mode .finish-edit-btn{padding:6px 9px;font-size:10px;white-space:nowrap;}
 }
 @media(max-width:360px){
-  #appScreen.edit-mode>.app-header>div:first-child{max-width:84px;}
+  #appScreen.edit-mode>.app-header>div:not(.header-actions){max-width:84px;}
+  /* 极窄屏：先挤间距、再缩字号 —— 顺序反过来会让按钮先被压扁 */
+  #appScreen.edit-mode .header-actions{gap:2px;}
+  #appScreen.edit-mode .edit-history-actions{gap:1px;}
   #appScreen.edit-mode .edit-history-btn{width:22px;height:22px;}
-  #appScreen.edit-mode .edit-theme-btn{padding-inline:4px;}
-  #appScreen.edit-mode .finish-edit-btn{padding-inline:7px;}
+  #appScreen.edit-mode .edit-theme-btn{padding-inline:4px;font-size:7px;}
+  #appScreen.edit-mode .finish-edit-btn{padding-inline:7px;font-size:9px;}
 }
 @supports(height:-webkit-fill-available){html[data-ios],html[data-ios] body{min-height:-webkit-fill-available}}
 </style>
@@ -11211,11 +11637,19 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
           </section>
 
           <section class="chat-settings-section">
-            <div class="chat-settings-section-title"><span>聊天栏磨砂透明</span><small>顶栏 / 底栏</small></div>
+            <div class="chat-settings-section-title"><span>聊天栏磨砂透明</span><small>顶栏 / 底栏（沉浸式聊天室里也生效）</small></div>
             <div class="chat-settings-help">开启后，聊天顶栏、输入区和主页底栏会使用透明玻璃效果。</div>
             <div class="chat-settings-toggle-row"><span>开启磨砂透明模式</span><button class="chat-glass-toggle" id="chatGlassToggle" type="button" onclick="toggleChatGlass()" aria-label="开启磨砂透明模式" aria-pressed="false"></button></div>
             <div class="chat-settings-range-control"><span class="chat-settings-range-row">磨砂程度</span><input id="chatGlassBlurInput" type="range" min="0" max="30" step="1" oninput="updateChatGlassSetting('blur', this.value)"><strong id="chatGlassBlurValue">14px</strong></div>
             <div class="chat-settings-range-control"><span class="chat-settings-range-row">透明度</span><input id="chatGlassOpacityInput" type="range" min="0" max="100" step="1" oninput="updateChatGlassSetting('opacity', this.value)"><strong id="chatGlassOpacityValue">72%</strong></div>
+          </section>
+
+          <section class="chat-settings-section">
+            <div class="chat-settings-section-title"><span>沉浸式聊天室</span><small>iMessage / 液态玻璃</small></div>
+            <div class="chat-settings-help">默认关闭，按房间记忆。参考 iOS 的信息界面重做这个房间：壁纸从最上面铺到输入栏，顶栏拆成悬浮的玻璃控件（返回圆钮 / 头像名字胶囊 / 功能胶囊），消息从它们下面滑过去、往下渐隐，顶栏空白处也能直接滑动聊天；我方气泡走 iMessage 蓝、对方是通透玻璃，连续消息自动收成一串；输入栏是一枚悬浮玻璃胶囊，发送键是蓝色圆钮。气泡配色只在「默认 / iMessage」预设下生效，WeChat / KakaoTalk / 自定义保持原样。先给这个房间设一张「聊天壁纸」，效果最明显。</div>
+            <div class="chat-settings-toggle-row"><span>开启沉浸式聊天室</span><button class="chat-glass-toggle" id="chatImmersiveToggle" type="button" onclick="toggleChatThreadImmersive()" aria-label="开启沉浸式聊天室" aria-pressed="false"></button></div>
+            <div class="chat-settings-range-control"><span class="chat-settings-range-row">顶栏 / 气泡白纱</span><input id="chatImmersiveVeilInput" type="range" min="0" max="100" step="1" oninput="updateChatImmersiveSetting('veil', this.value)"><strong id="chatImmersiveVeilValue">62%</strong></div>
+            <div class="chat-settings-range-control"><span class="chat-settings-range-row">玻璃磨砂</span><input id="chatImmersiveBlurInput" type="range" min="0" max="30" step="1" oninput="updateChatImmersiveSetting('blur', this.value)"><strong id="chatImmersiveBlurValue">14px</strong></div>
           </section>
 
           <section class="chat-settings-section">
@@ -19782,7 +20216,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       history: { label: '聊天记录' },
       stickers: { label: '表情包' }
     });
-    const CHAT_BACKUP_SETTINGS_FIELDS = Object.freeze(['avatarShape', 'wallpaper', 'bubblePreset', 'customBubbleCSS', 'themeCSS', 'selfName', 'selfAvatar', 'selfGradient', 'callVoiceBackground', 'callVideoBackground', 'callSelfBackground', 'partnerVoiceEnabled', 'companionBackground', 'chatGlassEnabled', 'chatGlassBlur', 'chatGlassOpacity', 'listenMiniStyle', 'listenWallpaper', 'listenWallpaperBlur']);
+    const CHAT_BACKUP_SETTINGS_FIELDS = Object.freeze(['avatarShape', 'wallpaper', 'bubblePreset', 'customBubbleCSS', 'themeCSS', 'selfName', 'selfAvatar', 'selfGradient', 'callVoiceBackground', 'callVideoBackground', 'callSelfBackground', 'partnerVoiceEnabled', 'companionBackground', 'chatGlassEnabled', 'chatGlassBlur', 'chatGlassOpacity', 'threadImmersive', 'threadImmersiveVeil', 'threadImmersiveBlur', 'listenMiniStyle', 'listenWallpaper', 'listenWallpaperBlur']);
     const CHAT_BACKUP_SPECIAL_FIELDS = Object.freeze(['decisionRecords', 'boardRecords', 'redEnvelopes', 'transferRecords', 'voiceCards', 'checkHistory', 'deletedSpecialMessageIds', 'deletedChatLineKeys', 'pendingCheck', 'pendingReply', 'pendingProactiveMessages', 'pendingProactiveBoards', 'messageKindCooldowns', 'inviteHistory', 'pendingInvite', 'listenQueue', 'listenIndex', 'listenFavorites', 'listenTrail', 'chatFavorites', 'patTexts', 'glyphCardRequests']);
     const CHAT_BACKUP_STICKER_FIELDS = Object.freeze(['stickerMine', 'stickerTheirs', 'kaomoji']);
 
@@ -21140,6 +21574,10 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         chatGlassEnabled: false,
         chatGlassBlur: 14,
         chatGlassOpacity: 72,
+        /* v121：沉浸式聊天室（按聊天室记忆）—— iMessage 风：壁纸通铺、顶栏/气泡/输入栏全部液态玻璃 */
+        threadImmersive: false,
+        threadImmersiveVeil: 62,      /* 顶栏那层白纱的浓度 % */
+        threadImmersiveBlur: 14,      /* 顶栏磨砂强度 px */
         inviteHistory: [],
         pendingInvite: null,
         historyDeleted: false,
@@ -21202,6 +21640,10 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         chatGlassEnabled: Boolean(saved.chatGlassEnabled),
         chatGlassBlur: Number.isFinite(Number(saved.chatGlassBlur)) ? Math.max(0, Math.min(30, Number(saved.chatGlassBlur))) : defaults.chatGlassBlur,
         chatGlassOpacity: Number.isFinite(Number(saved.chatGlassOpacity)) ? Math.max(0, Math.min(100, Number(saved.chatGlassOpacity))) : defaults.chatGlassOpacity,
+        /* 沉浸式聊天室（iMessage 风）按房间记忆；默认关闭，开了以后这个房间一直带着。 */
+        threadImmersive: Boolean(saved.threadImmersive),
+        threadImmersiveVeil: Number.isFinite(Number(saved.threadImmersiveVeil)) ? Math.max(0, Math.min(100, Number(saved.threadImmersiveVeil))) : defaults.threadImmersiveVeil,
+        threadImmersiveBlur: Number.isFinite(Number(saved.threadImmersiveBlur)) ? Math.max(0, Math.min(30, Number(saved.threadImmersiveBlur))) : defaults.threadImmersiveBlur,
         inviteHistory: Array.isArray(saved.inviteHistory) ? saved.inviteHistory : defaults.inviteHistory.slice(),
         pendingInvite: saved.pendingInvite && typeof saved.pendingInvite === 'object' ? saved.pendingInvite : defaults.pendingInvite,
         chatFavorites: Array.isArray(saved.chatFavorites) ? saved.chatFavorites : defaults.chatFavorites.slice(),
@@ -25548,8 +25990,9 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
        换壳时用同一个版本号比对离线壳，改完记得和 sw.js 的 CACHE_VERSION 一起动。 */
     /* v119：此前这个期望版本号一直没跟着 sw.js 升（停在 v111z74），
          启动自检每次都误判「离线壳陈旧」，于是一次会话最多白刷两次。
-         现在与 sw.js CACHE_VERSION、头部图标指纹三锚点锁死对齐。 */
-    window.MOBIUS_SHELL_EXPECT = 'v120';
+         现在与 sw.js CACHE_VERSION、头部图标指纹三锚点锁死对齐。
+       v121：预览排序 + 进房只补不重画，三锚点一并升到 v121（index.html、sw.js、图标 ?v=）。 */
+    window.MOBIUS_SHELL_EXPECT = 'v121';
     function comboDebug(msg) {
       try {
         if (localStorage.getItem('mobius:combo-debug') !== '1') return;
@@ -26007,12 +26450,26 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         const index=readDreamJSON(CHAT_HISTORY_SHARD_INDEX_KEY,[]);
         if (snapshot?.lines) { success = writeDreamJSON(chatHistoryShardKey(key), snapshot) && success; if(!index.includes(key)) writeDreamJSON(CHAT_HISTORY_SHARD_INDEX_KEY,[...index,key]); }
         else { removeDreamStorage(chatHistoryShardKey(key)); writeDreamJSON(CHAT_HISTORY_SHARD_INDEX_KEY,index.filter(item=>item!==key)); }
-        /* ⚠ v109：这一版快照刚从 localStorage 落地。如果 #chatThreadBody 里装的正是这个房间的 DOM，
-           就记下「DOM 已对齐到这一版」；否则（房间在后台、只写快照的那种）坚决不记，
-           免得下一次进房间时 isChatThreadDomBehindSnapshot 误判成「已经对齐」而不补渲染。 */
+        /* ⚠ v109 / v121：这一版快照刚从 localStorage 落地。只有「DOM 的尾巴确实包含这一版快照的
+           最后一条」时，才能记下「DOM 已对齐到这一版」。
+           以前只看 isChatThreadDomForHandle（这个房间的 DOM 还在不在），可是用户返回列表后
+           #chatThreadBody 并不会被清空、归属也没变 —— 后台到达的消息只写快照时，这里同样会把
+           标记推到新版本；下次进房间 isChatThreadDomBehindSnapshot 就误判成「已经对齐」，
+           新消息永远补不上（通话记录、别人代收的卡片都栽在这）。
+           现在按内容比对：尾巴对不上就不许推标记，进房间时由 v121 的「只增不重画」补上。 */
         if (success && isChatThreadDomForHandle(key)) {
           const markerBody = document.getElementById('chatThreadBody');
-          if (markerBody) markerBody.dataset.renderedSnapshotAt = String(Number(snapshot?.updatedAt) || 0);
+          if (markerBody) {
+            const snapshotLines = Array.isArray(snapshot?.lines) ? snapshot.lines : [];
+            const domLines = [...markerBody.querySelectorAll(':scope > .chat-message-line, :scope > .chat-call-system-message')];
+            let aligned = !snapshotLines.length && !domLines.length;
+            if (snapshotLines.length && domLines.length) {
+              const domKeys = new Set(chatLineIdentityKeys(domLines[domLines.length - 1].outerHTML));
+              const tailKeys = chatLineIdentityKeys(String(snapshotLines[snapshotLines.length - 1]));
+              aligned = tailKeys.length ? tailKeys.some(item => domKeys.has(item)) : false;
+            }
+            if (aligned) markerBody.dataset.renderedSnapshotAt = String(Number(snapshot?.updatedAt) || 0);
+          }
         }
       } else {
         const currentKeys=new Set(Object.keys(state)); const oldIndex=readDreamJSON(CHAT_HISTORY_SHARD_INDEX_KEY,[]);
@@ -26632,6 +27089,97 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       window.ensureChatHistoryLoadEarlierButton?.(key);
       lucide.createIcons();
     }
+
+    /* ═══ v121 · 进房补消息「只增不重画」 ═══
+       旧行为：同一个房间重进时，只要快照比 DOM 新（后台收到的卡、异步补回来的逐条库消息），
+       就把整段线程 body.innerHTML 擦掉重渲染一遍。用户看到的就是「旧消息先出来、再被新消息
+       顶掉」那一跳 —— 快照过期或丢了时更明显：先按旧快照画一屏，IndexedDB 读完再整屏重画。
+       现在：DOM 已经属于这个房间时，只把「快照里有、DOM 里没有」的尾部消息原地补进去，
+       不擦 DOM、不重置滚动位置。特殊卡的状态更新仍由随后的 restoreXxx（红包 / 转账 /
+       查岗 / 邀请 / 决策）原地改，不依赖整段重画。
+       返回 true = 这次已经处理完，调用方不要再重建；false = 交给原来的重建路径。 */
+    function mergeChatThreadWithSnapshot(handle) {
+      const key = String(handle || '').trim();
+      const body = document.getElementById('chatThreadBody');
+      if (!key || !body) return false;
+      if (String(activeChatHandle || '') !== key) return false;
+      const loaded = String(body.dataset.loadedChatHandle || '');
+      if (loaded && loaded !== key) return false;
+      if (getChatSettings(key).historyDeleted) return false;
+      const snapshot = getChatHistorySnapshot(key);
+      if (!Array.isArray(snapshot?.lines) || !snapshot.lines.length) return false;
+      const domLines = [...body.querySelectorAll(':scope > .chat-message-line, :scope > .chat-call-system-message')];
+      if (!domLines.length) return false;      /* 空房间没有可保留的内容，交给原重建路径 */
+      const known = new Set();
+      let newestTs = 0;
+      domLines.forEach(line => {
+        chatLineIdentityKeys(line.outerHTML).forEach(item => known.add(item));
+        const ts = Number(line.dataset.createdAt) || 0;
+        if (ts > newestTs) newestTs = ts;
+      });
+      const holder = document.createElement('div');
+      const typing = document.getElementById('chatTyping');
+      const additions = [];
+      snapshot.lines.forEach(html => {
+        const text = String(html || '');
+        if (!text) return;
+        const identity = chatLineIdentityKeys(text);
+        if (identity.length && identity.some(item => known.has(item))) return;   /* 已在 DOM 里（状态更新交给 restoreXxx） */
+        holder.innerHTML = text;
+        const line = holder.firstElementChild;
+        if (!line || !(line.classList.contains('chat-message-line') || line.classList.contains('chat-call-system-message'))) { holder.replaceChildren(); return; }
+        const ts = Number(line.dataset.createdAt) || 0;
+        /* 只补「比 DOM 里最新的那条还新」的尾部消息；更老的属于「加载更早记录」那一档，不能在这里灌进来 */
+        if (ts && newestTs && ts <= newestTs) { holder.replaceChildren(); return; }
+        if (ts) newestTs = ts;
+        identity.forEach(item => known.add(item));
+        additions.push(line);
+        holder.replaceChildren();
+      });
+      if (!additions.length) {
+        body.dataset.renderedSnapshotAt = String(Number(snapshot.updatedAt) || 0);
+        return true;
+      }
+      const atBottom = (body.scrollHeight - body.scrollTop - body.clientHeight) < 48;
+      const previousRestoreFlag = restoringChatHistory;
+      const previousIgnoreUntil = chatHistoryMutationIgnoreUntil;
+      restoringChatHistory = true;
+      chatHistoryMutationIgnoreUntil = Date.now() + 400;
+      try {
+        additions.forEach(line => {
+          const legacyPoke = line.querySelector?.('.chat-poke-bubble');
+          if (legacyPoke) {
+            const notice = createChatPokeNotice(legacyPoke.textContent, {
+              direction: line.classList.contains('incoming') ? 'incoming' : 'outgoing',
+              createdAt: line.dataset.createdAt
+            });
+            if (notice) insertChatLineChronologically(body, typing, notice, Number(line.dataset.createdAt) || 0);
+            return;
+          }
+          if (line.classList.contains('chat-poke-notice')) {
+            line.dataset.globalFontIgnore = 'true';
+            line.querySelectorAll('.chat-poke-notice-mark').forEach(node => node.remove());
+          }
+          if (line.classList.contains('chat-message-line')) stampChatMessageLine(line);
+          insertChatLineChronologically(body, typing, line, Number(line.dataset.createdAt) || 0);
+        });
+      } finally {
+        restoringChatHistory = previousRestoreFlag;
+        chatHistoryMutationIgnoreUntil = previousIgnoreUntil;
+      }
+      hydrateDreamMediaTree(body);
+      rehydrateStoredChatAvatars(body, key);
+      body.querySelectorAll('.chat-voice-bubble').forEach(bindChatVoiceBubbleInteractions);
+      dedupeChatSpecialCardsInDom(body);
+      try { sanitizeChatQuoteBlocks(body); } catch (_) {}
+      try { sanitizeGlyphRequestBubbles(body); } catch (_) {}
+      body.dataset.renderedSnapshotAt = String(Number(snapshot.updatedAt) || 0);
+      window.ensureChatHistoryLoadEarlierButton?.(key);
+      lucide.createIcons();
+      if (atBottom) body.scrollTop = body.scrollHeight;
+      return true;
+    }
+    window.mergeChatThreadWithSnapshot = mergeChatThreadWithSnapshot;
 
     function countStoredChatHistoryLines(raw) {
       try { const value=typeof raw==='string'?JSON.parse(decompressDreamJSONString(raw)):raw; return value&&typeof value==='object'?Object.values(value).reduce((sum,snapshot)=>sum+(Array.isArray(snapshot?.lines)?snapshot.lines.length:0),0):0; } catch(_) { return 0; }
@@ -27306,9 +27854,11 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
           restoringChatHistory = false;
           chatHistorySwitching = false;
         }
-      } else if (isChatThreadDomBehindSnapshot(nextHandle)) {
+      } else if (isChatThreadDomBehindSnapshot(nextHandle) && !mergeChatThreadWithSnapshot(nextHandle)) {
         // v109：同一个房间、但快照里有 DOM 还没渲染出来的消息（房间在后台时收到/发出的卡片）。
         // 走与切换房间同款的重建，保证「立刻重进聊天室就能看到」，不必等对方下一步动作或切房间。
+        // v121：先试「只增不重画」（mergeChatThreadWithSnapshot）—— 能补就绝不擦 DOM，
+        // 否则用户会看到旧消息消退、新消息出现的整段重画。补不动时才走下面的重建兜底。
         window.clearTimeout(chatHistoryPersistTimer);
         chatHistoryPersistTimer = null;
         chatHistorySwitching = true;
@@ -27905,6 +28455,17 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       const glassOpacityValue = document.getElementById('chatGlassOpacityValue');
       if (glassBlurValue) glassBlurValue.textContent = `${settings.chatGlassBlur}px`;
       if (glassOpacityValue) glassOpacityValue.textContent = `${settings.chatGlassOpacity}%`;
+      /* v121：沉浸式聊天室 */
+      const immersiveToggle = document.getElementById('chatImmersiveToggle');
+      const immersiveVeil = document.getElementById('chatImmersiveVeilInput');
+      const immersiveBlur = document.getElementById('chatImmersiveBlurInput');
+      if (immersiveToggle) { immersiveToggle.classList.toggle('active', settings.threadImmersive === true); immersiveToggle.setAttribute('aria-pressed', String(settings.threadImmersive === true)); }
+      if (immersiveVeil) immersiveVeil.value = settings.threadImmersiveVeil;
+      if (immersiveBlur) immersiveBlur.value = settings.threadImmersiveBlur;
+      const immersiveVeilValue = document.getElementById('chatImmersiveVeilValue');
+      const immersiveBlurValue = document.getElementById('chatImmersiveBlurValue');
+      if (immersiveVeilValue) immersiveVeilValue.textContent = `${settings.threadImmersiveVeil}%`;
+      if (immersiveBlurValue) immersiveBlurValue.textContent = `${settings.threadImmersiveBlur}px`;
       renderChatCardMountSummary();
       renderWallpaperState(settings.wallpaper);
     }
@@ -27976,7 +28537,9 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
           node.style.removeProperty('-webkit-backdrop-filter');
         });
       }
-      applyChatWallpaperLayers(threadGlassActive ? settings.wallpaper : '');
+      applyChatWallpaperLayers(chatThreadWallpaperShouldShow(settings) ? settings.wallpaper : '');
+      /* v121：沉浸式聊天室要跟着「房间开/关、资料页开/关」一起刷新度量。 */
+      applyChatThreadImmersiveSettings();
     }
 
     function toggleChatGlass() {
@@ -27992,6 +28555,207 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       applyChatGlassSettings();
       const label = document.getElementById(kind === 'blur' ? 'chatGlassBlurValue' : 'chatGlassOpacityValue');
       if (label) label.textContent = kind === 'blur' ? `${Number(value)}px` : `${Number(value)}%`;
+    }
+
+    /* v121：沉浸式聊天室 —— 参考 iOS 信息界面（Liquid Glass）：壁纸通铺整屏，
+       顶栏拆成悬浮玻璃控件，气泡走 iMessage 蓝 + 通透玻璃，输入栏是悬浮胶囊。 */
+    function toggleChatThreadImmersive() {
+      const next = updateChatSettings({ threadImmersive: !getChatSettings().threadImmersive });
+      applyChatThreadImmersiveSettings();
+      renderChatSettings();
+      showChatToast(next.threadImmersive ? '已开启沉浸式聊天室（iMessage 风）' : '已恢复普通分栏聊天室');
+    }
+
+    function updateChatImmersiveSetting(kind, value) {
+      const patch = kind === 'blur' ? { threadImmersiveBlur: Number(value) } : { threadImmersiveVeil: Number(value) };
+      updateChatSettings(patch);
+      applyChatThreadImmersiveSettings();
+      const label = document.getElementById(kind === 'blur' ? 'chatImmersiveBlurValue' : 'chatImmersiveVeilValue');
+      if (label) label.textContent = kind === 'blur' ? `${Number(value)}px` : `${Number(value)}%`;
+    }
+
+    /* v121：磨砂透明或沉浸式聊天室任一开启时，聊天壁纸才铺进聊天室
+       （顶栏是浮层，壁纸从顶栏底下一直到输入栏）。 */
+    function chatThreadWallpaperShouldShow(settings = getChatSettings()) {
+      const chatApp = document.getElementById('chatApp');
+      if (!chatApp || !chatApp.classList.contains('thread-open')) return false;
+      if (chatApp.classList.contains('profile-open') || chatApp.classList.contains('settings-open')) return false;
+      return settings.chatGlassEnabled === true || settings.threadImmersive === true;
+    }
+
+    function applyChatThreadImmersiveSettings() {
+      const view = document.getElementById('chatThreadView');
+      if (!view) return;
+      const settings = getChatSettings();
+      const active = settings.threadImmersive === true;
+      view.classList.toggle('chat-immersive', active);
+      /* 沉浸式生效时，顶栏 / 输入栏以这里的白纱 / 磨砂滑杆为准：
+         磨砂透明模式会给它们写一份内联玻璃样式（内联 !important 压过样式表），先撤掉。 */
+      if (active) {
+        [view.querySelector('.chat-thread-header'), document.getElementById('chatComposer'), view.querySelector('.chat-composer .chat-input-wrap')]
+          .filter(Boolean)
+          .forEach(node => {
+            node.style.removeProperty('background');
+            node.style.removeProperty('backdrop-filter');
+            node.style.removeProperty('-webkit-backdrop-filter');
+          });
+      }
+      const veil = Math.max(0, Math.min(100, Number(settings.threadImmersiveVeil))) / 100;
+      const blur = Number.isFinite(Number(settings.threadImmersiveBlur)) ? Math.max(0, Math.min(30, Number(settings.threadImmersiveBlur))) : 14;
+      view.style.setProperty('--chat-immersive-veil', String(veil));
+      view.style.setProperty('--chat-immersive-blur', `${blur}px`);
+      /* 搜索条比顶栏再实一点，免得读不清输入框。 */
+      view.style.setProperty('--chat-immersive-panel', String(Math.min(1, veil + .22)));
+      /* 白纱滑杆同时驱动所有玻璃面（顶栏控件 / 对方气泡 / 输入胶囊）的浓度：
+         0% → 0.40（几乎全透），62%（默认）→ 0.74，100% → 0.95（几乎不透明）。 */
+      view.style.setProperty('--chat-immersive-fill', String(Math.min(.95, .40 + veil * .55)));
+      /* 悬浮感的分配：顶部那层雾吃白纱 × 0.62（看得见的一层白纱），
+         磨砂给它 blur-strong（滑杆 × 1.35）并用 mask 一起淡出，越往下越清透；
+         三块控件再叠一层自己的玻璃，浓度白纱 × 0.58 + 0.16。 */
+      view.style.setProperty('--chat-immersive-top-veil', String(Math.round(veil * .62 * 1000) / 1000));
+      view.style.setProperty('--chat-immersive-blur-strong', `${Math.round(blur * 1.35 * 10) / 10}px`);
+      /* 「聊天栏磨砂透明」在沉浸式里不再被架空：开启后由它的「透明度 / 磨砂程度」
+         接管三枚顶栏控件 + 输入栏（清透就把它调低）；没开就还是白纱 / 磨砂两根滑杆。 */
+      const glassOn = Boolean(settings.chatGlassEnabled);
+      const glassOpacity = Math.max(0, Math.min(1, Number(settings.chatGlassOpacity) / 100));
+      const glassBlur = Number.isFinite(Number(settings.chatGlassBlur)) ? Math.max(0, Math.min(30, Number(settings.chatGlassBlur))) : 14;
+      const chromeFill = glassOn ? Math.min(.72, .06 + glassOpacity * .48) : Math.min(.82, .08 + veil * .42);
+      const chromeBlur = (glassOn ? glassBlur : blur) * 1.35;
+      view.style.setProperty('--chat-immersive-chrome', String(Math.round(chromeFill * 1000) / 1000));
+      /* 底部面板（附件 / 表情 / 批量 / 引用 / 语音）比控件实一点，模糊却同一档，字才读得清。 */
+      view.style.setProperty('--chat-immersive-sheet', String(Math.round(Math.min(.88, chromeFill + .28) * 1000) / 1000));
+      view.style.setProperty('--chat-immersive-chrome-blur', `${Math.round(chromeBlur * 10) / 10}px`);
+      /* 顶栏浮起来以后，壁纸要一直铺到屏幕最上面，否则顶栏后面会露一条底色。 */
+      applyChatWallpaperLayers(chatThreadWallpaperShouldShow(settings) ? settings.wallpaper : '');
+      bindChatImmersiveHeaderGesture();
+      syncChatThreadImmersiveHeader();
+      if (typeof requestAnimationFrame === 'function') requestAnimationFrame(syncChatThreadImmersiveHeader);
+    }
+
+    /* 顶栏第二行那颗胶囊只装「心情 · 状态」：没有内容时把它藏起来，
+       免得头像下面飘着一颗空玻璃片（角色心情会随时间轮换，所以挂个观察器跟着变）。 */
+    function syncChatThreadImmersiveHeader() {
+      const view = document.getElementById('chatThreadView');
+      if (!view) return;
+      const status = view.querySelector('.chat-thread-status');
+      const title = view.querySelector('.chat-thread-title');
+      if (title) title.classList.toggle('chat-immersive-blank', !String(status?.textContent || '').trim());
+      syncChatThreadImmersiveMetrics();
+    }
+
+    /* 顶栏是浮层，消息列表要多留出等高的顶部空白：
+       滚动时消息从顶栏下方穿过并渐隐，滚到最顶上时第一条消息也不会被盖住。 */
+    function syncChatThreadImmersiveMetrics() {
+      const view = document.getElementById('chatThreadView');
+      const body = document.getElementById('chatThreadBody');
+      if (!view || !body) return;
+      if (!view.classList.contains('chat-immersive')) {
+        body.style.removeProperty('--chat-immersive-top');
+        body.style.removeProperty('--chat-immersive-bottom');
+        view.style.removeProperty('--chat-immersive-header-h');
+        return;
+      }
+      const header = view.querySelector('.chat-thread-header');
+      const search = document.getElementById('chatThreadSearchPanel');
+      const headerHeight = Math.round(header?.getBoundingClientRect?.().height || header?.offsetHeight || 0) || 96;
+      const searchHeight = search && !search.hidden ? Math.round(search.offsetHeight || 0) : 0;
+      view.style.setProperty('--chat-immersive-header-h', `${headerHeight}px`);
+      body.style.setProperty('--chat-immersive-top', `${headerHeight + searchHeight}px`);
+      /* 输入栏浮起来时（没有底部面板打开），列表同样要让出它的高度。 */
+      const floating = !view.classList.contains('multi-select-mode') && !['chatQuotePreview', 'chatBatchPanel', 'chatExpressionPanel', 'chatAttachmentPanel']
+        .some(id => { const node = document.getElementById(id); return node && !node.hidden; });
+      const composer = document.getElementById('chatComposer');
+      if (floating && composer) {
+        const composerHeight = Math.round(composer.getBoundingClientRect?.().height || composer.offsetHeight || 0) || 56;
+        body.style.setProperty('--chat-immersive-bottom', `${composerHeight + 18}px`);
+      } else {
+        body.style.removeProperty('--chat-immersive-bottom');
+      }
+    }
+
+    /* 顶栏空白处（没按钮的地方）也能直接滑动聊天：
+       把触摸/滚轮手势转交给消息列表，点按仍然正常响应按钮；左滑还能拉出搜索。 */
+    let chatImmersiveGesture = null;
+    let chatImmersiveSuppressClickUntil = 0;
+    function handleChatImmersivePointerDown(event) {
+      const view = document.getElementById('chatThreadView');
+      if (!view?.classList.contains('chat-immersive')) return;
+      if (event.button !== undefined && event.button !== 0) return;
+      if (!event.target.closest('.chat-thread-header')) return;
+      const body = document.getElementById('chatThreadBody');
+      chatImmersiveGesture = { x: event.clientX, y: event.clientY, mode: '', id: event.pointerId, startTop: body?.scrollTop || 0 };
+    }
+    function handleChatImmersivePointerMove(event) {
+      if (!chatImmersiveGesture || event.pointerId !== chatImmersiveGesture.id) return;
+      const dx = event.clientX - chatImmersiveGesture.x;
+      const dy = event.clientY - chatImmersiveGesture.y;
+      if (!chatImmersiveGesture.mode) {
+        if (Math.abs(dy) < 5 && Math.abs(dx) < 5) return;
+        chatImmersiveGesture.mode = Math.abs(dy) >= Math.abs(dx) ? 'scroll' : 'swipe';
+        chatImmersiveSuppressClickUntil = Date.now() + 400;
+      }
+      if (chatImmersiveGesture.mode !== 'scroll') return;
+      event.preventDefault();
+      const body = document.getElementById('chatThreadBody');
+      if (body) body.scrollTop = chatImmersiveGesture.startTop - dy;
+    }
+    function handleChatImmersivePointerUp(event) {
+      const gesture = chatImmersiveGesture;
+      chatImmersiveGesture = null;
+      if (!gesture || event.pointerId !== gesture.id) return;
+      if (!gesture.mode) return;
+      /* 手指真的在顶栏上划过：这一次不算「点按」，
+         不然会被别的双击 / 长按逻辑当成 tap（比如双击头像弹互动）。 */
+      event.stopPropagation();
+      if (gesture.mode === 'swipe' && event.clientX - gesture.x < -55) openChatThreadSearch();
+    }
+    function handleChatImmersiveWheel(event) {
+      const view = document.getElementById('chatThreadView');
+      if (!view?.classList.contains('chat-immersive')) return;
+      if (!event.target?.closest?.('.chat-thread-header')) return;
+      event.preventDefault();
+      const body = document.getElementById('chatThreadBody');
+      if (body) body.scrollTop += event.deltaY;
+    }
+    function bindChatImmersiveHeaderGesture() {
+      const header = document.querySelector('#chatThreadView .chat-thread-header');
+      if (!header || header.dataset.immersiveGestureBound === 'true') return;
+      header.dataset.immersiveGestureBound = 'true';
+      header.addEventListener('pointerdown', handleChatImmersivePointerDown);
+      header.addEventListener('pointermove', handleChatImmersivePointerMove, { passive: false });
+      header.addEventListener('pointerup', handleChatImmersivePointerUp);
+      header.addEventListener('pointercancel', () => { chatImmersiveGesture = null; });
+      header.addEventListener('wheel', handleChatImmersiveWheel, { passive: false });
+      /* 滑动过程中松手，浏览器可能补一次 click，别让它误触顶栏按钮。 */
+      header.addEventListener('click', event => {
+        if (Date.now() >= chatImmersiveSuppressClickUntil) return;
+        event.stopPropagation();
+        event.preventDefault();
+      }, true);
+      /* 身份胶囊右侧有个小箭头：「点一下进个人主页」是 iOS 的惯例。
+         群聊用的是群 id，没有个人主页，直接不响应。 */
+      const threadIsGroup = () => {
+        const avatar = document.getElementById('threadAvatar');
+        if (avatar?.classList.contains('group')) return true;
+        try { return window.GroupChatV2?.context?.type === 'group'; } catch (_) { return false; }
+      };
+      header.addEventListener('click', event => {
+        if (Date.now() < chatImmersiveSuppressClickUntil) return;
+        if (!event.target?.closest?.('.chat-thread-title')) return;
+        if (threadIsGroup() || !currentPartnerHandle) return;
+        if (typeof openProfileView === 'function') openProfileView();
+      });
+      /* 顶栏高度会随安全区、字号、是否开会话而变，度量要跟着走。 */
+      if (typeof ResizeObserver === 'function') {
+        try { new ResizeObserver(() => syncChatThreadImmersiveMetrics()).observe(header); } catch (_) {}
+      }
+      /* 心情 / 状态是轮换的：文案一变，胶囊的显隐和顶栏高度都要跟着重算。 */
+      const statusNode = document.querySelector('#chatThreadView .chat-thread-status');
+      if (statusNode && typeof MutationObserver === 'function' && statusNode.dataset.immersiveWatch !== 'true') {
+        statusNode.dataset.immersiveWatch = 'true';
+        try { new MutationObserver(() => syncChatThreadImmersiveHeader()).observe(statusNode, { childList: true, characterData: true, subtree: true }); } catch (_) {}
+      }
+      window.addEventListener('resize', () => syncChatThreadImmersiveMetrics(), { passive: true });
     }
 
     function applyListenMiniStyle() {
@@ -29315,6 +30079,8 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       closeExpressionPanel();
       closeAttachmentPanel();
       panel.hidden = false;
+      /* v121：沉浸式下搜索条也浮在顶栏下面，消息列表要多让出它的高度。 */
+      if (typeof syncChatThreadImmersiveMetrics === 'function') syncChatThreadImmersiveMetrics();
       const input = document.getElementById('chatThreadSearchInput');
       if (input) {
         input.value = chatThreadSearchState.query || '';
@@ -29327,6 +30093,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
     function closeChatThreadSearch() {
       const panel = document.getElementById('chatThreadSearchPanel');
       if (panel) panel.hidden = true;
+      if (typeof syncChatThreadImmersiveMetrics === 'function') syncChatThreadImmersiveMetrics();
       chatThreadSearchState = { query: '', matches: [], currentIndex: -1 };
       updateChatThreadSearchHighlights();
       const input = document.getElementById('chatThreadSearchInput');
@@ -29884,9 +30651,14 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       const header=document.querySelector('#chatApp .chat-thread-header');
       if(!header||header.dataset.doubleTapTopBound==='true')return;
       header.dataset.doubleTapTopBound='true';header.title='双击空白处或标题回到聊天顶部';
-      const excluded=target=>Boolean(target?.closest?.('button,.chat-thread-avatar,input,textarea,select,a'));
-      let lastTapAt=0,lastTapTarget=null;
+      const excluded=target=>Boolean(target?.closest?.('button,.chat-thread-avatar,.chat-thread-title,input,textarea,select,a'));
+      let lastTapAt=0,lastTapTarget=null,pointerOrigin=null;
+      /* v121：沉浸式聊天室可以在顶栏空白处拖动聊天，拖动不算「点一下」，
+         否则「先点一下、再拖一下」会被误判成双击回顶部。 */
+      header.addEventListener('pointerdown',event=>{pointerOrigin={x:event.clientX,y:event.clientY};},true);
       header.addEventListener('pointerup',event=>{
+        const origin=pointerOrigin;pointerOrigin=null;
+        if(origin&&(Math.abs(event.clientX-origin.x)>6||Math.abs(event.clientY-origin.y)>6)){lastTapAt=0;lastTapTarget=null;return;}
         if(event.pointerType==='mouse'||excluded(event.target))return;
         const now=Date.now();
         if(lastTapTarget===event.target&&now-lastTapAt<=430){event.preventDefault();event.stopPropagation();lastTapAt=0;lastTapTarget=null;scrollChatThreadToTop();}
@@ -36545,6 +37317,12 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       try { openMailApp(); if(data.mailId && typeof openMailLetter==='function') setTimeout(()=> openMailLetter(data.mailId), 200); } catch(e){ openMailApp(); }
     } else if(r.startsWith('circle')){
       try { const btn = document.querySelectorAll('.nav-btn')[2]; if(btn && typeof switchTab==='function') switchTab(btn); else openCircleApp(); } catch(e){ if(typeof openCircleApp==='function') openCircleApp(); }
+      /* v121：带 postId 的通知点了要落到那条动态上（滚过去 + 闪一下），不能只停在列表顶部 */
+      if(data.postId){
+        const jump = () => { try { window.focusCirclePost?.(data.postId); } catch(_) {} };
+        setTimeout(jump, 260);
+        setTimeout(jump, 900);   /* 动态列表可能还在渲染 / 图片在解码，补一次 */
+      }
     } else if(r.startsWith('invite')){
       try { if(typeof openDesktopInviteApp==='function') openDesktopInviteApp(data.handle); else openChatApp(); } catch(e){ openChatApp(); }
     } else if(r==='moon'){
@@ -36665,8 +37443,8 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
      所以不会再出现「指过去是 404 → 系统给一枚默认黑图标」。
      v111z3：这七个文件换成**用户自己的真 logo**（浅蓝灰底 + 深墨「∞」，由用户提供，原样交付）；
      并统一加 `?v=v111z3` —— 手机上可能还留着上一版占位图的 HTTP 缓存，换个 URL 才保证抓到新图。 */
-  const NOTIF_ICON_FALLBACK_URL = new URL('./icons/icon-192.png?v=v120', location.href).href;
-  const NOTIF_BADGE_URL = new URL('./icons/badge-96.png?v=v120', location.href).href;
+  const NOTIF_ICON_FALLBACK_URL = new URL('./icons/icon-192.png?v=v121', location.href).href;
+  const NOTIF_BADGE_URL = new URL('./icons/badge-96.png?v=v121', location.href).href;
   async function resolveNotificationAvatarIcon(routeData, opts) {
 
 
@@ -37419,6 +38197,47 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
     // also wrap the proactive mail trigger directly (already covered via persist)
   }
 
+  /* v121 · 朋友圈提醒的统一口径
+     用户口径：「正常的应该是 角色昵称 · 发布了一条朋友圈」。
+     改前：标题只写 author（改过昵称的会留旧名，且不说清是什么事），正文在没文字时写
+     「发布了一条新动态」——横幅和系统通知都看不出「谁、发了什么」。
+     现在：标题固定为「昵称 · 发布了一条朋友圈」，正文给动态内容（纯图/表情也给一句），
+     并把这条动态的 postId 一路带到 routeData —— 点提醒直接落到那条动态上。 */
+  function circlePostNotificationName(post, identity){
+    const fromRecord = identity && identity.name && identity.name !== '新消息' ? identity.name : '';
+    return String(fromRecord || post?.author || '一位梦角').trim() || '一位梦角';
+  }
+  function circlePostNotificationCopy(post, identity){
+    const name = circlePostNotificationName(post, identity);
+    const title = `${name} · 发布了一条朋友圈`;
+    let body = String(post?.text || '').replace(/\s+/g, ' ').trim();
+    if(!body){
+      const imageCount = Array.isArray(post?.images) ? post.images.filter(Boolean).length : 0;
+      if(imageCount) body = imageCount > 1 ? `[图片] 晒了 ${imageCount} 张照片` : '[图片] 晒了一张照片';
+      else if(post?.stickerUrl) body = '[表情] 配了张表情包';
+      else body = '点开看看 TA 的新动态';
+    }
+    return { title: title.slice(0, 80), body: body.slice(0, 86) };
+  }
+  /* 点提醒后滚到那条动态并闪一下 —— 以前只是打开朋友圈，停在列表顶部等于没提醒。 */
+  function focusCirclePost(postId){
+    const key = String(postId || '').trim();
+    if(!key) return false;
+    const app = document.getElementById('circleApp');
+    if(!app || !app.classList.contains('is-visible')) return false;
+    const feed = document.getElementById('circleFeed');
+    const safeKey = (typeof CSS !== 'undefined' && CSS.escape) ? CSS.escape(key) : key.replace(/["\\]/g, '\\$&');
+    const target = feed ? feed.querySelector(`.circle-post[data-circle-post-id="${safeKey}"]`) : null;
+    if(!target) return false;
+    try { target.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch(_) { try { target.scrollIntoView(); } catch(__) {} }
+    target.classList.remove('circle-post-flash');
+    void target.offsetWidth;   /* 重放动画 */
+    target.classList.add('circle-post-flash');
+    window.setTimeout(() => target.classList.remove('circle-post-flash'), 1900);
+    return true;
+  }
+  window.focusCirclePost = focusCirclePost;
+
   function wrapCircleNotifications(){
     const origPersist = window.persistCirclePosts;
     if(origPersist && !origPersist._wrapped){
@@ -37435,13 +38254,32 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
               const circleHandle = String(newest.roleId || '');
               const circleIdentity = circleHandle ? getChatBannerIdentity(circleHandle) : null;
               const circleVisual = newest.avatarImage ? {type:'image',src:newest.avatarImage} : circleIdentity?.visual;
-              showSystemInAppBanner({ handle:circleHandle, title:newest.author || '朋友圈', preview:newest.text ? newest.text.slice(0,80) : '发布了一条新动态', route:'circle', routeData:{postId:newest.id}, initials:circleIdentity?.initials||Array.from(newest.author||'圈').slice(0,2).join(''), visual:circleVisual||'linear-gradient(135deg,#78909a,#405761)' });
+              const circleCopy = circlePostNotificationCopy(newest, circleIdentity);
+              /* v121：正看着朋友圈时不再弹横幅（动态就在眼前，还有圈内 toast），
+                 但系统通知照旧 —— 免得「明明在看还弹一条」。 */
+              const circleOnScreen = document.visibilityState !== 'hidden'
+                && !!document.getElementById('circleApp')?.classList.contains('is-visible');
+              if(!circleOnScreen){
+                showSystemInAppBanner({
+                  handle:circleHandle,
+                  title:circleCopy.title,
+                  preview:circleCopy.body,
+                  route:'circle',
+                  routeData:{ postId:newest.id, handle:circleHandle, name:circleCopy.title, initials:circleIdentity?.initials || '圈', visual:circleVisual || 'linear-gradient(135deg,#78909a,#405761)' },
+                  initials:circleIdentity?.initials || Array.from(circlePostNotificationName(newest, circleIdentity)).slice(0,2).join(''),
+                  visual:circleVisual || 'linear-gradient(135deg,#78909a,#405761)'
+                });
+              }
               showSystemNotification({
-                title: newest.author || '朋友圈',
-                body: newest.text ? newest.text.slice(0,80) : '发布了一条新动态',
+                title: circleCopy.title,
+                body: circleCopy.body,
                 route: 'circle',
-                routeData: {},
-                tag: 'circle-'+newest.id
+                /* v121：postId + 头像信息一起带过去 —— 点通知落到那条动态，通知小图标也是 TA 的头像 */
+                routeData: { postId: newest.id, handle: circleHandle, name: circleCopy.title, initials: circleIdentity?.initials || '圈', visual: circleVisual || 'linear-gradient(135deg,#78909a,#405761)' },
+                tag: 'circle-'+newest.id,
+                kind: 'circle',
+                /* 按人分组：同一个角色 30 分钟内只占一条，不同角色的动态各自成条（别并成一条看不出是谁） */
+                group: 'circle:' + (circleHandle || 'unknown')
               });
             }
           }
@@ -38031,7 +38869,11 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         // 获取时间
         const timeEl = line.querySelector('.chat-message-meta');
         const time = timeEl ? timeEl.textContent.trim().split('·')[0].trim() : '';
-        return {preview, time, isOutgoing: line.classList.contains('outgoing')};
+        /* v121：把这一行自己的消息时刻也带出去。以前排序用的是「快照落盘时间」
+           （snap.updatedAt），和待收队列里的消息时刻（createdAt）不是一个钟 —— 补话的
+           createdAt 是它本该到达的过去时刻，一比就输给刚落盘的旧快照，列表于是继续显示旧的。 */
+        const ts = Number(line.dataset.createdAt) || 0;
+        return {preview, time, isOutgoing: line.classList.contains('outgoing'), ts};
       }
     }
     return null;
@@ -38051,7 +38893,9 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       if(snap && Array.isArray(snap.lines) && snap.lines.length){
         const res = extractPreviewFromHistoryLines(snap.lines);
         if(res){
-          best = {preview: res.preview, time: res.time, ts: snap.updatedAt||0, isOutgoing: res.isOutgoing};
+          /* v121：排序基准改成「最后一行自己的消息时刻」；只有老数据没记时刻时才退回快照落盘时间。
+             同时不再把历史里那串写死的时刻文本当显示值（它永远是旧的），让 formatListTime 现算。 */
+          best = {preview: res.preview, time: '', ts: Number(res.ts) || Number(snap.updatedAt) || 0, isOutgoing: res.isOutgoing};
         }
       }
     } catch(e){}
@@ -38084,19 +38928,22 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
         if(Array.isArray(settings.pendingCheck) && settings.pendingCheck) {}
         // 取最新的 pending
         if(pendings.length){
-          const sorted = [...pendings].sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+          /* v121：排序和比较用同一个钟 ——「本该到达的时刻」（重排过的条目记着 reTimedFrom）。
+             以前排序看 createdAt（重排条目记的是未来某刻）、比较看 reTimedFrom，两边不是一把尺。 */
+          const pendingAt = item => Number(item.reTimedFrom || item.createdAt) || 0;
+          const sorted = [...pendings].sort((a,b)=>pendingAt(b)-pendingAt(a));
           const latest = sorted[0];
           const text = typeof chatPendingItemPreview==='function' ? chatPendingItemPreview(latest) : ((latest.text||'').trim().slice(0,28)||'[新消息]');
-          const ts = latest.createdAt||0;
-          if(!best || ts>best.ts){
+          /* v121：并且允许并排时判给待收的那一条 —— 队列里还有没显示的消息，就说明它比历史里那句新。 */
+          const ts = pendingAt(latest) || Date.now();
+          if(!best || ts>=best.ts){
             best = {preview: text, time: '刚刚', ts, isOutgoing:false, isPending:true};
           }
         }
         // 邀请、红包等也可视为预览，但暂以文字为主
         if(settings.pendingInvite && settings.pendingInvite.status==='pending'){
-          const ts = settings.pendingInvite.createdAt||0;
-          const txt = 'INVITE';
-          if(!best || ts>best.ts) best = {preview: txt, time:'刚刚', ts, isOutgoing:false};
+          const ts = Number(settings.pendingInvite.reTimedFrom || settings.pendingInvite.createdAt) || Date.now();
+          if(!best || ts>=best.ts) best = {preview:'INVITE', time:'刚刚', ts, isOutgoing:false};
         }
       }
     } catch(e){}
@@ -38118,6 +38965,9 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
   function updateChatListPreview(handle, opts={}){
     const row = findChatRowByHandle(handle);
     if(!row) return;
+    /* v121：群聊行由 renderGroupList 用群专用格式（「我：/成员：」前缀）整行重画。
+       这里只负责单聊行 —— 否则群行的预览会被写成单聊口径，还会被挪进单聊区。 */
+    if(String(row.dataset.chatTab||'')==='group') return;
     const previewEl = row.querySelector('.chat-row-preview span');
     const timeEl = row.querySelector('.chat-row-notification .chat-row-time');
     const notif = row.querySelector('.chat-row-notification');
@@ -38209,6 +39059,19 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
        现在：当前房间先刷（最便宜），剩下的切成 ≤12ms 的小片，让浏览器先喘口气再补，
        列表立刻能点、预览随后填上；重复调用会取消上一批。 */
     const __list = [...handles];
+    /* v121：按列表里实际的先后顺序补预览 —— 用户最常看的是顶部那几行（置顶、最新），
+       以前是按 Set 的插入顺序（corners → 注册表 → 行）洗牌，顶部行可能排在最后才填上，
+       看着就像「预览不更新」。 */
+    const __rowOrder = new Map();
+    document.querySelectorAll('#chatListScroll .chat-row').forEach((row, index) => {
+      const rowHandle = String(row.dataset.handle || '').trim();
+      if (rowHandle && !__rowOrder.has(rowHandle)) __rowOrder.set(rowHandle, index);
+    });
+    __list.sort((a, b) => {
+      const ia = __rowOrder.has(a) ? __rowOrder.get(a) : 1e6;
+      const ib = __rowOrder.has(b) ? __rowOrder.get(b) : 1e6;
+      return ia - ib;
+    });
     if (window.__chatPreviewFillTimer) { clearTimeout(window.__chatPreviewFillTimer); window.__chatPreviewFillTimer = 0; }
     const __cheap = h => { try { return typeof currentPartnerHandle !== 'undefined' && currentPartnerHandle === h; } catch (_) { return false; } };
     const __rest = [];
@@ -38347,6 +39210,35 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       try { initializeAllChatListPreviews(); } catch(e){}
       refreshChatListTimeLabels();
     });
+  }
+
+  /* v121 · 预览刷新时机补齐：只要某个房间的历史快照落了盘，就刷新那一行的预览。
+     以前会刷新预览的只有「存聊天室设置」和「当前房间插消息」两条路 —— 后台补进来的
+     通话记录、邀请卡状态、KOMO 卡状态等只写快照不写设置，列表就永远停在上一句
+     （用户口径：「预览更新不及时，老是显示旧信息」）。这里挂在 persistChatHistoryState 上，
+     所有落盘路径都能兜住；同一轮的多次落盘合并成一次刷新，不把列表刷成幻灯机。 */
+  const origPersistHistory = window.persistChatHistoryState;
+  if(origPersistHistory && !origPersistHistory._previewPatched){
+    let previewRefreshTimer = 0, previewRefreshHandle = '';
+    const flushPreviewRefresh = () => {
+      previewRefreshTimer = 0;
+      const handle = previewRefreshHandle;
+      previewRefreshHandle = '';
+      if(!handle) return;
+      try { updateChatListPreview(handle); } catch(e){}
+    };
+    window.persistChatHistoryState = function(preferredHandle){
+      const res = origPersistHistory.apply(this, arguments);
+      try{
+        const handle = String(preferredHandle || '').trim();
+        if(handle){
+          previewRefreshHandle = handle;
+          if(!previewRefreshTimer) previewRefreshTimer = window.setTimeout(flushPreviewRefresh, 140);
+        }
+      }catch(e){}
+      return res;
+    };
+    window.persistChatHistoryState._previewPatched = true;
   }
 
   // 打开会话时清除未读
@@ -45184,10 +46076,13 @@ if(currentLines.length&&snapshotStale){
   const state=loadChatHistoryState();state[key]={storageVersion:4,updatedAt:Date.now(),lines:merged,source:'stale-snapshot-repair'};
   if(persistChatHistoryState(key))window.clearChatSnapshotStaleMark?.(key);
   const body=document.getElementById('chatThreadBody');if(!body||String(activeChatHandle)!==key)return;
+  /* v121：DOM 里已经有这个房间的内容（哪怕只是那份过期快照）时，只把缺的尾部消息补进去，
+     不再整段擦掉重画 —— 这正是用户看到的「旧消息消退、然后新消息出现」那一跳。 */
+  if(window.mergeChatThreadWithSnapshot?.(key))return;
   chatHistoryMutationIgnoreUntil=Date.now()+400;restoringChatHistory=true;
   try{body.innerHTML=defaultChatThreadMarkup;body.dataset.loadedChatHandle=key;restoreChatHistory(key,{preserveRestoreFlag:true});applyChatHistoryState();}finally{restoringChatHistory=false;}
   return;
-}const deleted=new Set((getChatSettings(key).deletedSpecialMessageIds||[]).map(String)),seen=new Map(),recovered=[];records.forEach(record=>{const holder=document.createElement('div');holder.innerHTML=String(record.html||'');const identity=chatSpecialIdentityFromLine(holder.firstElementChild);if(identity&&deleted.has(identity))return;if(identity&&seen.has(identity)){recovered[seen.get(identity)]=record.html;return;}if(identity)seen.set(identity,recovered.length);recovered.push(record.html);});if(!recovered.length)return;const state=loadChatHistoryState();state[key]={storageVersion:4,updatedAt:Date.now(),lines:recovered,source:'individual-message-store-recovery'};persistChatHistoryState(key);const body=document.getElementById('chatThreadBody');if(!body||String(activeChatHandle)!==key)return;chatHistoryMutationIgnoreUntil=Date.now()+400;restoringChatHistory=true;try{body.innerHTML=defaultChatThreadMarkup;body.dataset.loadedChatHandle=key;restoreChatHistory(key,{preserveRestoreFlag:true});applyChatHistoryState();}finally{restoringChatHistory=false;}};
+}const deleted=new Set((getChatSettings(key).deletedSpecialMessageIds||[]).map(String)),seen=new Map(),recovered=[];records.forEach(record=>{const holder=document.createElement('div');holder.innerHTML=String(record.html||'');const identity=chatSpecialIdentityFromLine(holder.firstElementChild);if(identity&&deleted.has(identity))return;if(identity&&seen.has(identity)){recovered[seen.get(identity)]=record.html;return;}if(identity)seen.set(identity,recovered.length);recovered.push(record.html);});if(!recovered.length)return;const state=loadChatHistoryState();state[key]={storageVersion:4,updatedAt:Date.now(),lines:recovered,source:'individual-message-store-recovery'};persistChatHistoryState(key);const body=document.getElementById('chatThreadBody');if(!body||String(activeChatHandle)!==key)return;/* v121：DOM 里已有旧内容时只补不重画，别让用户看到整段消退 */if(window.mergeChatThreadWithSnapshot?.(key))return;chatHistoryMutationIgnoreUntil=Date.now()+400;restoringChatHistory=true;try{body.innerHTML=defaultChatThreadMarkup;body.dataset.loadedChatHandle=key;restoreChatHistory(key,{preserveRestoreFlag:true});applyChatHistoryState();}finally{restoringChatHistory=false;}};
 function insertEarlierLines(handle,lines){const body=document.getElementById('chatThreadBody'),typing=document.getElementById('chatTyping');if(!body||!lines.length)return;const oldHeight=body.scrollHeight,anchor=body.querySelector(':scope > .chat-message-line, :scope > .chat-call-system-message')||typing,holder=document.createElement('div'),fragment=document.createDocumentFragment();lines.forEach(html=>{holder.innerHTML=String(html||'');const line=holder.firstElementChild;if(line&&(line.classList.contains('chat-message-line')||line.classList.contains('chat-call-system-message'))){if(line.classList.contains('chat-message-line'))stampChatMessageLine(line);fragment.appendChild(line);}holder.replaceChildren();});body.insertBefore(fragment,anchor||null);hydrateDreamMediaTree(body);window.rehydrateStoredChatAvatars?.(body,handle);body.querySelectorAll('.chat-voice-bubble').forEach(bindChatVoiceBubbleInteractions);window.dedupeChatSpecialCardsInDom?.(body);lucide.createIcons();body.scrollTop+=body.scrollHeight-oldHeight;}
 window.ensureChatHistoryLoadEarlierButton=function(handle){const body=document.getElementById('chatThreadBody');if(!body)return;body.querySelector(':scope > .chat-load-earlier-v4')?.remove();const start=Math.max(0,Number(body.dataset.historyLoadedStart)||0);if(start<=0)return;const button=document.createElement('button');button.type='button';button.className='chat-load-earlier-v4';button.textContent=`加载更早记录（还有 ${start} 条）`;button.onclick=()=>window.loadEarlierChatHistoryPage(handle,button);body.insertBefore(button,body.firstChild);};
 window.loadEarlierChatHistoryPage=async function(handle,button){const body=document.getElementById('chatThreadBody'),snapshot=getChatHistorySnapshot(handle);if(!body||!Array.isArray(snapshot?.lines))return;button.disabled=true;button.textContent='正在加载…';const end=Math.max(0,Number(body.dataset.historyLoadedStart)||0),start=Math.max(0,end-CHAT_V4_PAGE_SIZE);chatHistoryMutationIgnoreUntil=Date.now()+350;restoringChatHistory=true;try{insertEarlierLines(handle,snapshot.lines.slice(start,end));body.dataset.historyLoadedStart=String(start);rememberChatViewWindow(handle,snapshot.lines.length-start);}finally{restoringChatHistory=false;}window.ensureChatHistoryLoadEarlierButton(handle);};
