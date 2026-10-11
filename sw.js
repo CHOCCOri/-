@@ -22,8 +22,8 @@ const APP_MEDIA_CACHE = 'mobius-image-resilience-v1'; // 应用私有，永不�
    这里做最后一道闸：不是同源网址就换成随包交付的站点图标。
    v111z3：站点图标换成用户自己的真 logo；URL 统一带 `?v=v111z3` 破缓存
    （手机里可能还留着旧占位图；问号只影响抓取，isPrecachedAsset 只比 pathname，见下）。 */
-const NOTIF_ICON_FALLBACK = './icons/icon-192.png?v=v111z62';
-const NOTIF_BADGE_FALLBACK = './icons/badge-96.png?v=v111z62';
+const NOTIF_ICON_FALLBACK = `./icons/icon-192.png?v=${CACHE_VERSION}`;
+const NOTIF_BADGE_FALLBACK = `./icons/badge-96.png?v=${CACHE_VERSION}`;
 function notifAssetUrl(value, fallback) {
   const s = String(value || '').trim();
   if (!s) return fallback;
