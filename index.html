@@ -13,9 +13,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Möbius">
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png?v=v119">
-  <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon-180.png?v=v119">
-  <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png?v=v119">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png?v=v120">
+  <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon-180.png?v=v120">
+  <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png?v=v120">
   <!-- 填写后端 Web Push 配置后，页面关闭或系统锁屏时也可由推送服务器唤醒 SW。 -->
   <meta name="dream-push-vapid-public-key" content="">
   <meta name="dream-push-subscribe-endpoint" content="">
@@ -149,11 +149,19 @@ if(focused&&!viewport&&stableHeight>0)keyboardInset=Math.max(keyboardInset,Math.
     }
 
     .app-header {
-      padding: 32px 16px 8px;
+      padding: calc(12px + env(safe-area-inset-top, 0px)) 12px 0;
+      min-height: calc(12px + env(safe-area-inset-top, 0px));
       display: flex;
-      justify-content: space-between;
+      justify-content: flex-end;
       align-items: center;
       z-index: 10;
+      box-sizing: border-box;
+      pointer-events: none;
+    }
+    #appScreen.edit-mode > .app-header {
+      padding: calc(8px + env(safe-area-inset-top, 0px)) 12px 6px;
+      min-height: calc(40px + env(safe-area-inset-top, 0px));
+      pointer-events: auto;
     }
 
     .editable-sub {
@@ -226,7 +234,8 @@ if(focused&&!viewport&&stableHeight>0)keyboardInset=Math.max(keyboardInset,Math.
     .desktop-theme-palette-row button:nth-child(3) i { background: linear-gradient(90deg,#f7f2ff,#e8dcf7,#f1edf9); }
     .desktop-theme-palette-row button:nth-child(4) i { background: linear-gradient(90deg,#fff3f4,#f8dfe7,#f2ebf4); }
     .desktop-theme-palette-row button:nth-child(5) i { background: linear-gradient(90deg,#f5fbf3,#def2e8,#edf4ef); }
-    .app-header { padding: 8px 12px 6px; }
+    .app-header { padding: calc(12px + env(safe-area-inset-top, 0px)) 12px 0; min-height: calc(12px + env(safe-area-inset-top, 0px)); }
+    #appScreen.edit-mode > .app-header { padding: calc(8px + env(safe-area-inset-top, 0px)) 12px 6px; min-height: calc(40px + env(safe-area-inset-top, 0px)); }
     .editable-sub { font-size: 8px; letter-spacing: 1.25px; }
     .app-header .title { font-size: 18px; }
     .bottom-nav { height: 44px; padding: 0 16px; }
@@ -9046,7 +9055,8 @@ html[data-ios] .screen,html[data-ios] #appScreen{width:100%!important;height:var
 html[data-ios][data-standalone="true"],html[data-ios][data-standalone="true"] body{position:fixed;inset:0}
 html[data-ios][data-standalone="true"] #appScreen{position:absolute!important;inset:0!important}
 html[data-ios] #appScreen{--app-bottom-safe:var(--ios-safe-bottom);--app-bottom-nav-base:44px;--app-bottom-nav-extra:max(0px,calc(var(--app-bottom-safe) - 5px));--app-bottom-nav-height:calc(var(--app-bottom-nav-base) + var(--app-bottom-nav-extra));--app-bottom-nav-padding:0 16px var(--app-bottom-nav-extra)}
-html[data-ios] #appScreen>.app-header{min-height:calc(56px + var(--ios-safe-top))!important;padding:calc(8px + var(--ios-safe-top)) 12px 6px!important}
+html[data-ios] #appScreen>.app-header{min-height:calc(12px + var(--ios-safe-top))!important;padding:calc(12px + var(--ios-safe-top)) 12px 0!important}
+html[data-ios] #appScreen.edit-mode>.app-header{min-height:calc(40px + var(--ios-safe-top))!important;padding:calc(8px + var(--ios-safe-top)) 12px 6px!important}
 html[data-ios] #appScreen>.bottom-nav{height:var(--app-bottom-nav-height)!important;min-height:var(--app-bottom-nav-height)!important;flex-basis:var(--app-bottom-nav-height)!important;padding:0 16px var(--app-bottom-nav-extra)!important;background:var(--glass-bg,var(--card-white,#fff))!important}
 html[data-ios] #appScreen>.desktop-viewport{min-height:0!important;height:auto!important;overflow-x:auto!important;overflow-y:hidden!important}
 html[data-ios] #appScreen>.chat-app .chat-list-header,html[data-ios] #appScreen>.chat-app .chat-thread-header,html[data-ios] #appScreen>.chat-app .chat-profile-page-header,html[data-ios] #appScreen>.chat-app .chat-settings-header,html[data-ios] #appScreen>.mail-app .mail-app-head,html[data-ios] #appScreen>.moon-app .moon-head,html[data-ios] #appScreen>.circle-app .circle-app-head,html[data-ios] #appScreen>.global-settings-app .global-settings-head,html[data-ios] #appScreen>.tips-app .tips-app-head,html[data-ios] #appScreen>.answer-book-app .answer-book-head,html[data-ios] #appScreen>.komo-app .komo-head,html[data-ios] #appScreen>.desktop-invite-app .desktop-invite-head{padding-top:calc(8px + var(--ios-safe-top))!important;min-height:calc(56px + var(--ios-safe-top))!important}
@@ -9837,10 +9847,6 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
 
     <!-- Header 区域 -->
     <div class="app-header">
-      <div>
-        <div class="editable-sub" contenteditable="true" spellcheck="false" data-no-shell-draft-guard="true">Möbius</div>
-        <div class="title" id="greetingTitle">晚上好，用户</div>
-      </div>
       <div class="header-actions"><!-- v111z 报修：通知中心入口已移除（铃铛） -->
         <div class="edit-history-actions" aria-label="桌面编辑历史">
           <button class="edit-history-btn" id="desktopUndoButton" type="button" onclick="undoDesktopLayout()" aria-label="撤销" title="撤销"><i data-lucide="undo-2" size="12"></i></button>
@@ -25543,7 +25549,7 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
     /* v119：此前这个期望版本号一直没跟着 sw.js 升（停在 v111z74），
          启动自检每次都误判「离线壳陈旧」，于是一次会话最多白刷两次。
          现在与 sw.js CACHE_VERSION、头部图标指纹三锚点锁死对齐。 */
-    window.MOBIUS_SHELL_EXPECT = 'v119';
+    window.MOBIUS_SHELL_EXPECT = 'v120';
     function comboDebug(msg) {
       try {
         if (localStorage.getItem('mobius:combo-debug') !== '1') return;
@@ -33680,7 +33686,8 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
       const hour = now.getHours();
       let timeText = hour >= 5 && hour < 12 ? "早上好" : hour >= 12 && hour < 14 ? "中午好" : hour >= 14 && hour < 18 ? "下午好" : "晚上好";
       const globalProfile = getCircleProfile();
-      document.getElementById('greetingTitle').innerText = `${timeText}，${globalProfile.nickname || getDefaultChatSelfName()}`;
+      const greetingEl = document.getElementById('greetingTitle');
+      if (greetingEl) greetingEl.innerText = `${timeText}，${globalProfile.nickname || getDefaultChatSelfName()}`;
 
       document.getElementById('calendarMonthText').innerText = `${now.getFullYear()} 年 ${now.getMonth() + 1} 月`;
       const yesterday = new Date(now); yesterday.setDate(now.getDate() - 1);
@@ -36658,8 +36665,8 @@ html[data-perf-mode="lite"] #chatApp:not([data-composer-style="classic"]) .chat-
      所以不会再出现「指过去是 404 → 系统给一枚默认黑图标」。
      v111z3：这七个文件换成**用户自己的真 logo**（浅蓝灰底 + 深墨「∞」，由用户提供，原样交付）；
      并统一加 `?v=v111z3` —— 手机上可能还留着上一版占位图的 HTTP 缓存，换个 URL 才保证抓到新图。 */
-  const NOTIF_ICON_FALLBACK_URL = new URL('./icons/icon-192.png?v=v119', location.href).href;
-  const NOTIF_BADGE_URL = new URL('./icons/badge-96.png?v=v119', location.href).href;
+  const NOTIF_ICON_FALLBACK_URL = new URL('./icons/icon-192.png?v=v120', location.href).href;
+  const NOTIF_BADGE_URL = new URL('./icons/badge-96.png?v=v120', location.href).href;
   async function resolveNotificationAvatarIcon(routeData, opts) {
 
 
